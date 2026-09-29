@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "dgSpecHash": "9B3sdIBKEHs=",
+  "success": true,
+  "projectFilePath": "D:\\Work\\Brio\\backend\\Brio.Api\\Brio.Api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\LAPTOP KING\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.9\\microsoft.aspnetcore.openapi.10.0.9.nupkg.sha512",
+    "C:\\Users\\LAPTOP KING\\.nuget\\packages\\microsoft.entityframeworkcore\\10.0.12\\microsoft.entityframeworkcore.10.0.12.nupkg.sha512",
+    "C:\\Users\\LAPTOP KING\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\10.0.12\\microsoft.entityframeworkcore.abstractions.10.0.12.nupkg.sha512",
+    "C:\\Users\\LAPTOP KING\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\10.0.12\\microsoft.entityframeworkcore.analyzers.10.0.12.nupkg.sha512",
+    "C:\\Users\\LAPTOP KING\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\10.0.12\\microsoft.entityframeworkcore.relational.10.0.12.nupkg.sha512",
+    "C:\\Users\\LAPTOP KING\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'Microsoft.OpenApi' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
+      "projectPath": "D:\\Work\\Brio\\backend\\Brio.Api\\Brio.Api.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\Work\\Brio\\backend\\Brio.Api\\Brio.Api.csproj",
+      "libraryId": "Microsoft.OpenApi",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}

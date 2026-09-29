@@ -1,0 +1,16 @@
+D:\Work\Brio\backend\Brio.Business\bin\Debug\net10.0\Brio.Business.deps.json
+D:\Work\Brio\backend\Brio.Business\bin\Debug\net10.0\Brio.Business.dll
+D:\Work\Brio\backend\Brio.Business\bin\Debug\net10.0\Brio.Business.pdb
+D:\Work\Brio\backend\Brio.Business\bin\Debug\net10.0\Brio.Data.dll
+D:\Work\Brio\backend\Brio.Business\bin\Debug\net10.0\Brio.Data.pdb
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.csproj.AssemblyReference.cache
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.AssemblyInfoInputs.cache
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.AssemblyInfo.cs
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.csproj.CoreCompileInputs.cache
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.sourcelink.json
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Bus.98F14343.Up2Date
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.dll
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\refint\Brio.Business.dll
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\Brio.Business.pdb
+D:\Work\Brio\backend\Brio.Business\obj\Debug\net10.0\ref\Brio.Business.dll

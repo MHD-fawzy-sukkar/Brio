@@ -1,0 +1,13 @@
+D:\Work\Brio\backend\Brio.Data\bin\Debug\net10.0\Brio.Data.deps.json
+D:\Work\Brio\backend\Brio.Data\bin\Debug\net10.0\Brio.Data.dll
+D:\Work\Brio\backend\Brio.Data\bin\Debug\net10.0\Brio.Data.pdb
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.csproj.AssemblyReference.cache
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.GeneratedMSBuildEditorConfig.editorconfig
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.AssemblyInfoInputs.cache
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.AssemblyInfo.cs
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.csproj.CoreCompileInputs.cache
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.sourcelink.json
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.dll
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\refint\Brio.Data.dll
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.pdb
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\ref\Brio.Data.dll
