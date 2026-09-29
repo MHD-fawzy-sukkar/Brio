@@ -11,3 +11,5 @@ D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.dll
 D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\refint\Brio.Data.dll
 D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.pdb
 D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\ref\Brio.Data.dll
+D:\Work\Brio\backend\Brio.Data\bin\Debug\net10.0\Brio.Data.runtimeconfig.json
+D:\Work\Brio\backend\Brio.Data\obj\Debug\net10.0\Brio.Data.genruntimeconfig.cache

@@ -74,15 +74,35 @@
 
 ---
 
-## 4. Current Project State
-- Solution `backend/Brio.sln` builds cleanly with zero compilation errors (`dotnet build Brio.sln` succeeded).
-- Pure Domain Model strategy strictly maintained.
-- `Brio.Business` remains decoupled from EF Core framework dependencies.
+## 4. Completed Phase 3: Presentation Layer (API), Dependency Injection & Migrations
+
+### Configuration & Dependency Injection (`Brio.Api`)
+- Updated `Brio.Api/appsettings.json` with SQL Server connection string `DefaultConnection`.
+- Configured DI container in `Brio.Api/Program.cs`:
+  - Added `ApplicationDbContext` with `UseSqlServer`.
+  - Registered `IRepository<>`, `Repository<>`, `IQuizRepository`, `QuizRepository` as Scoped services.
+  - Registered `IQuizService`, `QuizService` as Scoped services.
+  - Configured Controllers & OpenAPI support.
+
+### Web API Controllers (`Brio.Api/Controllers`)
+- Implemented thin `QuizController.cs` using constructor injection:
+  - `POST api/quizzes`: Creates quiz (returns `201 Created` / `400 Bad Request`).
+  - `POST api/quizzes/{quizId}/questions`: Adds question to existing quiz (returns `201 Created` / `404 Not Found` / `400 Bad Request`).
+  - `GET api/quizzes/{quizId}`: Retrieves full quiz details (returns `200 OK` / `404 Not Found`).
+
+### Database Migrations (`Brio.Data/Migrations`)
+- Successfully generated initial EF Core migration `InitialCreate` via `dotnet ef migrations add InitialCreate --project ../Brio.Data --startup-project .`.
 
 ---
 
-## 5. Next Steps (Pending)
-- Phase 3: Web API Controllers & Dependency Injection setup in `Brio.Api`.
-- EF Core Migrations & Connection String configuration.
-- Real-time Engine setup (SignalR & Redis integration).
+## 5. Current Project State
+- Solution `backend/Brio.sln` builds cleanly with zero compilation errors (`dotnet build Brio.sln` succeeded).
+- EF Core initial migration `InitialCreate` is generated and ready for deployment.
+- Pure Domain Model strategy strictly maintained.
+- All Controllers follow RESTful HTTP status code conventions.
+
+---
+
+## 6. Next Steps (Pending)
+- Phase 4: Real-time SignalR Engine & Redis State Integration.
 - Unit & Integration Testing in `Brio.Tests`.
