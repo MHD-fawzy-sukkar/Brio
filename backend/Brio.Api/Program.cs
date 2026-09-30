@@ -20,15 +20,17 @@ builder.Services.AddScoped<IQuizRepository, QuizRepository>();
 // Register Services
 builder.Services.AddScoped<IQuizService, QuizService>();
 
-// Configure OpenAPI
-builder.Services.AddOpenApi();
+// Configure OpenAPI (Swagger)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(); 
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

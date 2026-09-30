@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Brio.Business")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+071c22d24a48ea9abc090735cfccdf1b930a33c1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+07d9df1e838c31b9ceb48137e397579db35c5be3")]
 [assembly: System.Reflection.AssemblyProductAttribute("Brio.Business")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Brio.Business")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
