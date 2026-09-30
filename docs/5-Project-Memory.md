@@ -118,13 +118,34 @@
 
 ---
 
-## 6. Current Project State
-- Solution `backend/Brio.sln` builds cleanly with zero compilation errors (`dotnet build Brio.sln` succeeded) and all tests passing.
-- Full CRUD operations implemented for both Quizzes and Questions.
-- Layer isolation, Forms, Validators, Mappers, Services, and RFC 7807 Exception Middleware strictly align with `Reference-Architecture.md`.
+## 6. Completed Phase 4: Google OAuth & JWT Authentication Implementation
+
+### Authentication & Token Generation (`Brio.Business`)
+- Created `JwtSettings.cs` in `Brio.Business/Configurations/JwtSettings.cs` bound to `appsettings.json`.
+- Created Auth models:
+  - `Forms/AuthForms/GoogleAuthForm.cs` (`IdToken`)
+  - `DTOs/AuthDtos/CreatorDto.cs` & `DTOs/AuthDtos/AuthResponseDto.cs`
+- Implemented `IAuthService` and `AuthService`:
+  - Validates Google ID token (simulated/mocked parsing).
+  - Auto-provisions new `Creator` entity if not found in database.
+  - Generates signed JWT Bearer tokens containing `ClaimTypes.NameIdentifier`, `ClaimTypes.Email`, and `ClaimTypes.Name`.
+
+### Secure Endpoints & Current Principal Extraction (`Brio.Api`)
+- Updated `HttpContextCurrentUserAccessor` in `Brio.Api/Auth` to extract `ClaimTypes.NameIdentifier` directly from `HttpContext.User`.
+- Added `[Authorize]` attribute to `QuizzesController` and `QuestionsController`.
+- Implemented `AuthController` with `POST /api/auth/google` endpoint.
+- Updated `Program.cs` configuring JWT Bearer authentication, authorization, and Swagger UI security definitions (`OpenApiSecurityScheme` & `OpenApiSecuritySchemeReference`).
 
 ---
 
-## 7. Next Steps (Pending)
-- Phase 4: Real-time SignalR Engine & Redis State Integration.
+## 7. Current Project State
+- Solution `backend/Brio.sln` builds cleanly with zero compilation errors (`dotnet build Brio.sln` succeeded) and all tests passing.
+- Full CRUD operations secured behind JWT Bearer Authentication.
+- Auth flow (`POST /api/auth/google`) returns JWT token containing creator principal claims.
+- Swagger UI updated with Bearer authorization testing support.
+
+---
+
+## 8. Next Steps (Pending)
+- Phase 5: Real-time SignalR Engine & Redis State Integration.
 - Unit & Integration Testing in `Brio.Tests`.

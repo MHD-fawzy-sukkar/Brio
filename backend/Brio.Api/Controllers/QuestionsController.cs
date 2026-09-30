@@ -1,10 +1,12 @@
 using Brio.Business.DTOs.QuestionDtos;
 using Brio.Business.Forms.QuestionForms;
 using Brio.Business.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brio.Api.Controllers;
 
+[Authorize]
 public class QuestionsController : ApiControllerBase
 {
     private readonly IQuestionService _questionService;

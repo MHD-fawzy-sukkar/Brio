@@ -14,7 +14,6 @@ D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Brio.Tests.deps.json
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Brio.Tests.runtimeconfig.json
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Brio.Tests.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Brio.Tests.pdb
-D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Microsoft.AspNetCore.OpenApi.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Microsoft.VisualStudio.CodeCoverage.Shim.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Abstractions.dll
@@ -171,3 +170,5 @@ D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\runtimes\win-x86\native\msalru
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll

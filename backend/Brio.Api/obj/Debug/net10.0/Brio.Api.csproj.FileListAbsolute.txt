@@ -9,7 +9,6 @@ D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Brio.Api.pdb
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Azure.Core.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Azure.Identity.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Humanizer.dll
-D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Microsoft.AspNetCore.OpenApi.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Microsoft.Bcl.AsyncInterfaces.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Microsoft.Build.Framework.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Microsoft.CodeAnalysis.dll
@@ -171,3 +170,5 @@ D:\Work\Brio\backend\Brio.Api\obj\Debug\net10.0\ref\Brio.Api.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\Work\Brio\backend\Brio.Api\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll

@@ -1,10 +1,12 @@
 using Brio.Business.DTOs.QuizDtos;
 using Brio.Business.Forms.QuizForms;
 using Brio.Business.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brio.Api.Controllers;
 
+[Authorize]
 [Route("api/quizzes")]
 public class QuizzesController : ApiControllerBase
 {
