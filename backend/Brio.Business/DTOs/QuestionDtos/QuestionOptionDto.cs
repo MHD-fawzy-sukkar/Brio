@@ -1,4 +1,4 @@
-namespace Brio.Business.DTOs;
+namespace Brio.Business.DTOs.QuestionDtos;
 
 public record QuestionOptionDto(
     Guid Id,

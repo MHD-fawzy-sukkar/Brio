@@ -95,14 +95,36 @@
 
 ---
 
-## 5. Current Project State
-- Solution `backend/Brio.sln` builds cleanly with zero compilation errors (`dotnet build Brio.sln` succeeded).
-- EF Core initial migration `InitialCreate` is generated and ready for deployment.
-- Pure Domain Model strategy strictly maintained.
-- All Controllers follow RESTful HTTP status code conventions.
+## 5. Completed Phase 3.5: Reference Architecture Overhaul & Separated Full CRUD
+
+### Layer Restructuring (`Brio.Business` & `Brio.Api`)
+- Restructured `Brio.Business` to strictly comply with `docs/Reference-Architecture.md`:
+  - Added `/Forms` (`QuizForms/`, `QuestionForms/`): `CreateQuizForm`, `UpdateQuizForm`, `CreateQuestionForm`, `UpdateQuestionForm`, `CreateQuestionOptionForm`, `UpdateQuestionOptionForm`.
+  - Structured `/DTOs` (`QuizDtos/`, `QuestionDtos/`): `QuizDetailDto`, `QuizSummaryDto`, `QuestionDto`, `QuestionOptionDto`.
+  - Added `/Mappers`: `QuizMapper`, `QuestionMapper` (manual strongly-typed C# object mapping).
+  - Added `/Validations`: `DomainExceptions.cs` (`DomainException`, `NotFoundException`, `ForbiddenException`, `BusinessRuleException`, `ConflictException`, `ErrorCodes`), `QuizValidator`, `QuestionValidator`.
+  - Added `/Security`: `ICurrentUserAccessor` interface for current user principal abstraction.
+- Implemented `IQuestionRepository` and `QuestionRepository` in `Brio.Data/Repositories`.
+
+### Security & Ownership Enforcements
+- Implemented `HttpContextCurrentUserAccessor` in `Brio.Api/Auth` providing `CreatorId` mock isolation.
+- Enforced creator ownership checks in `QuizService` and `QuestionService`: Update and Delete operations verify `quiz.CreatorId == currentUserId` throwing `ForbiddenException` on mismatch.
+
+### Middleware & Controller Separation
+- Implemented `ExceptionHandlingMiddleware` translating all `DomainException` occurrences to standard RFC 7807 `ProblemDetails` (`application/problem+json`).
+- Deleted monolithic `QuizController.cs`.
+- Implemented `ApiControllerBase.cs`, `QuizzesController.cs`, and `QuestionsController.cs` returning RESTful HTTP status codes (`200 OK`, `201 Created`, `204 NoContent`, `400 Bad Request`, `403 Forbidden`, `404 Not Found`).
+- Updated `Program.cs` registering all Mappers, Accessors, Services, Repositories, and Middleware.
 
 ---
 
-## 6. Next Steps (Pending)
+## 6. Current Project State
+- Solution `backend/Brio.sln` builds cleanly with zero compilation errors (`dotnet build Brio.sln` succeeded) and all tests passing.
+- Full CRUD operations implemented for both Quizzes and Questions.
+- Layer isolation, Forms, Validators, Mappers, Services, and RFC 7807 Exception Middleware strictly align with `Reference-Architecture.md`.
+
+---
+
+## 7. Next Steps (Pending)
 - Phase 4: Real-time SignalR Engine & Redis State Integration.
 - Unit & Integration Testing in `Brio.Tests`.

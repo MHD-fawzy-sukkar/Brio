@@ -1,7 +1,9 @@
-using Brio.Business.DTOs;
-using Brio.Business.Extensions;
+using Brio.Business.DTOs.QuizDtos;
+using Brio.Business.Forms.QuizForms;
 using Brio.Business.Interfaces;
-using Brio.Data.Entities;
+using Brio.Business.Mappers;
+using Brio.Business.Security;
+using Brio.Business.Validations;
 using Brio.Data.Repositories;
 
 namespace Brio.Business.Services;
@@ -9,148 +11,78 @@ namespace Brio.Business.Services;
 public class QuizService : IQuizService
 {
     private readonly IQuizRepository _quizRepository;
-    private readonly IRepository<Question> _questionRepository;
+    private readonly QuizMapper _quizMapper;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public QuizService(IQuizRepository quizRepository, IRepository<Question> questionRepository)
+    public QuizService(
+        IQuizRepository quizRepository,
+        QuizMapper quizMapper,
+        ICurrentUserAccessor currentUserAccessor)
     {
         _quizRepository = quizRepository;
-        _questionRepository = questionRepository;
+        _quizMapper = quizMapper;
+        _currentUserAccessor = currentUserAccessor;
     }
 
-    public async Task<QuizDetailDto> CreateQuizAsync(CreateQuizDto dto, CancellationToken cancellationToken = default)
+    public async Task<QuizDetailDto> CreateQuizAsync(CreateQuizForm form, CancellationToken cancellationToken = default)
     {
-        var quiz = new Quiz
-        {
-            Id = Guid.NewGuid(),
-            CreatorId = dto.CreatorId,
-            Title = dto.Title.Trim(),
-            Description = dto.Description?.Trim(),
-            CoverImageUrl = dto.CoverImageUrl?.Trim(),
-            CreatedAt = DateTime.UtcNow
-        };
-
-        if (dto.Questions != null && dto.Questions.Count > 0)
-        {
-            foreach (var qDto in dto.Questions)
-            {
-                var question = MapCreateQuestionDtoToEntity(quiz.Id, qDto);
-                quiz.Questions.Add(question);
-            }
-        }
+        var creatorId = form.CreatorId ?? _currentUserAccessor.GetCurrentUserId();
+        var quiz = _quizMapper.MapToEntity(form, creatorId);
 
         await _quizRepository.AddAsync(quiz, cancellationToken);
         await _quizRepository.SaveChangesAsync(cancellationToken);
 
         var createdQuiz = await _quizRepository.GetWithQuestionsAndOptionsAsync(quiz.Id, cancellationToken);
-        return MapToDetailDto(createdQuiz ?? quiz);
+        return _quizMapper.MapToDetailDto(createdQuiz ?? quiz);
     }
 
-    public async Task<QuestionDto> AddQuestionToQuizAsync(Guid quizId, CreateQuestionDto dto, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<QuizSummaryDto>> GetAllQuizzesAsync(CancellationToken cancellationToken = default)
     {
-        var quiz = await _quizRepository.GetByIdAsync(quizId, cancellationToken);
-        if (quiz == null)
-        {
-            throw new KeyNotFoundException($"Quiz with ID '{quizId}' was not found.");
-        }
-
-        var question = MapCreateQuestionDtoToEntity(quizId, dto);
-
-        await _questionRepository.AddAsync(question, cancellationToken);
-        
-        quiz.UpdatedAt = DateTime.UtcNow;
-        _quizRepository.Update(quiz);
-
-        await _quizRepository.SaveChangesAsync(cancellationToken);
-
-        return MapToQuestionDto(question);
+        var quizzes = await _quizRepository.GetAllAsync(cancellationToken);
+        return quizzes.Select(_quizMapper.MapToSummaryDto).ToList();
     }
 
-    public async Task<QuizDetailDto?> GetQuizByIdAsync(Guid quizId, CancellationToken cancellationToken = default)
+    public async Task<QuizDetailDto> GetQuizByIdAsync(Guid quizId, CancellationToken cancellationToken = default)
     {
         var quiz = await _quizRepository.GetWithQuestionsAndOptionsAsync(quizId, cancellationToken);
         if (quiz == null)
         {
-            return null;
+            throw new NotFoundException($"Quiz with ID '{quizId}' was not found.");
         }
 
-        return MapToDetailDto(quiz);
+        return _quizMapper.MapToDetailDto(quiz);
     }
 
-    private static Question MapCreateQuestionDtoToEntity(Guid quizId, CreateQuestionDto dto)
+    public async Task<QuizDetailDto> UpdateQuizAsync(Guid quizId, UpdateQuizForm form, CancellationToken cancellationToken = default)
     {
-        var question = new Question
+        var quiz = await _quizRepository.GetWithQuestionsAndOptionsAsync(quizId, cancellationToken);
+        if (quiz == null)
         {
-            Id = Guid.NewGuid(),
-            QuizId = quizId,
-            OrderIndex = dto.OrderIndex,
-            Text = dto.Text.Trim(),
-            Type = dto.Type,
-            MediaUrl = dto.MediaUrl?.Trim(),
-            TimeLimit = dto.TimeLimit,
-            PointsMultiplier = dto.PointsMultiplier
-        };
-
-        foreach (var optDto in dto.Options)
-        {
-            string text = dto.Type == QuestionType.ShortAnswer
-                ? optDto.Text.NormalizeShortAnswer()
-                : optDto.Text.Trim();
-
-            question.Options.Add(new QuestionOption
-            {
-                Id = Guid.NewGuid(),
-                QuestionId = question.Id,
-                Text = text,
-                ImageUrl = optDto.ImageUrl?.Trim(),
-                IsCorrect = optDto.IsCorrect
-            });
+            throw new NotFoundException($"Quiz with ID '{quizId}' was not found.");
         }
 
-        return question;
+        var currentUserId = _currentUserAccessor.GetCurrentUserId();
+        QuizValidator.ValidateOwnership(quiz, currentUserId);
+
+        _quizMapper.UpdateEntity(quiz, form);
+        _quizRepository.Update(quiz);
+        await _quizRepository.SaveChangesAsync(cancellationToken);
+
+        return _quizMapper.MapToDetailDto(quiz);
     }
 
-    private static QuizDetailDto MapToDetailDto(Quiz quiz)
+    public async Task DeleteQuizAsync(Guid quizId, CancellationToken cancellationToken = default)
     {
-        var questionDtos = quiz.Questions
-            .OrderBy(q => q.OrderIndex)
-            .Select(MapToQuestionDto)
-            .ToList();
+        var quiz = await _quizRepository.GetByIdAsync(quizId, cancellationToken);
+        if (quiz == null)
+        {
+            throw new NotFoundException($"Quiz with ID '{quizId}' was not found.");
+        }
 
-        return new QuizDetailDto(
-            quiz.Id,
-            quiz.CreatorId,
-            quiz.Creator?.DisplayName ?? string.Empty,
-            quiz.Title,
-            quiz.Description,
-            quiz.CoverImageUrl,
-            quiz.CreatedAt,
-            quiz.UpdatedAt,
-            questionDtos
-        );
-    }
+        var currentUserId = _currentUserAccessor.GetCurrentUserId();
+        QuizValidator.ValidateOwnership(quiz, currentUserId);
 
-    private static QuestionDto MapToQuestionDto(Question question)
-    {
-        var optionDtos = question.Options
-            .Select(o => new QuestionOptionDto(
-                o.Id,
-                o.QuestionId,
-                o.Text,
-                o.ImageUrl,
-                o.IsCorrect
-            ))
-            .ToList();
-
-        return new QuestionDto(
-            question.Id,
-            question.QuizId,
-            question.OrderIndex,
-            question.Text,
-            question.Type,
-            question.MediaUrl,
-            question.TimeLimit,
-            question.PointsMultiplier,
-            optionDtos
-        );
+        _quizRepository.Delete(quiz);
+        await _quizRepository.SaveChangesAsync(cancellationToken);
     }
 }

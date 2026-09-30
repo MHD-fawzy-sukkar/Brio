@@ -1,10 +1,18 @@
+using Brio.Api.Auth;
+using Brio.Api.Middleware;
 using Brio.Business.Interfaces;
+using Brio.Business.Mappers;
+using Brio.Business.Security;
 using Brio.Business.Services;
 using Brio.Data.Contexts;
 using Brio.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add HttpContextAccessor and CurrentUserAccessor
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -16,15 +24,24 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register Repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IQuizRepository, QuizRepository>();
+builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+
+// Register Mappers
+builder.Services.AddScoped<QuestionMapper>();
+builder.Services.AddScoped<QuizMapper>();
 
 // Register Services
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
 
 // Configure OpenAPI (Swagger)
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); 
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Custom Exception Handling Middleware for RFC 7807 ProblemDetails
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

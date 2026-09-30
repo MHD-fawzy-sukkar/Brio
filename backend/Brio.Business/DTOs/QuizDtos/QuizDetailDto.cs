@@ -1,4 +1,6 @@
-namespace Brio.Business.DTOs;
+using Brio.Business.DTOs.QuestionDtos;
+
+namespace Brio.Business.DTOs.QuizDtos;
 
 public record QuizDetailDto(
     Guid Id,
@@ -9,5 +11,5 @@ public record QuizDetailDto(
     string? CoverImageUrl,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    List<QuestionDto> Questions
+    IReadOnlyList<QuestionDto> Questions
 );

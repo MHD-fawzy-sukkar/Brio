@@ -168,3 +168,6 @@ D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\runtimes\osx-x64\native\msalru
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\runtimes\win-arm64\native\msalruntime_arm64.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\runtimes\win-x64\native\msalruntime.dll
 D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\runtimes\win-x86\native\msalruntime_x86.dll
+D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\Work\Brio\backend\Brio.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
