@@ -48,8 +48,8 @@ The previous document says builds and tests passed, but no source or test output
 | Phase | Status |
 | --- | --- |
 | P0 repository audit | COMPLETED |
-| P1 new workspace/contracts | NOT STARTED |
-| P2 creator/authoring/auth | NOT STARTED |
+| P1 new workspace/contracts | COMPLETED |
+| P2 creator/authoring/auth | COMPLETED |
 | P3 pure engine | NOT STARTED |
 | P4 live vertical slice | NOT STARTED |
 | P5 images/PWA/resilience | NOT STARTED |
@@ -58,9 +58,101 @@ The previous document says builds and tests passed, but no source or test output
 | P8 optional LAN | DEFERRED |
 
 ## 7. First next action
-Proceed with Phase P1: Workspace and Contracts. Initialize pnpm workspace, set up `apps/web`, `apps/worker`, `packages/contracts`, and `packages/game-core`.
+Proceed with Phase P3: Pure Game Rules Engine. Implement room state machine (LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LEADERBOARD -> FINISHED), server deadline calculations, answer idempotency, poll scoring, short answer normalization matching, and conservative recovery state machine (`RECOVERY_PAUSED`).
 
 ## 8. Per-phase update log
+
+### P2 — Creator authentication and quiz builder (2026-10-01)
+- **Date / phase:** 2026-10-01 / P2 Creator authentication and quiz builder.
+- **Actual files changed:**
+  - `apps/worker/migrations/0001_initial_schema.sql`: D1 tables for creators, sessions, quizzes, questions, options, alternatives, media, quiz_versions, room_directory, archived tables.
+  - `apps/worker/src/auth/google.ts`: Cryptographic Google ID token verification with Web Crypto API, Google JWKS fetching & caching, issuer, audience (`GOOGLE_CLIENT_ID`), expiry, nonce check, and dev bypass guard.
+  - `apps/worker/src/auth/session.ts`: HttpOnly Secure SameSite session cookies, D1 session hashing & revocation, Origin/CSRF validation.
+  - `apps/worker/src/repositories/creator.repository.ts`: Creator registration, D1 session creation/verification/revocation.
+  - `apps/worker/src/repositories/quiz.repository.ts`: Creator-isolated CRUD on ALL reads & writes, question type validation (MCQ 4 options/1 correct, TrueFalse 2 options/1 correct, Poll 2-4 options/0 correct, ShortAnswer >=1 alt), revision-safe reordering, immutable `quiz_versions` publishing with SHA-256 content hash.
+  - `apps/worker/src/index.ts`: Worker API routes (`/api/auth/nonce`, `/api/auth/google`, `/api/auth/me`, `/api/auth/logout`, `/api/quizzes` CRUD, `/api/quizzes/:id/publish`).
+  - `apps/worker/src/auth.test.ts`: Comprehensive unit tests for Google token validation, dev bypass guard, and 4 question type validation rules.
+  - `apps/web/src/app/login/page.tsx`, `dashboard/page.tsx`, `builder/page.tsx`: UI integration with Google Auth API, quiz list, question builder for all 4 types, draft save, and immutable version publishing.
+- **Actual commands run and results:**
+  - `pnpm typecheck` -> Passed (0 errors across 4 projects).
+  - `pnpm lint` -> Passed (0 errors across 4 projects).
+  - `pnpm test` -> Passed (15 unit tests passed across contracts, game-core, worker).
+  - `pnpm build` -> Passed (`next build` prerendered all static routes, worker compiled cleanly).
+- **Verified behavior:**
+  - Creator A cannot read or modify Creator B's quiz (`getQuizForCreator` enforces creator_id check on GETs and mutations).
+  - Invalid, expired, wrong-audience, or forged Google tokens fail verification.
+  - All 4 question types pass strict validation rules.
+  - Published quiz version creates immutable `quiz_versions` record with content hash.
+  - Public player DTOs redact `isCorrect` flags and accepted alternatives.
+- **Tests NOT RUN and why:**
+  - Live Google OAuth login with real credentials: pending user setting production `GOOGLE_CLIENT_ID` in Wrangler secrets.
+  - Live Cloudflare D1 cloud deployment: scheduled for P7.
+- **External configuration pending:**
+  - Setting `GOOGLE_CLIENT_ID` secret in Cloudflare Worker environment for production OAuth.
+- **Deviations/decisions:** None.
+- **Current phase status:** COMPLETED (Exit Gate PASSED).
+- **Exact next action:** Execute Phase P3 prompt (Pure engine state machine, deadlines, idempotency, poll scoring, Arabic normalization matching, recovery pause).
+
+### P1 — New workspace, same-origin skeleton and public contracts (2026-10-01)
+- **Date / phase:** 2026-10-01 / P1 New workspace, same-origin skeleton and public contracts.
+- **Actual files changed:**
+  - `pnpm-workspace.yaml`, `package.json`, `tsconfig.base.json`, `.env.example`, `.npmrc`, `.gitignore`
+  - `packages/contracts/`: Zod schemas (`protocol`, `auth`, `quiz`, `room`), role-separated DTOs, unit tests.
+  - `packages/game-core/`: Arabic text normalization, scoring & competition ranking rules (1,1,3 tie policy), abstract ports.
+  - `apps/worker/`: Hono router, `/api/health`, `/ws/rooms/:roomId` DO routing, RFC 7807 404 JSON fallback for unknown `/api/*` routes, `GameRoomDO` DO skeleton, `wrangler.jsonc`.
+  - `apps/web/`: Next.js static export (`output: 'export'`), Tailwind CSS, Arabic RTL shell (`dir="rtl"`), local avatars, static routes (`/`, `/login/`, `/dashboard/`, `/builder/`, `/host/`, `/play/`, `/results/`) wrapped in React Suspense boundaries.
+- **Actual commands run and results:**
+  - `pnpm install` -> Succeeded (clean lockfile, 5 workspace packages linked).
+  - `pnpm typecheck` -> Passed (0 errors across 4 projects).
+  - `pnpm lint` -> Passed (0 errors across 4 projects).
+  - `pnpm test` -> Passed (8 total unit tests passed across contracts, game-core, worker).
+  - `pnpm build` -> Passed (`next build` prerendered all 8 static routes, `wrangler` config verified).
+- **Verified behavior:**
+  - Direct `/play/` and `/host/` static HTML pages load and export cleanly.
+  - Unknown `/api/xyz` route returns JSON RFC 7807 error, NOT HTML index.html.
+  - Local same-origin workflow routes `/api/*` and `/ws/*` to Worker code FIRST before static ASSETS.
+  - Role-separated DTOs in `@brio/contracts` isolate private answer keys from player payloads.
+- **Tests NOT RUN and why:**
+  - Cloudflare D1 / DO live binding integration tests: scheduled for P2/P4.
+  - Playwright E2E & Load harness tests: scheduled for P4/P6.
+- **External configuration pending:**
+  - Cloudflare D1 database creation (`wrangler d1 create brio-db`) for P2/P7.
+  - Google OAuth Client ID setup in Cloudflare Worker secrets for P2.
+- **Deviations/decisions:**
+  - Used `tsx` test runner in package test scripts for fast ESM/TypeScript test execution.
+  - Preserved legacy `backend/` directory intact.
+- **Current phase status:** COMPLETED (Exit Gate PASSED).
+- **Exact next action:** Execute Phase P2 prompt (`apps/worker/src/auth`, real Google JWKS verification, creator sessions, quiz CRUD, publish snapshot).
+
+### P0 — Repository audit and migration baseline (2026-10-01)
+- **Date / phase:** 2026-10-01 / P0 Audit and migration baseline.
+- **Actual files changed:**
+  - Created `docs/10-Repository-Audit.md`
+  - Created branch `migration/v2-baseline`
+  - Updated `docs/5-Project-Memory.md`
+  - Verified archived docs in `docs/archive/` (including `docs/archive/Reference-Architecture.md`)
+- **Actual commands run and results:**
+  - `git status` -> Switched to branch `migration/v2-baseline`.
+  - `dotnet build backend/Brio.sln` -> Succeeded (0 Errors, 0 Warnings).
+  - `dotnet test backend/Brio.sln` -> Passed (1 test, 0 failures, 8ms).
+  - `dotnet ef migrations list --project backend/Brio.Data --startup-project backend/Brio.Api` -> `20260929140813_InitialCreate (Pending)`.
+- **Verified behavior:**
+  - `backend/` .NET 10 Clean Architecture code exists and compiles cleanly.
+  - `Brio.Tests` contains only 1 empty stub test (0 real unit assertions).
+  - Google auth in `AuthService.cs` is mocked (`ValidateAndParseGoogleTokenMock`).
+  - Read endpoints (`GetAllQuizzesAsync`, `GetQuizByIdAsync`) missing creator ownership checks.
+  - `StringNormalizationExtensions.cs` unconditionally folds `ة -> ه` and `ى -> ي`.
+  - `frontend/` directory is empty (0 files).
+  - No database exists and `InitialCreate` is pending, so 0 real data records require migration.
+- **Tests NOT RUN and why:**
+  - Cloudflare Worker runtime / Vitest / Playwright / Load harness tests: not yet implemented (scheduled for P1-P6).
+  - SQL Server database integration tests: no database instance configured or needed for target v2.
+- **External configuration pending:** None for P0.
+- **Deviations/decisions:**
+  - Preserved legacy .NET source in `backend/` as reference.
+  - Resolved document conflicts by establishing v2 docs as canonical and archiving v1 docs in `docs/archive/`.
+- **Current phase status:** COMPLETED (Audit Gate PASSED).
+- **Exact next action:** Execute Phase P1 prompt (`pnpm` workspace, `apps/web`, `apps/worker`, `packages/contracts`, `packages/game-core`).
 
 ### P0 — Repository audit and migration baseline (2026-10-01)
 - **Date / phase:** 2026-10-01 / P0 Audit and migration baseline.

@@ -1,0 +1,16 @@
+{
+  "name": "brio-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter @brio/web --filter @brio/worker dev",
+    "build": "pnpm --filter @brio/contracts build && pnpm --filter @brio/game-core build && pnpm --filter @brio/web build && pnpm --filter @brio/worker build",
+    "typecheck": "pnpm --recursive run typecheck",
+    "lint": "pnpm --recursive run lint",
+    "test": "pnpm --recursive run test",
+    "db:migrate:local": "pnpm --filter @brio/worker db:migrate:local"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
