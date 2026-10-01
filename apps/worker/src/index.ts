@@ -27,8 +27,13 @@ import {
   addQuestionToQuiz,
   deleteQuestionFromQuiz,
   reorderQuizQuestions,
-  publishQuizVersion
+  publishQuizVersion,
+  getLatestQuizVersion
 } from './repositories/quiz.repository';
+import {
+  reserveRoomSlot,
+  findRoomByCode
+} from './repositories/room-directory.repository';
 import {
   GoogleAuthRequestSchema,
   SaveQuizRequestSchema,
@@ -361,7 +366,144 @@ app.post('/api/quizzes/:id/publish', async (c) => {
   }
 });
 
-// 15. Diagnostic WebSocket route upgrade to Durable Object
+// 15. Create Game Room (Owner Authenticated + Pilot Capacity Checks)
+app.post('/api/rooms', async (c) => {
+  const creator = await getAuthCreator(c);
+  if (!creator) {
+    return rfc7807Error(c, 401, 'unauthorized', 'Authentication required');
+  }
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body');
+  }
+
+  if (!body.quizId || typeof body.quizId !== 'string') {
+    return rfc7807Error(c, 400, 'validation_failed', 'quizId is required');
+  }
+
+  const versionRecord = await getLatestQuizVersion(c.env.DB, body.quizId);
+  if (!versionRecord) {
+    return rfc7807Error(c, 400, 'quiz_not_published', 'Quiz must be published before creating a room');
+  }
+
+  let quizSnapshot: any;
+  try {
+    quizSnapshot = JSON.parse(versionRecord.private_snapshot_json);
+  } catch {
+    return rfc7807Error(c, 500, 'internal_error', 'Corrupted quiz version snapshot');
+  }
+
+  try {
+    const reservation = await reserveRoomSlot(c.env.DB, creator.id, versionRecord.id);
+
+    const doId = c.env.GAME_ROOM.idFromName(reservation.roomId);
+    const stub = c.env.GAME_ROOM.get(doId);
+
+    const setupRes = await stub.fetch(
+      new Request('http://internal/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: reservation.roomId,
+          code: reservation.code,
+          creatorId: creator.id,
+          quizSnapshot
+        })
+      })
+    );
+
+    if (!setupRes.ok) {
+      return rfc7807Error(c, 500, 'do_setup_failed', 'Failed to initialize room Durable Object');
+    }
+
+    return c.json({ roomId: reservation.roomId, code: reservation.code }, 201);
+  } catch (err: any) {
+    return rfc7807Error(c, 400, 'room_creation_denied', err.message);
+  }
+});
+
+// 16. PIN Lookup Route
+app.get('/api/rooms/by-code/:code', async (c) => {
+  const code = c.req.param('code');
+  const room = await findRoomByCode(c.env.DB, code);
+
+  if (!room || room.status === 'finished' || room.status === 'expired') {
+    return rfc7807Error(c, 404, 'room_not_found', 'Room not found or code expired');
+  }
+
+  return c.json({
+    roomId: room.room_id,
+    code: room.code,
+    status: room.status
+  });
+});
+
+// 17. Player Join Endpoint
+app.post('/api/rooms/:roomId/join', async (c) => {
+  const roomId = c.req.param('roomId');
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body');
+  }
+
+  const nickname = (body.nickname || '').trim();
+  const avatarId = body.avatarId || 'avatar_1';
+
+  if (!nickname || nickname.length < 2 || nickname.length > 20) {
+    return rfc7807Error(c, 400, 'validation_failed', 'Nickname must be between 2 and 20 characters');
+  }
+
+  const playerId = 'p_' + crypto.randomUUID();
+  const sessionToken = crypto.randomUUID();
+  const sessionHash = await hashSessionToken(sessionToken);
+
+  const doId = c.env.GAME_ROOM.idFromName(roomId);
+  const stub = c.env.GAME_ROOM.get(doId);
+
+  const joinRes = await stub.fetch(
+    new Request('http://internal/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId, nickname, avatarId, sessionHash })
+    })
+  );
+
+  if (!joinRes.ok) {
+    return rfc7807Error(c, 400, 'join_failed', 'Failed to join room');
+  }
+
+  return c.json({
+    roomId,
+    playerId,
+    nickname,
+    avatarId,
+    sessionToken
+  }, 201);
+});
+
+// 18. HTTP Public Room Snapshot
+app.get('/api/rooms/:roomId/snapshot', async (c) => {
+  const roomId = c.req.param('roomId');
+  const playerId = c.req.query('playerId') || '';
+
+  const doId = c.env.GAME_ROOM.idFromName(roomId);
+  const stub = c.env.GAME_ROOM.get(doId);
+
+  const res = await stub.fetch(new Request(`http://internal/snapshot?playerId=${encodeURIComponent(playerId)}`));
+  if (!res.ok) {
+    return rfc7807Error(c, 404, 'room_not_found', 'Room state snapshot unavailable');
+  }
+
+  const data = await res.json();
+  return c.json(data);
+});
+
+// 19. Diagnostic WebSocket route upgrade to Durable Object
 app.all('/ws/rooms/:roomId', async (c) => {
   const roomId = c.req.param('roomId');
   if (!roomId) {

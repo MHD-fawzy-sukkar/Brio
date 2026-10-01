@@ -407,3 +407,16 @@ export async function publishQuizVersion(
     contentHash
   };
 }
+
+export async function getLatestQuizVersion(
+  db: D1Database,
+  quizId: string
+): Promise<{ id: string; quiz_id: string; revision: number; private_snapshot_json: string } | null> {
+  const row = await db
+    .prepare('SELECT id, quiz_id, revision, private_snapshot_json FROM quiz_versions WHERE quiz_id = ? ORDER BY revision DESC LIMIT 1')
+    .bind(quizId)
+    .first<{ id: string; quiz_id: string; revision: number; private_snapshot_json: string }>();
+
+  return row || null;
+}
+

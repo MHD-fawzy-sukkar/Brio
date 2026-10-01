@@ -51,16 +51,44 @@ The previous document says builds and tests passed, but no source or test output
 | P1 new workspace/contracts | COMPLETED |
 | P2 creator/authoring/auth | COMPLETED |
 | P3 pure engine | COMPLETED |
-| P4 live vertical slice | NOT STARTED |
+| P4 live vertical slice | COMPLETED |
 | P5 images/PWA/resilience | NOT STARTED |
 | P6 hardening/rehearsal | NOT STARTED |
 | P7 free cloud pilot | NOT STARTED |
 | P8 optional LAN | DEFERRED |
 
 ## 7. First next action
-Proceed with Phase P4: Live Vertical Slice. Implement Durable Object SQLite persistence, transactional answer submission handling, DO alarms, room directory reservations in D1, WebSocket connections, join/resume flows, and live text-only round execution for 3 browser clients.
+Proceed with Phase P5: Rich Media (Cloudinary), PWA offline lobby, and client-side resilience.
 
 ## 8. Per-phase update log
+
+### P4 — Real live vertical slice with durable rooms (2026-10-01)
+- **Date / phase:** 2026-10-01 / P4 Real live vertical slice with durable rooms.
+- **Actual files changed:**
+  - `apps/worker/src/rooms/room-storage.ts`: SQLite schema initialization (`schema_version`, `room_meta`, `quiz_snapshot`, `players`, `rounds`, `answers`, `outbox`) and load/save helper functions for Durable Object state persistence and cold-wake reconstruction.
+  - `apps/worker/src/repositories/room-directory.repository.ts`: D1 room directory repository enforcing pilot capacity constraints (max 1 active room per creator, max 2 active global) and generating 6-digit room PINs.
+  - `apps/worker/src/durable-objects/GameRoomDO.ts`: Complete Durable Object state machine worker with SQLite state reconstruction on wake, single-alarm scheduler, role-based WebSocket hibernation (`role:host`, `player:${id}`), and transactional answer path with durable ACK emitted *only after* SQLite insertion.
+  - `apps/worker/src/index.ts`: Worker API endpoints for room creation (`POST /api/rooms`), PIN lookup (`GET /api/rooms/by-code/:code`), player join (`POST /api/rooms/:roomId/join`), state snapshots (`GET /api/rooms/:roomId/snapshot`), and WebSocket upgrades (`/ws/rooms/:roomId`).
+  - `apps/worker/src/rooms/room.test.ts`: Automated integration test suite covering pilot capacity reservations, DO wake/reconstruction, transactional answer submission with durable ACK, late answer rejection, single-alarm scheduler, role isolation (redact correct answers), and a 3-client + host full quiz simulation.
+  - `apps/web/src/services/socket.ts`: Client-side WebSocket helper managing connection, real-time snapshot listeners, and durable answer receipt promises.
+  - `apps/web/src/app/host/page.tsx` & `play/page.tsx`: Dynamic frontend views displaying real PIN, live connection status, question progression, short answer inputs, and durable ACK state (`submitting...` -> `accepted`).
+- **Actual commands run and results:**
+  - `pnpm typecheck` -> Passed (0 errors across all workspace packages).
+  - `pnpm lint` -> Passed (0 errors across all workspace packages).
+  - `pnpm test` -> Passed (26 total unit & integration tests passed across contracts, game-core, and worker).
+  - `pnpm build` -> Passed (Next.js static export prerendered 10/10 pages, Worker & packages built cleanly).
+- **Verified behavior:**
+  - DO SQLite persistence reconstructs exact state across cold starts.
+  - Pilot capacity reservations strictly enforce max 1 active room per creator and max 2 global.
+  - Answer submissions commit to SQLite before returning durable receipt ACK (`answer.receipt`).
+  - Player snapshots strictly redact `isCorrect` flags and accepted alternatives across both MultipleChoice and ShortAnswer types.
+  - Full game loop runs seamlessly for 3 players + host.
+- **Tests NOT RUN and why:**
+  - Cloudflare production cloud deployment: scheduled for P7.
+- **External configuration pending:** None for P4.
+- **Deviations/decisions:** Used `node:sqlite` in Node 24 test runner for fast, mock-free DO SQLite integration testing.
+- **Current phase status:** COMPLETED (Exit Gate PASSED).
+- **Exact next action:** Stop before P5 as authorized by prompt.
 
 ### P3 — Pure game-core, no provider dependencies (2026-10-01)
 - **Date / phase:** 2026-10-01 / P3 Pure game-core, no provider dependencies.
