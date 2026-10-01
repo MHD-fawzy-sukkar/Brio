@@ -50,7 +50,7 @@ The previous document says builds and tests passed, but no source or test output
 | P0 repository audit | COMPLETED |
 | P1 new workspace/contracts | COMPLETED |
 | P2 creator/authoring/auth | COMPLETED |
-| P3 pure engine | NOT STARTED |
+| P3 pure engine | COMPLETED |
 | P4 live vertical slice | NOT STARTED |
 | P5 images/PWA/resilience | NOT STARTED |
 | P6 hardening/rehearsal | NOT STARTED |
@@ -58,9 +58,36 @@ The previous document says builds and tests passed, but no source or test output
 | P8 optional LAN | DEFERRED |
 
 ## 7. First next action
-Proceed with Phase P3: Pure Game Rules Engine. Implement room state machine (LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LEADERBOARD -> FINISHED), server deadline calculations, answer idempotency, poll scoring, short answer normalization matching, and conservative recovery state machine (`RECOVERY_PAUSED`).
+Proceed with Phase P4: Live Vertical Slice. Implement Durable Object SQLite persistence, transactional answer submission handling, DO alarms, room directory reservations in D1, WebSocket connections, join/resume flows, and live text-only round execution for 3 browser clients.
 
 ## 8. Per-phase update log
+
+### P3 — Pure game-core, no provider dependencies (2026-10-01)
+- **Date / phase:** 2026-10-01 / P3 Pure game-core, no provider dependencies.
+- **Actual files changed:**
+  - `packages/game-core/src/engine/types.ts`: Pure state machine types, active round states, answer records, engine effect declarations.
+  - `packages/game-core/src/normalization/matching.ts`: Short answer matching with NFC, space trimming, lowercase, case-folding, and optional Arabic diacritics/folding settings.
+  - `packages/game-core/src/serializers/public.ts`: Public player & host snapshot serializers with absolute redaction of `isCorrect` flags and accepted alternatives.
+  - `packages/game-core/src/engine/state-machine.ts`: Deterministic pure state machine (`LOBBY` -> `COUNTDOWN` -> `QUESTION` -> `STATS` -> `LEADERBOARD` -> `FINISHED`), server deadline calculations (`receivedAt startsAt <= now < endsAt`), submission idempotency, poll scoring, competition ranks (1,1,3 tie policy), pause/resume, and overdue recovery pause (`RECOVERY_PAUSED` >5s) with `void_and_replay` / `void_and_skip`.
+  - `packages/game-core/src/engine/state-machine.test.ts`: Comprehensive unit test suite for state machine transitions, deadline boundaries, answer idempotency, overdue recovery pause, and public serialization redaction.
+- **Actual commands run and results:**
+  - `pnpm typecheck` -> Passed (0 errors across 4 projects).
+  - `pnpm lint` -> Passed (0 errors across 4 projects).
+  - `pnpm test` -> Passed (20 unit tests passed across contracts, game-core, worker).
+  - `pnpm build` -> Passed (`next build` prerendered static routes, worker compiled cleanly).
+- **Verified behavior:**
+  - `game-core` imports ZERO Cloudflare / DOM / HTTP / Node dependencies.
+  - Deadline boundaries strictly enforced: `now = startsAt` accepted, `now = endsAt` rejected even if close alarm is delayed.
+  - Idempotent submission retries return saved receipt without double scoring.
+  - Overdue server transition (>5s) triggers `RECOVERY_PAUSED` and supports `void_and_replay` without duplicate awards.
+  - Public player snapshots redact all `isCorrect` flags and accepted alternatives.
+- **Tests NOT RUN and why:**
+  - Live Durable Object alarms & WebSocket integration: scheduled for P4.
+  - Multi-browser Playwright E2E tests: scheduled for P4.
+- **External configuration pending:** None for P3.
+- **Deviations/decisions:** None.
+- **Current phase status:** COMPLETED (Exit Gate PASSED).
+- **Exact next action:** Execute Phase P4 prompt (Durable Object SQLite, DO alarms, WebSocket join/resume, live vertical slice).
 
 ### P2 — Creator authentication and quiz builder (2026-10-01)
 - **Date / phase:** 2026-10-01 / P2 Creator authentication and quiz builder.
@@ -92,6 +119,67 @@ Proceed with Phase P3: Pure Game Rules Engine. Implement room state machine (LOB
 - **Deviations/decisions:** None.
 - **Current phase status:** COMPLETED (Exit Gate PASSED).
 - **Exact next action:** Execute Phase P3 prompt (Pure engine state machine, deadlines, idempotency, poll scoring, Arabic normalization matching, recovery pause).
+
+### P1 — New workspace, same-origin skeleton and public contracts (2026-10-01)
+- **Date / phase:** 2026-10-01 / P1 New workspace, same-origin skeleton and public contracts.
+- **Actual files changed:**
+  - `pnpm-workspace.yaml`, `package.json`, `tsconfig.base.json`, `.env.example`, `.npmrc`, `.gitignore`
+  - `packages/contracts/`: Zod schemas (`protocol`, `auth`, `quiz`, `room`), role-separated DTOs, unit tests.
+  - `packages/game-core/`: Arabic text normalization, scoring & competition ranking rules (1,1,3 tie policy), abstract ports.
+  - `apps/worker/`: Hono router, `/api/health`, `/ws/rooms/:roomId` DO routing, RFC 7807 404 JSON fallback for unknown `/api/*` routes, `GameRoomDO` DO skeleton, `wrangler.jsonc`.
+  - `apps/web/`: Next.js static export (`output: 'export'`), Tailwind CSS, Arabic RTL shell (`dir="rtl"`), local avatars, static routes (`/`, `/login/`, `/dashboard/`, `/builder/`, `/host/`, `/play/`, `/results/`) wrapped in React Suspense boundaries.
+- **Actual commands run and results:**
+  - `pnpm install` -> Succeeded (clean lockfile, 5 workspace packages linked).
+  - `pnpm typecheck` -> Passed (0 errors across 4 projects).
+  - `pnpm lint` -> Passed (0 errors across 4 projects).
+  - `pnpm test` -> Passed (8 total unit tests passed across contracts, game-core, worker).
+  - `pnpm build` -> Passed (`next build` prerendered all 8 static routes, `wrangler` config verified).
+- **Verified behavior:**
+  - Direct `/play/` and `/host/` static HTML pages load and export cleanly.
+  - Unknown `/api/xyz` route returns JSON RFC 7807 error, NOT HTML index.html.
+  - Local same-origin workflow routes `/api/*` and `/ws/*` to Worker code FIRST before static ASSETS.
+  - Role-separated DTOs in `@brio/contracts` isolate private answer keys from player payloads.
+- **Tests NOT RUN and why:**
+  - Cloudflare D1 / DO live binding integration tests: scheduled for P2/P4.
+  - Playwright E2E & Load harness tests: scheduled for P4/P6.
+- **External configuration pending:**
+  - Cloudflare D1 database creation (`wrangler d1 create brio-db`) for P2/P7.
+  - Google OAuth Client ID setup in Cloudflare Worker secrets for P2.
+- **Deviations/decisions:**
+  - Used `tsx` test runner in package test scripts for fast ESM/TypeScript test execution.
+  - Preserved legacy `backend/` directory intact.
+- **Current phase status:** COMPLETED (Exit Gate PASSED).
+- **Exact next action:** Execute Phase P2 prompt (`apps/worker/src/auth`, real Google JWKS verification, creator sessions, quiz CRUD, publish snapshot).
+
+### P0 — Repository audit and migration baseline (2026-10-01)
+- **Date / phase:** 2026-10-01 / P0 Audit and migration baseline.
+- **Actual files changed:**
+  - Created `docs/10-Repository-Audit.md`
+  - Created branch `migration/v2-baseline`
+  - Updated `docs/5-Project-Memory.md`
+  - Verified archived docs in `docs/archive/` (including `docs/archive/Reference-Architecture.md`)
+- **Actual commands run and results:**
+  - `git status` -> Switched to branch `migration/v2-baseline`.
+  - `dotnet build backend/Brio.sln` -> Succeeded (0 Errors, 0 Warnings).
+  - `dotnet test backend/Brio.sln` -> Passed (1 test, 0 failures, 8ms).
+  - `dotnet ef migrations list --project backend/Brio.Data --startup-project backend/Brio.Api` -> `20260929140813_InitialCreate (Pending)`.
+- **Verified behavior:**
+  - `backend/` .NET 10 Clean Architecture code exists and compiles cleanly.
+  - `Brio.Tests` contains only 1 empty stub test (0 real unit assertions).
+  - Google auth in `AuthService.cs` is mocked (`ValidateAndParseGoogleTokenMock`).
+  - Read endpoints (`GetAllQuizzesAsync`, `GetQuizByIdAsync`) missing creator ownership checks.
+  - `StringNormalizationExtensions.cs` unconditionally folds `ة -> ه` and `ى -> ي`.
+  - `frontend/` directory is empty (0 files).
+  - No database exists and `InitialCreate` is pending, so 0 real data records require migration.
+- **Tests NOT RUN and why:**
+  - Cloudflare Worker runtime / Vitest / Playwright / Load harness tests: not yet implemented (scheduled for P1-P6).
+  - SQL Server database integration tests: no database instance configured or needed for target v2.
+- **External configuration pending:** None for P0.
+- **Deviations/decisions:**
+  - Preserved legacy .NET source in `backend/` as reference.
+  - Resolved document conflicts by establishing v2 docs as canonical and archiving v1 docs in `docs/archive/`.
+- **Current phase status:** COMPLETED (Audit Gate PASSED).
+- **Exact next action:** Execute Phase P1 prompt (`pnpm` workspace, `apps/web`, `apps/worker`, `packages/contracts`, `packages/game-core`).
 
 ### P1 — New workspace, same-origin skeleton and public contracts (2026-10-01)
 - **Date / phase:** 2026-10-01 / P1 New workspace, same-origin skeleton and public contracts.
