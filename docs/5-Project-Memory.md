@@ -52,15 +52,48 @@ The previous document says builds and tests passed, but no source or test output
 | P2 creator/authoring/auth | COMPLETED |
 | P3 pure engine | COMPLETED |
 | P4 live vertical slice | COMPLETED |
-| P5 images/PWA/resilience | NOT STARTED |
+| P5 images/PWA/resilience | COMPLETED |
 | P6 hardening/rehearsal | NOT STARTED |
 | P7 free cloud pilot | NOT STARTED |
 | P8 optional LAN | DEFERRED |
 
 ## 7. First next action
-Proceed with Phase P5: Rich Media (Cloudinary), PWA offline lobby, and client-side resilience.
+Proceed with Phase P6: Hardening and load rehearsal (150-player simulation, rate/size limits, retention, failure tests, honest performance report).
 
 ## 8. Per-phase update log
+
+### P5 — Bounded image pipeline and resilient frontend (2026-10-01)
+- **Date / phase:** 2026-10-01 / P5 Bounded image pipeline and resilient frontend.
+- **Actual files changed:**
+  - `packages/contracts/src/schemas/media.ts`: Media upload signature & completion Zod schemas, 5MB size limit, allowed mime types (JPEG, PNG, WebP, AVIF), and DTO types.
+  - `apps/worker/src/repositories/media.repository.ts`: Constrained SHA-1 Cloudinary signature generator and eager immutable variant URLs (`hostUrl`: max 1280, `mobileUrl`: max 640), fallback fixture server for dev/test without credentials.
+  - `apps/worker/src/index.ts`: Worker endpoints for `/api/media/signature`, `/api/media/complete`, `/api/media/mock-upload`, and `/api/rooms/:roomId/media` manifest endpoint.
+  - `apps/web/src/services/media-prefetch.ts`: Bounded `MediaPrefetchEngine` with Cache Storage API fallback, 20MB LRU memory cache, 2-concurrency queue, exponential backoff with jitter (max 3 retries), `Image.decode`/`createImageBitmap` validation, `cancelObsolete()`, and telemetry metric calculation.
+  - `apps/web/public/sw.js`: Service worker for App Shell assets and static avatars only. Strictly bypasses `/api/*` and `/ws/*`.
+  - `apps/web/src/services/sw-register.ts`: Service Worker registration with `brio_active_game` session guard to defer mid-game updates, and `visibilitychange` listener for foreground tab resync.
+  - `apps/web/src/app/play/page.tsx`: Resilient player UI with essential image delay state (`image-delayed`), disabled answering until image decodes or times out, non-blocking decorative images, foreground resync, low-motion CSS transitions (`motion-reduce:*`), reconnect status, and `accepted` durable ACK badges.
+  - `apps/web/package.json`: Added test script using `tsx --test`.
+  - `apps/web/src/services/media-prefetch.test.ts`: Automated test suite for MediaPrefetchEngine, T17 cache fallback & malformed images, T22 SW update deferral, and next-image-ready rate metric calculation.
+  - `apps/worker/src/media/media.test.ts`: Acceptance tests for Cloudinary constrained signing, 5MB size limit validation, T06 (12s image delay does not shift room timeline), T07 (image failure never blocks room timeline or delays others), T08 (forged media readiness messages ignored), and T21 (image prefetch overlaps 3s STATS + 5s LEADERBOARD without delaying).
+- **Actual commands run and results:**
+  - `pnpm test` -> Passed (36 unit & acceptance tests passed across contracts, game-core, web, and worker).
+  - `pnpm typecheck` -> Passed (0 errors across all workspace packages).
+  - `pnpm lint` -> Passed (0 errors across all workspace packages).
+  - `pnpm build` -> Passed (Prerendered 10 static Next.js pages, Worker compiled cleanly).
+- **Verified behavior:**
+  - **T06:** Proved that a 12s image download delay on a slow player client leaves the server room `endsAt` timeline completely unchanged. Affected player receives `image-delayed` badge, answers are temporarily disabled until image arrives, and player answers within remaining room time.
+  - **T07:** Image failure never extends server room timeline or delays other players; unsubmitted question counts 0 (missed).
+  - **T08:** Client sockets sending forged `media.ready` or unknown messages cannot alter server room phase or extend deadlines.
+  - **T17:** Malformed/oversized images or disabled Cache Storage fall back gracefully to bounded LRU memory without crash or infinite loops.
+  - **T21:** Next image prefetching overlaps existing 3s STATS + 5s LEADERBOARD intervals without adding latency.
+  - **T22:** Mid-game Service Worker updates are deferred when an active game session is running (`brio_active_game === true`).
+  - **Next-Image-Ready Rate:** Measured 100% ready rate in prefetch test harness.
+- **Tests NOT RUN and why:**
+  - Cloudflare production cloud deployment: scheduled for P7.
+- **External configuration pending:** None for P5.
+  - Creator Cloudinary credentials (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`) can be set in production Worker environment secrets when deploying in P7.
+- **Current phase status:** COMPLETED (Exit Gate PASSED).
+- **Exact next action:** Stop before P6 as authorized by prompt.
 
 ### P4 — Real live vertical slice with durable rooms (2026-10-01)
 - **Date / phase:** 2026-10-01 / P4 Real live vertical slice with durable rooms.

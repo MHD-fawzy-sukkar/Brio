@@ -37,8 +37,14 @@ import {
 import {
   GoogleAuthRequestSchema,
   SaveQuizRequestSchema,
-  AuthoringQuestionSchema
+  AuthoringQuestionSchema,
+  UploadSignatureRequestSchema,
+  UploadCompleteRequestSchema
 } from '@brio/contracts';
+import {
+  generateCloudinarySignature,
+  saveMediaRecord
+} from './repositories/media.repository';
 
 export { GameRoomDO };
 
@@ -364,6 +370,81 @@ app.post('/api/quizzes/:id/publish', async (c) => {
   } catch (err: any) {
     return rfc7807Error(c, 400, 'publish_failed', err.message);
   }
+});
+
+// 14.5 Media Signed Upload Parameters Generation (Creator Owner Isolated)
+app.post('/api/media/signature', async (c) => {
+  const creator = await getAuthCreator(c);
+  if (!creator) {
+    return rfc7807Error(c, 401, 'unauthorized', 'Authentication required');
+  }
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body');
+  }
+
+  const parsed = UploadSignatureRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return rfc7807Error(c, 400, 'validation_failed', 'Media upload signature validation failed', parsed.error.flatten().fieldErrors);
+  }
+
+  const quiz = await getQuizForCreator(c.env.DB, parsed.data.quizId, creator.id);
+  if (!quiz) {
+    return rfc7807Error(c, 404, 'not_found', 'Quiz not found or unauthorized');
+  }
+
+  try {
+    const sig = await generateCloudinarySignature(c.env as any, creator.id, parsed.data);
+    return c.json(sig);
+  } catch (err: any) {
+    return rfc7807Error(c, 500, 'signature_generation_failed', err.message);
+  }
+});
+
+// 14.6 Complete Media Upload & Save Eager Variants (Creator Owner Isolated)
+app.post('/api/media/complete', async (c) => {
+  const creator = await getAuthCreator(c);
+  if (!creator) {
+    return rfc7807Error(c, 401, 'unauthorized', 'Authentication required');
+  }
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body');
+  }
+
+  const parsed = UploadCompleteRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return rfc7807Error(c, 400, 'validation_failed', 'Media completion validation failed', parsed.error.flatten().fieldErrors);
+  }
+
+  const quiz = await getQuizForCreator(c.env.DB, parsed.data.quizId, creator.id);
+  if (!quiz) {
+    return rfc7807Error(c, 404, 'not_found', 'Quiz not found or unauthorized');
+  }
+
+  try {
+    const media = await saveMediaRecord(c.env.DB, creator.id, c.env as any, parsed.data);
+    return c.json(media, 201);
+  } catch (err: any) {
+    return rfc7807Error(c, 500, 'media_save_failed', err.message);
+  }
+});
+
+// 14.7 Mock Media Upload Fallback Endpoint (for dev/test environments)
+app.post('/api/media/mock-upload', async (c) => {
+  return c.json({
+    public_id: 'mock_uploaded_img',
+    format: 'webp',
+    width: 1280,
+    height: 720,
+    bytes: 154000
+  });
 });
 
 // 15. Create Game Room (Owner Authenticated + Pilot Capacity Checks)
