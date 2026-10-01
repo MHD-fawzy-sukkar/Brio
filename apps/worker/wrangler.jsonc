@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "brio-db",
-      "database_id": "local-brio-db-id"
+      "database_id": "fcf6442e-ead1-4136-9660-21ab5206df3a"
     }
   ],
   "durable_objects": {

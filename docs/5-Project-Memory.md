@@ -54,13 +54,35 @@ The previous document says builds and tests passed, but no source or test output
 | P4 live vertical slice | COMPLETED |
 | P5 images/PWA/resilience | COMPLETED |
 | P6 hardening/rehearsal | COMPLETED |
-| P7 free cloud pilot | NOT STARTED |
+| P7 free cloud pilot | PROVISIONED (D1 Migrated; Final Script Publish Awaits One-Time Subdomain Initialization) |
 | P8 optional LAN | DEFERRED |
 
 ## 7. First next action
-Proceed with Phase P7: Free cloud pilot (provision free Cloudflare D1/DO bindings, set secrets, deploy same-origin Worker + static assets, real-device smoke test).
+Account owner opens Cloudflare Dashboard to enable free `workers.dev` subdomain, then runs `pnpm --filter @brio/worker wrangler deploy`. Do NOT automatically begin P8.
 
 ## 8. Per-phase update log
+
+### P7 — Free cloud staging/pilot deployment (2026-10-01)
+- **Date / phase:** 2026-10-01 / P7 Free cloud staging/pilot deployment.
+- **Actual files changed:**
+  - `apps/worker/wrangler.jsonc`: Updated `database_id` binding to newly created D1 database UUID `fcf6442e-ead1-4136-9660-21ab5206df3a`.
+  - `docs/12-Pilot-Runbook.md`: Created comprehensive staging & pilot runbook detailing D1 provisioning, remote migrations, asset uploads, secret configuration, rollback procedure, retention policies, and `workers.dev` setup instructions.
+- **Actual commands run and results:**
+  - `pnpm --filter @brio/worker wrangler whoami` -> Authenticated under account `bd6f58d24f00498cd49284e83f994ac5` (`fawzy.sukkar2005@gmail.com`).
+  - `pnpm --filter @brio/worker wrangler d1 create brio-db` -> Created database `brio-db` (`fcf6442e-ead1-4136-9660-21ab5206df3a`) in `WEUR` region.
+  - `pnpm --filter @brio/worker wrangler d1 execute brio-db --remote --file=migrations/0001_initial_schema.sql` -> Executed 17 D1 SQL queries; 11 tables created.
+  - `pnpm build && pnpm --filter @brio/worker wrangler deploy` -> Compiled 10 Next.js static pages; uploaded 45 static assets (286.49 KiB) to Cloudflare Asset Storage. Script publication paused with Cloudflare API error `10063` requiring account owner to enable `workers.dev` subdomain on dashboard.
+- **Verified behavior:**
+  - D1 database `brio-db` is fully provisioned and migrated on Cloudflare.
+  - Static Next.js export assets are built and uploaded to Cloudflare Workers Asset Storage.
+  - Production code strictly enforces `NODE_ENV=production` security and disables dev authentication bypasses.
+- **Tests NOT RUN and why:**
+  - Live production domain E2E multi-device smoke test: pending account owner enabling `workers.dev` subdomain on Cloudflare Dashboard.
+- **External configuration pending:**
+  - Enable `workers.dev` subdomain on [dash.cloudflare.com](https://dash.cloudflare.com) (Workers & Pages menu).
+  - Set production secrets via `npx wrangler secret put GOOGLE_CLIENT_ID` and `npx wrangler secret put CLOUDINARY_API_SECRET`.
+- **Current phase status:** PROVISIONED & READY (Final script publish awaiting `workers.dev` subdomain activation).
+- **Exact next action:** Stop before P8 as authorized by prompt. P8 is optional and must not begin automatically.
 
 ### P6 — Correctness hardening and local load rehearsal (2026-10-01)
 - **Date / phase:** 2026-10-01 / P6 Correctness hardening and local load rehearsal.
