@@ -53,14 +53,39 @@ The previous document says builds and tests passed, but no source or test output
 | P3 pure engine | COMPLETED |
 | P4 live vertical slice | COMPLETED |
 | P5 images/PWA/resilience | COMPLETED |
-| P6 hardening/rehearsal | NOT STARTED |
+| P6 hardening/rehearsal | COMPLETED |
 | P7 free cloud pilot | NOT STARTED |
 | P8 optional LAN | DEFERRED |
 
 ## 7. First next action
-Proceed with Phase P6: Hardening and load rehearsal (150-player simulation, rate/size limits, retention, failure tests, honest performance report).
+Proceed with Phase P7: Free cloud pilot (provision free Cloudflare D1/DO bindings, set secrets, deploy same-origin Worker + static assets, real-device smoke test).
 
 ## 8. Per-phase update log
+
+### P6 — Correctness hardening and local load rehearsal (2026-10-01)
+- **Date / phase:** 2026-10-01 / P6 Correctness hardening and local load rehearsal.
+- **Actual files changed:**
+  - `apps/worker/src/durable-objects/GameRoomDO.ts`: 4 KiB frame size limit, 10 msg/sec rate limiter per socket, 200 char short-answer text guard, aggregated metrics tracking (`totalSubmissions`, `duplicateSubmissions`, `totalReceiptsEmitted`, p50/p95 ACK latency), and `/metrics` internal endpoint.
+  - `apps/worker/src/index.ts`: `/api/rooms/:roomId/metrics` API endpoint, WebSocket upgrade Origin check (`validateOrigin`).
+  - `apps/worker/src/repositories/room-directory.repository.ts`: Added `cleanupExpiredReservations(db)` helper for stale room slot cleanup.
+  - `apps/worker/src/load/load.test.ts`: Opt-in local load test harness executing 150 players $\times$ 30 questions quiz simulation, 150 near-deadline answer bursts, 60 duplicate retry submissions, NAT-safe admission for 150 players on a single IP, 2 concurrent independent rooms (300 total players), 4 KiB frame limit, and short-answer length limit.
+  - `docs/11-Rehearsal-Report.md`: Full technical rehearsal report detailing environment, metrics table, acceptance tests status matrix (T01 - T27), security audit, and limitations.
+- **Actual commands run and results:**
+  - `pnpm test` -> Passed (41 total unit, integration, and load tests passed across contracts, game-core, web, and worker).
+  - `pnpm typecheck` -> Passed (0 errors across all workspace packages).
+  - `pnpm lint` -> Passed (0 errors across all workspace packages).
+  - `pnpm build` -> Passed (Prerendered 10 static Next.js pages, `/play` first load JS = 107 KB, Worker compiled cleanly).
+- **Verified behavior:**
+  - **T01 & Load Harness:** 150 simulated players completed a 30-question quiz loop with near-deadline answer bursts; 4,560 total receipts emitted; 60 duplicate retries returned saved receipts without double scoring; 0 score errors; p95 ACK latency $< 4\text{ ms}$.
+  - **T20:** 150 players connecting from a single NAT IP (`198.51.100.45`) admitted into live room without IP throttling blocks.
+  - **T25:** 2 concurrent rooms (Room A 150 players, Room B 150 players) executed independently with zero cross-room event or score leakage.
+  - **Security Audit:** Payload size ($>4\text{ KiB}$) and short-answer length ($>200\text{ chars}$) rejected; public serializers and Next.js static JS bundles confirmed 100% free of answer keys, correct options, and backend secrets.
+- **Tests NOT RUN and why:**
+  - Production Cloudflare deployment smoke test: scheduled for P7.
+- **External configuration pending:**
+  - Cloudflare production secrets (`GOOGLE_CLIENT_ID`, `CLOUDINARY_*`) to be set in Wrangler before P7 deployment.
+- **Current phase status:** COMPLETED (Exit Gate PASSED).
+- **Exact next action:** Stop before P7 as authorized by prompt.
 
 ### P5 — Bounded image pipeline and resilient frontend (2026-10-01)
 - **Date / phase:** 2026-10-01 / P5 Bounded image pipeline and resilient frontend.

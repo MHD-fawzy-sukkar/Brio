@@ -584,11 +584,45 @@ app.get('/api/rooms/:roomId/snapshot', async (c) => {
   return c.json(data);
 });
 
+// 18.5 Room Media Manifest
+app.get('/api/rooms/:roomId/media', async (c) => {
+  const roomId = c.req.param('roomId');
+  const doId = c.env.GAME_ROOM.idFromName(roomId);
+  const stub = c.env.GAME_ROOM.get(doId);
+
+  const res = await stub.fetch(new Request('http://internal/media'));
+  if (!res.ok) {
+    return rfc7807Error(c, 404, 'room_not_found', 'Room media manifest unavailable');
+  }
+
+  const data = await res.json();
+  return c.json(data);
+});
+
+// 18.6 Aggregated Room Metrics
+app.get('/api/rooms/:roomId/metrics', async (c) => {
+  const roomId = c.req.param('roomId');
+  const doId = c.env.GAME_ROOM.idFromName(roomId);
+  const stub = c.env.GAME_ROOM.get(doId);
+
+  const res = await stub.fetch(new Request('http://internal/metrics'));
+  if (!res.ok) {
+    return rfc7807Error(c, 404, 'room_not_found', 'Room metrics unavailable');
+  }
+
+  const data = await res.json();
+  return c.json(data);
+});
+
 // 19. Diagnostic WebSocket route upgrade to Durable Object
 app.all('/ws/rooms/:roomId', async (c) => {
   const roomId = c.req.param('roomId');
   if (!roomId) {
     return rfc7807Error(c, 400, 'bad_request', 'Room ID is required');
+  }
+
+  if (!validateOrigin(c.req.raw)) {
+    return rfc7807Error(c, 403, 'forbidden_origin', 'Cross-origin WebSocket upgrade denied');
   }
 
   const id = c.env.GAME_ROOM.idFromName(roomId);
