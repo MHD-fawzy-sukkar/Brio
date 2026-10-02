@@ -422,7 +422,8 @@ describe('Phase P4 — Integration Tests', () => {
       assert.equal(doInstance.state.phase, 'COUNTDOWN');
       assert.equal(doInstance.state.currentQuestionIndex, 0);
       const lateJoin=await doInstance.fetch(new Request('http://internal/join',{method:'POST',body:JSON.stringify({playerId:'late',nickname:'Late',avatarId:'avatar_2',sessionHash:'late_hash'})}));
-      assert.equal(lateJoin.status,409);
+      assert.equal(lateJoin.status,200);
+      assert.equal(doInstance.state.players.has('late'),true);
 
       // 2. Alarm triggers -> QUESTION 1 phase (Q1 MultipleChoice)
       doInstance.state.activeRound!.endsAt = Date.now() - 1000;
@@ -500,6 +501,8 @@ describe('Phase P4 — Integration Tests', () => {
 
       assert.equal(doInstance.state.phase, 'FINISHED');
       assert.equal(doInstance.state.players.get('p2')!.score > 0, true); // Arabic answer matched!
+      const afterFinishJoin=await doInstance.fetch(new Request('http://internal/join',{method:'POST',body:JSON.stringify({playerId:'too_late',nickname:'Too Late',avatarId:'avatar_3',sessionHash:'too_late_hash'})}));
+      assert.equal(afterFinishJoin.status,409);
     });
   });
 

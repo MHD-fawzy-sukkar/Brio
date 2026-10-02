@@ -45,6 +45,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @keyframes shimmer { to { background-position:-200% 0; } }
 @keyframes answer-confirmed { 0% { opacity:0; transform:scale(.96) translateY(10px); } 100% { opacity:1; transform:none; } }
 .answer-confirmation { animation:answer-confirmed .35s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes answer-lock { 0% { box-shadow:0 0 0 0 rgba(16,185,129,.35); } 55% { box-shadow:0 0 0 10px rgba(16,185,129,0); } 100% { box-shadow:0 10px 28px rgba(16,185,129,.16); } }
+.answer-locked { animation:answer-lock .65s ease-out both; }
+@keyframes winner-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+@keyframes podium-glow { 0%,100% { filter:brightness(1); } 50% { filter:brightness(1.08); } }
+.podium-winner { animation:winner-float 3.2s ease-in-out infinite; }
+.podium-step-1 { animation:podium-glow 2.4s ease-in-out infinite; box-shadow:0 -10px 35px rgba(251,191,36,.24); }
+.podium-step-2,.podium-step-3 { box-shadow:0 -8px 26px rgba(124,92,231,.10); }
 @media (max-width: 639px) {
   .card { border-radius:1.2rem; }
   .primary-btn,.secondary-btn { min-height:44px; }

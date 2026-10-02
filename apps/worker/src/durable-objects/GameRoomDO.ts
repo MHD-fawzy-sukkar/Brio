@@ -188,7 +188,7 @@ export class GameRoomDO {
     // 2. Player Join HTTP endpoint
     if (url.pathname.endsWith('/join') && request.method === 'POST') {
       if (!this.quizSnapshot) return new Response(JSON.stringify({ detail: 'Game not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
-      if (this.state.phase !== 'LOBBY') return new Response(JSON.stringify({ detail: 'Game has already started' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+      if (this.state.phase === 'FINISHED') return new Response(JSON.stringify({ detail: 'Game has finished' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
       const body = (await request.json()) as any;
       const { playerId, nickname, avatarId, sessionHash } = body;
 

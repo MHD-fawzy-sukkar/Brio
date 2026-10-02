@@ -3,13 +3,18 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, STATIC_AVATARS } from '../../components/Avatar';
+import { PageSkeleton } from '../../components/Loading';
 
 const AVATARS = STATIC_AVATARS;
 
 function JoinSetup() {
   const params = useSearchParams();
-  const roomId = params.get('roomId');
-  const code = params.get('code');
+  const directRoomId = params.get('roomId') || '';
+  const directCode = params.get('code') || '';
+  const pin = (params.get('pin') || '').replace(/\D/g,'').slice(0,6);
+  const [roomId,setRoomId]=useState(directRoomId);
+  const [code,setCode]=useState(directCode || pin);
+  const [resolving,setResolving]=useState(!directRoomId);
   const [nickname, setNickname] = useState('');
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [joining, setJoining] = useState(false);
@@ -17,9 +22,16 @@ function JoinSetup() {
   const requestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!roomId || !code) window.location.replace('/');
-    return () => { requestRef.current?.abort(); requestRef.current = null; };
-  }, [roomId, code]);
+    if(directRoomId&&/^\d{6}$/.test(directCode)){setResolving(false);return;}
+    if(!/^\d{6}$/.test(pin)){setError('رابط الانضمام غير مكتمل. اطلب من المضيف رمزاً جديداً.');setResolving(false);return;}
+    const controller=new AbortController(); requestRef.current=controller; setResolving(true); setError(null);
+    fetch(`/api/rooms/by-code/${encodeURIComponent(pin)}`,{signal:controller.signal}).then(async(response)=>{
+      const room=await response.json().catch(()=>null);
+      if(!response.ok||!room?.roomId)throw new Error('لم نجد لعبة نشطة بهذا الرمز. تحقق منه وحاول مجدداً.');
+      setRoomId(room.roomId);setCode(pin);
+    }).catch((cause)=>{if((cause as Error)?.name!=='AbortError')setError(cause instanceof Error?cause.message:'تعذر تجهيز رابط الانضمام.');}).finally(()=>setResolving(false));
+    return () => { controller.abort(); if(requestRef.current===controller)requestRef.current=null; };
+  }, [directRoomId,directCode,pin]);
 
   const join = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -47,6 +59,9 @@ function JoinSetup() {
     }
   };
 
+  if(resolving)return <PageSkeleton/>;
+  if(!roomId||!code)return <div className="card mx-auto max-w-lg p-10 text-center"><div className="text-5xl">🔎</div><h1 className="mt-4 text-xl font-black">تعذر فتح رابط اللعبة</h1><p className="mt-2 text-sm font-bold leading-7 text-rose-600">{error}</p><a href="/" className="secondary-btn mt-6 inline-block">إدخال الرمز يدوياً</a></div>;
+
   return (
     <div className="mx-auto flex min-h-[72vh] max-w-4xl items-center justify-center py-8">
       <section className="card grid w-full overflow-hidden lg:grid-cols-[.85fr_1.15fr]">
@@ -59,7 +74,7 @@ function JoinSetup() {
           {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
           <div><label htmlFor="nickname" className="label">الاسم المستعار</label><input id="nickname" value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={2} maxLength={24} autoFocus className="field" placeholder="مثال: نور" /></div>
           <fieldset><legend className="label">اختر صورتك</legend><div className="grid grid-cols-3 gap-3 sm:grid-cols-6">{AVATARS.map((item, index) => <button key={item} type="button" onClick={() => setAvatar(item)} aria-label={`الصورة ${index + 1}`} aria-pressed={avatar === item} className={`rounded-2xl border-2 p-1.5 transition ${avatar === item ? 'scale-105 border-violet-500 bg-violet-50 shadow-md' : 'border-slate-100 hover:border-violet-200'}`}><Avatar src={item} className="w-full rounded-xl" /></button>)}</div></fieldset>
-          <button type="submit" disabled={joining || nickname.trim().length < 2} className="primary-btn w-full py-3.5">{joining ? 'لحظة، نجهّز مكانك…' : 'انضم إلى غرفة الانتظار'}</button>
+          <button type="submit" disabled={joining || nickname.trim().length < 2} className="primary-btn w-full py-3.5">{joining ? 'لحظة، نجهّز مكانك…' : 'انضم إلى اللعبة'}</button>
           <a href="/" className="block text-center text-sm font-bold text-slate-500 hover:text-violet-600">استخدام رمز مختلف</a>
         </form>
       </section>

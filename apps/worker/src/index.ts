@@ -608,7 +608,7 @@ app.post('/api/rooms/:roomId/join', async (c) => {
 
   if (!joinRes.ok) {
     const problem = await joinRes.json().catch(() => null) as { detail?: string } | null;
-    return rfc7807Error(c, joinRes.status === 409 ? 409 : 400, 'join_failed', joinRes.status===409?'بدأت اللعبة وأُغلق باب الانضمام. جرّب لعبة أخرى.':problem?.detail || 'تعذر الانضمام إلى الغرفة.');
+    return rfc7807Error(c, joinRes.status === 409 ? 409 : 400, 'join_failed', joinRes.status===409?'انتهت هذه اللعبة. اطلب من المضيف رمز الجولة الجديدة.':problem?.detail || 'تعذر الانضمام إلى الغرفة.');
   }
 
   return c.json({
