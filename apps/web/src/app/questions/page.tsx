@@ -1,15 +1,19 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { AuthoringQuestion, PointsMultiplier, QuestionType } from '@brio/contracts';
 import { AuthGuard } from '../../components/AuthGuard';
-import { uploadQuestionImage, validateImage } from '../../services/media-upload';
+import { validateImage } from '../../services/media-upload';
+import { backgroundUploads, type UploadTask } from '../../services/background-upload';
+import { ButtonContent, PageSkeleton } from '../../components/Loading';
+import { multiplierAfterTypeChange } from '../../services/question-form';
 
 const typeLabels: Record<QuestionType,string> = { MultipleChoice:'اختيار من متعدد', TrueFalse:'صح أو خطأ', ShortAnswer:'إجابة قصيرة', Poll:'استطلاع رأي' };
 const blankOptions = (count:number) => Array.from({length:count},(_,index) => ({ text:'', isCorrect:index === 0 }));
 
 function QuestionEditor() {
+  const router=useRouter();
   const params = useSearchParams();
   const quizId = params.get('quizId');
   const questionId = params.get('questionId');
@@ -18,6 +22,10 @@ function QuestionEditor() {
   const [error,setError] = useState<string|null>(null);
   const [imageFile,setImageFile] = useState<File|null>(null);
   const [imagePreview,setImagePreview] = useState<string|null>(null);
+  const [storedImageUrl,setStoredImageUrl] = useState<string|null>(null);
+  const [activeUpload,setActiveUpload] = useState<UploadTask|undefined>();
+  const uploadedImageUrl=activeUpload?.state==='failed' ? null : activeUpload?.resultUrl || activeUpload?.previewUrl;
+  const visibleImageUrl=imagePreview || uploadedImageUrl || storedImageUrl;
 
   useEffect(() => () => { if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview); }, [imagePreview]);
 
@@ -32,12 +40,18 @@ function QuestionEditor() {
       setQuestion({ id:found.id, type:found.type, text:found.text, durationMs:found.duration_ms, multiplier:found.multiplier, essentialImage:null,
         options:(found.options || []).map((option:{text:string;is_correct:number}) => ({text:option.text,isCorrect:option.is_correct===1})),
         acceptedAlternatives:found.acceptedAlternatives || [] });
-      setImagePreview(found.media_url || null);
+      setStoredImageUrl(found.media_url || null);
     }).catch((cause) => setError(cause.message));
   },[quizId,questionId]);
 
+  useEffect(()=>{
+    if(!quizId||!questionId)return;
+    const update=()=>setActiveUpload(backgroundUploads.latestQuestion(quizId,questionId));
+    update(); return backgroundUploads.subscribe(update);
+  },[quizId,questionId]);
+
   const changeType = (type:QuestionType) => {
-    setQuestion((current) => ({...current,type,multiplier:type==='Poll'?'Zero':current.multiplier,
+    setQuestion((current) => ({...current,type,multiplier:multiplierAfterTypeChange(current.type,type,current.multiplier),
       options:type==='MultipleChoice'?blankOptions(4):type==='TrueFalse'?[{text:'صح',isCorrect:true},{text:'خطأ',isCorrect:false}]:type==='Poll'?blankOptions(2).map((item)=>({...item,isCorrect:false})):[],
       acceptedAlternatives:type==='ShortAnswer'?['']:[] }));
   };
@@ -70,21 +84,20 @@ function QuestionEditor() {
     if (!response.ok) { setBusy(false); return setError(body?.detail || 'راجع حقول السؤال والإجابات.'); }
     const savedQuestionId = questionId || body?.questionId;
     if (imageFile && savedQuestionId) {
-      try { await uploadQuestionImage(quizId,savedQuestionId,imageFile); }
-      catch { window.location.href=`/builder/?quizId=${quizId}&notice=question-image-failed`; return; }
+      backgroundUploads.enqueueQuestion(quizId,savedQuestionId,imageFile);
     }
-    window.location.href=`/builder/?quizId=${quizId}`;
+    router.push(`/builder/?quizId=${quizId}`);
   };
 
   return (
     <form onSubmit={save} className="mx-auto max-w-5xl space-y-6">
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><a href={`/builder/?quizId=${quizId || ''}`} className="text-sm font-bold text-violet-600">→ العودة إلى المسابقة</a><h1 className="mt-2 text-3xl font-black">{questionId?'تعديل السؤال':'سؤال جديد'}</h1><p className="mt-1 text-sm text-slate-500">ركّز على سؤال واحد؛ سيُحفظ في مسودتك فوراً.</p></div><button disabled={busy} className="primary-btn">{busy?'جاري الحفظ…':'حفظ السؤال'}</button></header>
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><a href={`/builder/?quizId=${quizId || ''}`} className="text-sm font-bold text-violet-600">→ العودة إلى المسابقة</a><h1 className="mt-2 text-3xl font-black">{questionId?'تعديل السؤال':'سؤال جديد'}</h1><p className="mt-1 text-sm text-slate-500">ركّز على سؤال واحد؛ سيُحفظ فوراً وتُرفع الصورة في الخلفية.</p></div><button disabled={busy} className="primary-btn"><ButtonContent busy={busy} busyText="جاري الحفظ…">حفظ السؤال</ButtonContent></button></header>
       {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}</div>}
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <section className="card space-y-6 p-6">
           <div><label className="label">نوع السؤال</label><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{(Object.keys(typeLabels) as QuestionType[]).map((type)=><button type="button" key={type} onClick={()=>changeType(type)} className={`rounded-xl border p-3 text-sm font-black ${question.type===type?'border-violet-600 bg-violet-50 text-violet-700':'border-slate-200 bg-white text-slate-500'}`}>{typeLabels[type]}</button>)}</div></div>
+          <div><label className="label">صورة السؤال <span className="font-normal text-slate-400">(اختيارية)</span></label><label className="group relative grid min-h-52 cursor-pointer place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-violet-400 hover:bg-violet-50/50">{visibleImageUrl?<img src={visibleImageUrl} alt="معاينة صورة السؤال" className="max-h-72 w-full object-contain p-3"/>:<div className="text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-2xl shadow-sm">🖼️</span><b className="mt-3 block text-sm text-slate-700">أضف صورة توضيحية</b><small className="mt-1 block text-slate-400">تظهر كاملة دون قص</small></div>}<span className="absolute bottom-3 left-3 rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-violet-700 shadow-md">{imageFile?'تغيير الصورة':'رفع صورة'}</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" onChange={(e)=>chooseImage(e.target.files?.[0])}/></label>{activeUpload?.state==='uploading'&&<p role="status" className="mt-2 text-xs font-bold text-violet-600">جاري رفع الصورة في الخلفية… تظهر المعاينة الآن وسيُحدّث الرابط تلقائياً.</p>}{activeUpload?.state==='failed'&&<p role="alert" className="mt-2 text-xs font-bold text-rose-600">تعذر رفع الصورة. اخترها مجدداً ثم احفظ السؤال لإعادة المحاولة.</p>}{!activeUpload&&<p className="mt-2 text-xs text-slate-400">حتى 5MB. يبدأ الرفع في الخلفية فور حفظ السؤال.</p>}</div>
           <div><label className="label">نص السؤال</label><textarea className="field min-h-28 resize-y text-lg font-bold" maxLength={1000} value={question.text} onChange={(e)=>setQuestion({...question,text:e.target.value})} placeholder="اكتب السؤال بوضوح…" required /></div>
-          <div><label className="label">صورة السؤال <span className="font-normal text-slate-400">(اختيارية)</span></label><div className="grid items-center gap-4 sm:grid-cols-[140px_1fr]">{imagePreview?<img src={imagePreview} alt="معاينة صورة السؤال" className="aspect-video w-full rounded-xl object-cover"/>:<div className="grid aspect-video place-items-center rounded-xl bg-slate-100 text-2xl">🖼️</div>}<div><label className="secondary-btn inline-flex cursor-pointer justify-center text-sm">{imageFile?'اختيار صورة أخرى':'اختيار صورة من الجهاز'}<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" onChange={(e)=>chooseImage(e.target.files?.[0])}/></label><p className="mt-2 text-xs text-slate-400">حتى 5MB، وتُرفع إلى Cloudinary بعد حفظ السؤال.</p></div></div></div>
           {(question.type==='MultipleChoice'||question.type==='TrueFalse'||question.type==='Poll') && <div>
             <div className="mb-3 flex items-center justify-between"><label className="label !mb-0">الإجابات {question.type!=='Poll'&&<span className="font-normal text-slate-400">— اختر الصحيحة</span>}</label>{question.type!=='TrueFalse'&&<button type="button" onClick={addOption} className="text-sm font-black text-violet-600">＋ إضافة خيار</button>}</div>
             <div className="space-y-3">{question.options.map((option,index)=><div key={index} className="flex items-center gap-3"><button tabIndex={-1} type="button" aria-label="تعيين كإجابة صحيحة" disabled={question.type==='Poll'} onClick={()=>markCorrect(index)} className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 font-black ${option.isCorrect?'border-emerald-500 bg-emerald-500 text-white':'border-slate-300 text-transparent'} disabled:border-slate-200`}>✓</button><input className="field" value={option.text} onChange={(e)=>updateOption(index,e.target.value)} placeholder={`الإجابة ${index+1}`} maxLength={200} required />{question.type!=='TrueFalse'&&<button tabIndex={-1} type="button" onClick={()=>removeOption(index)} disabled={question.options.length<=2} aria-label="حذف الخيار" className="rounded-xl px-2 py-2 font-black text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30">×</button>}</div>)}</div>
@@ -102,4 +115,4 @@ function QuestionEditor() {
   );
 }
 
-export default function QuestionsPage(){ return <AuthGuard><Suspense fallback={<div className="card p-14 text-center">جاري تحميل المحرر…</div>}><QuestionEditor/></Suspense></AuthGuard>; }
+export default function QuestionsPage(){ return <AuthGuard><Suspense fallback={<PageSkeleton/>}><QuestionEditor/></Suspense></AuthGuard>; }

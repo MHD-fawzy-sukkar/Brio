@@ -1,68 +1,27 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Podium } from '../../components/Podium';
+import { PageSkeleton } from '../../components/Loading';
 
-function ResultsContent() {
-  const searchParams = useSearchParams();
-  const roomId = searchParams.get('roomId') || 'demo-room';
-
-  const podium = [
-    { rank: 1, nickname: 'أحمد المتفوق', score: 9500, avatar: '/avatars/avatar-1.svg', color: 'border-amber-400 bg-amber-500/10' },
-    { rank: 2, nickname: 'سارة الذكية', score: 8200, avatar: '/avatars/avatar-2.svg', color: 'border-slate-300 bg-slate-400/10' },
-    { rank: 3, nickname: 'خالد البطل', score: 7100, avatar: '/avatars/avatar-3.svg', color: 'border-amber-700 bg-amber-700/10' }
-  ];
-
-  return (
-    <div className="space-y-6 max-w-2xl mx-auto text-center">
-      <div className="space-y-2">
-        <div className="text-4xl">🏆</div>
-        <h1 className="text-2xl font-extrabold text-white">النتائج النهائية والمنصة</h1>
-        <p className="text-xs text-slate-400">معرف الغرفة: {roomId}</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 items-end pt-6 min-h-[220px]">
-        {/* Rank 2 */}
-        <div className={`p-4 rounded-2xl border ${podium[1].color} flex flex-col items-center gap-2 space-y-1`}>
-          <span className="text-2xl">🥈</span>
-          <img src={podium[1].avatar} alt={podium[1].nickname} className="w-12 h-12 rounded-xl" />
-          <span className="text-xs font-bold text-white">{podium[1].nickname}</span>
-          <span className="text-xs font-mono text-slate-300">{podium[1].score} نقطة</span>
-        </div>
-
-        {/* Rank 1 */}
-        <div className={`p-5 rounded-2xl border-2 ${podium[0].color} flex flex-col items-center gap-2 space-y-1 transform -translate-y-4 shadow-xl`}>
-          <span className="text-3xl">👑</span>
-          <img src={podium[0].avatar} alt={podium[0].nickname} className="w-14 h-14 rounded-xl border-2 border-amber-400" />
-          <span className="text-sm font-extrabold text-white">{podium[0].nickname}</span>
-          <span className="text-sm font-mono font-bold text-amber-400">{podium[0].score} نقطة</span>
-        </div>
-
-        {/* Rank 3 */}
-        <div className={`p-4 rounded-2xl border ${podium[2].color} flex flex-col items-center gap-2 space-y-1`}>
-          <span className="text-2xl">🥉</span>
-          <img src={podium[2].avatar} alt={podium[2].nickname} className="w-12 h-12 rounded-xl" />
-          <span className="text-xs font-bold text-white">{podium[2].nickname}</span>
-          <span className="text-xs font-mono text-slate-300">{podium[2].score} نقطة</span>
-        </div>
-      </div>
-
-      <div className="pt-6">
-        <a
-          href="/"
-          className="inline-block bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs py-2.5 px-6 rounded-xl transition-colors"
-        >
-          العودة للصفحة الرئيسية 🏠
-        </a>
-      </div>
-    </div>
-  );
+function ResultsContent(){
+  const params=useSearchParams();
+  const roomId=params.get('roomId')||'';
+  const playerId=params.get('playerId')||'';
+  const [snapshot,setSnapshot]=useState<any>(null);
+  const [error,setError]=useState<string|null>(null);
+  useEffect(()=>{
+    if(!roomId){setError('معرّف الغرفة مفقود.');return;}
+    const query=playerId?`?playerId=${encodeURIComponent(playerId)}`:'';
+    fetch(`/api/rooms/${encodeURIComponent(roomId)}/snapshot${query}`).then(async(response)=>{
+      const body=await response.json().catch(()=>null);if(!response.ok)throw new Error(body?.detail||'تعذر تحميل النتائج.');setSnapshot(body);
+    }).catch((cause)=>setError(cause instanceof Error?cause.message:'تعذر تحميل النتائج.'));
+  },[roomId,playerId]);
+  if(error)return <div className="card mx-auto max-w-lg p-10 text-center font-bold text-rose-600">{error}</div>;
+  if(!snapshot)return <PageSkeleton/>;
+  if(snapshot.role==='host')return <div className="mx-auto max-w-6xl space-y-6"><Podium players={snapshot.leaderboard||[]}/><div className="text-center"><a className="primary-btn inline-block" href="/dashboard/">العودة للوحة التحكم</a></div></div>;
+  return <div className="mx-auto max-w-xl rounded-[2rem] bg-gradient-to-br from-violet-700 to-slate-950 p-10 text-center text-white shadow-2xl"><div className="text-7xl">{snapshot.ownRank<=3?'🏆':'✨'}</div><h1 className="mt-5 text-4xl font-black">{snapshot.ownRank===1?'أنت البطل!':'أحسنت اللعب!'}</h1><div className="mt-8 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-white/10 p-5"><small>الترتيب</small><b className="mt-1 block text-4xl">#{snapshot.ownRank||'—'}</b></div><div className="rounded-2xl bg-white/10 p-5"><small>النقاط</small><b className="mt-1 block text-3xl">{snapshot.ownScore?.toLocaleString('ar')}</b></div></div><a href="/" className="mt-8 inline-block rounded-xl bg-white px-6 py-3 font-black text-violet-700">العودة للرئيسية</a></div>;
 }
 
-export default function ResultsPage() {
-  return (
-    <Suspense fallback={<div className="text-center py-10 text-slate-400">جاري تحميل منصة النتائج...</div>}>
-      <ResultsContent />
-    </Suspense>
-  );
-}
+export default function ResultsPage(){return <Suspense fallback={<PageSkeleton/>}><ResultsContent/></Suspense>;}

@@ -1,0 +1,10 @@
+interface PodiumPlayer { id?:string;nickname:string;avatarId:string;score:number;rank:number }
+
+const styles:Record<number,string>={1:'from-amber-300 to-yellow-500 text-amber-950 min-h-64',2:'from-slate-200 to-slate-400 text-slate-800 min-h-52',3:'from-orange-300 to-amber-700 text-white min-h-44',4:'from-violet-200 to-violet-400 text-violet-950 min-h-36'};
+const medals:Record<number,string>={1:'👑',2:'🥈',3:'🥉',4:'⭐'};
+
+export function Podium({players}:{players:PodiumPlayer[]}){
+  const top=players.filter((player)=>player.rank<=4).slice(0,4);
+  const ordered=[top.find((p)=>p.rank===2),top.find((p)=>p.rank===1),top.find((p)=>p.rank===3),top.find((p)=>p.rank===4)].filter(Boolean) as PodiumPlayer[];
+  return <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-4 py-10 text-white sm:px-8"><div className="pointer-events-none absolute inset-0 opacity-70">{Array.from({length:24},(_,i)=><i key={i} className="confetti-piece" style={{left:`${(i*37)%100}%`,animationDelay:`-${(i%9)*.31}s`,background:['#fbbf24','#a78bfa','#34d399','#fb7185'][i%4]}}/>)}</div><div className="relative z-10 text-center"><span className="rounded-full bg-white/10 px-4 py-2 text-xs font-black text-amber-300">النتائج النهائية</span><h2 className="mt-5 text-3xl font-black sm:text-4xl">منصة الأبطال</h2></div><div className="relative z-10 mt-10 grid grid-cols-2 items-end gap-3 sm:grid-cols-4">{ordered.map((player)=><article key={`${player.rank}-${player.nickname}`} className={`podium-rise flex flex-col items-center justify-start rounded-t-[2rem] bg-gradient-to-b p-4 text-center shadow-2xl ${styles[player.rank]||styles[4]}`}><span className="text-3xl">{medals[player.rank]}</span><img src={player.avatarId} alt="" className="mt-3 h-16 w-16 rounded-2xl border-4 border-white/70 bg-white"/><b className="mt-3 max-w-full truncate text-sm">{player.nickname}</b><strong className="mt-1 text-lg">{player.score.toLocaleString('ar')} نقطة</strong><span className="mt-auto pt-4 text-4xl font-black">#{player.rank}</span></article>)}</div></div>;
+}

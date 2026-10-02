@@ -55,6 +55,7 @@ async function uploadImage(input: { quizId: string; questionId?: string; target:
       target,
       publicId: uploaded.public_id || signature.publicId,
       format: uploaded.format || 'webp',
+      version: typeof uploaded.version === 'number' ? uploaded.version : undefined,
       width: uploaded.width || 1280,
       height: uploaded.height || 720,
       byteSize: uploaded.bytes || file.size,

@@ -119,6 +119,11 @@ test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LE
   assert.equal(state.players.get('p1')?.score, 975); // Correct in 1s of a 20s round
   assert.equal(state.players.get('p2')?.score, 0);    // Wrong = 0 pts
   assert.equal(state.players.get('p3')?.score, 0);    // Missed = 0 pts
+  const statsSnapshot = toPublicHostSnapshot(state, SAMPLE_QUIZ);
+  assert.equal(statsSnapshot.phaseEndsAt, state.activeRound!.statsEndsAt);
+  assert.equal(statsSnapshot.answerStats.find((item) => item.optionId === 'o1')?.count, 1);
+  assert.equal(statsSnapshot.answerStats.find((item) => item.optionId === 'o1')?.isCorrect, true);
+  assert.equal(statsSnapshot.leaderboard[0].score, 975);
 
   // Advance to LEADERBOARD
   now += 3000;
@@ -166,6 +171,7 @@ test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LE
   now += 20000;
   reconcileDeadlines(state, SAMPLE_QUIZ, now); // STATS
   assert.equal(state.players.get('p2')?.score, 1950); // Fast correct answer earns a speed-adjusted double score
+  assert.equal(state.players.get('p1')?.score, 975); // Prefix sum preserves earlier rounds
 
   now += 3000;
   reconcileDeadlines(state, SAMPLE_QUIZ, now); // LEADERBOARD

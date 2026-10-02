@@ -114,6 +114,10 @@ export function savePlayerToDb(sql: SqlStorageLike, player: PlayerState, session
   );
 }
 
+export function savePlayerScoreToDb(sql: SqlStorageLike, player: PlayerState): void {
+  sql.exec('UPDATE players SET score = ?, connection_generation = ? WHERE player_id = ?', player.score, player.connectionGeneration, player.id);
+}
+
 export function saveRoundToDb(sql: SqlStorageLike, round: ActiveRoundState): void {
   sql.exec(
     `INSERT OR REPLACE INTO rounds (round_id, question_index, question_id, type, starts_at, ends_at, stats_ends_at, ranking_ends_at, closed, scored)

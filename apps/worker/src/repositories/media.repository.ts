@@ -25,9 +25,10 @@ export async function generateCloudinarySignature(
   const apiKey = env.CLOUDINARY_API_KEY;
   const apiSecret = env.CLOUDINARY_API_SECRET;
 
+  // Stable IDs overwrite previous versions instead of accumulating paid orphan assets.
   const publicId = request.target === 'cover'
-    ? `cover_${request.quizId.substring(0, 8)}_${timestamp}`
-    : `img_${request.questionId!.substring(0, 8)}_${timestamp}`;
+    ? `cover_${request.quizId}`
+    : `question_${request.questionId!}`;
   const folder = `brio/${creatorId}/${request.quizId}`;
 
   if (env.DEV_MEDIA_BYPASS === 'true') {
@@ -89,8 +90,9 @@ export async function saveMediaRecord(
     // Eager immutable Cloudinary variant URLs with explicit width & crop constraints
     // host: max width 1280 (1280x720)
     // mobile: max width 640 (640x360)
-    hostUrl = `https://res.cloudinary.com/${cloudName}/image/upload/w_1280,c_limit,f_auto,q_auto/${req.publicId}.${req.format}`;
-    mobileUrl = `https://res.cloudinary.com/${cloudName}/image/upload/w_640,c_limit,f_auto,q_auto/${req.publicId}.${req.format}`;
+    const version = req.version ? `/v${req.version}` : '';
+    hostUrl = `https://res.cloudinary.com/${cloudName}/image/upload/w_1280,c_limit,f_auto,q_auto${version}/${req.publicId}.${req.format}`;
+    mobileUrl = `https://res.cloudinary.com/${cloudName}/image/upload/w_640,c_limit,f_auto,q_auto${version}/${req.publicId}.${req.format}`;
   }
 
   const now = new Date().toISOString();
@@ -122,13 +124,29 @@ export async function saveMediaRecord(
     .run();
 
   if (req.target === 'cover') {
-    await db.prepare('UPDATE quizzes SET cover_image_url = ?, updated_at = ? WHERE id = ? AND creator_id = ?')
+    const updated = await db.prepare('UPDATE quizzes SET cover_image_url = ?, updated_at = ? WHERE id = ? AND creator_id = ?')
       .bind(hostUrl, now, req.quizId, creatorId).run();
+    if (updated.meta.changes === 0) {
+      await db.prepare('DELETE FROM media WHERE id = ?').bind(mediaId).run();
+      throw new Error('Quiz not found or unauthorized');
+    }
+    await db.prepare('DELETE FROM media WHERE quiz_id = ? AND question_id IS NULL AND id <> ?')
+      .bind(req.quizId, mediaId).run();
   } else {
-    await db
+    const previous = await db.prepare('SELECT media_id FROM questions WHERE id = ? AND quiz_id = ?')
+      .bind(req.questionId, req.quizId).first<{ media_id:string|null }>();
+    if (!previous) {
+      await db.prepare('DELETE FROM media WHERE id = ?').bind(mediaId).run();
+      throw new Error('Question not found in this quiz');
+    }
+    const updated = await db
       .prepare('UPDATE questions SET media_id = ?, essential = ? WHERE id = ? AND quiz_id = ?')
       .bind(mediaId, req.isEssential ? 1 : 0, req.questionId, req.quizId)
       .run();
+    if (updated.meta.changes === 0) throw new Error('Question image could not be linked');
+    if (previous.media_id && previous.media_id !== mediaId) {
+      await db.prepare('DELETE FROM media WHERE id = ?').bind(previous.media_id).run();
+    }
   }
 
   return {

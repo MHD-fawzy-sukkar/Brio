@@ -93,25 +93,30 @@ export async function getQuizForCreator(
     .bind(quizId)
     .all<QuestionRecord>();
 
-  const questionsList: QuizDetailRecord['questions'] = [];
-
-  for (const q of rawQuestions || []) {
-    const { results: options } = await db
-      .prepare('SELECT id, question_id, position, text, is_correct FROM question_options WHERE question_id = ? ORDER BY position ASC')
-      .bind(q.id)
-      .all<OptionRecord>();
-
-    const { results: alts } = await db
-      .prepare('SELECT normalized_value FROM short_answer_alternatives WHERE question_id = ?')
-      .bind(q.id)
-      .all<AlternativeRecord>();
-
-    questionsList.push({
-      ...q,
-      options: options || [],
-      acceptedAlternatives: (alts || []).map((a) => a.normalized_value)
-    });
+  // Keep D1 query count constant (four reads total) regardless of question count.
+  const [{ results: allOptions }, { results: allAlternatives }] = await Promise.all([
+    db.prepare(`SELECT qo.id, qo.question_id, qo.position, qo.text, qo.is_correct
+      FROM question_options qo JOIN questions q ON q.id = qo.question_id
+      WHERE q.quiz_id = ? ORDER BY qo.question_id, qo.position`).bind(quizId).all<OptionRecord>(),
+    db.prepare(`SELECT sa.id, sa.question_id, sa.normalized_value
+      FROM short_answer_alternatives sa JOIN questions q ON q.id = sa.question_id
+      WHERE q.quiz_id = ? ORDER BY sa.question_id`).bind(quizId).all<AlternativeRecord>()
+  ]);
+  const optionsByQuestion=new Map<string,OptionRecord[]>();
+  for(const option of allOptions||[]) {
+    const group=optionsByQuestion.get(option.question_id);
+    if(group) group.push(option); else optionsByQuestion.set(option.question_id,[option]);
   }
+  const alternativesByQuestion=new Map<string,string[]>();
+  for(const alternative of allAlternatives||[]) {
+    const group=alternativesByQuestion.get(alternative.question_id);
+    if(group) group.push(alternative.normalized_value); else alternativesByQuestion.set(alternative.question_id,[alternative.normalized_value]);
+  }
+  const questionsList: QuizDetailRecord['questions'] = (rawQuestions||[]).map((q)=>({
+    ...q,
+    options:optionsByQuestion.get(q.id)||[],
+    acceptedAlternatives:alternativesByQuestion.get(q.id)||[]
+  }));
 
   return {
     ...quiz,

@@ -102,6 +102,7 @@ export interface AnswerSubmissionResult {
 
 export type EngineEffectType =
   | 'PERSIST_STATE'
+  | 'PERSIST_SCORES'
   | 'BROADCAST_STATE'
   | 'SCHEDULE_ALARM'
   | 'CANCEL_ALARM'

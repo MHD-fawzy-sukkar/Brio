@@ -413,6 +413,9 @@ app.post('/api/media/signature', async (c) => {
   if (!quiz) {
     return rfc7807Error(c, 404, 'not_found', 'Quiz not found or unauthorized');
   }
+  if (parsed.data.target === 'question' && !quiz.questions.some((question) => question.id === parsed.data.questionId)) {
+    return rfc7807Error(c, 404, 'not_found', 'Question not found in this quiz');
+  }
 
   try {
     const sig = await generateCloudinarySignature(c.env as any, creator.id, parsed.data);
@@ -444,6 +447,9 @@ app.post('/api/media/complete', async (c) => {
   const quiz = await getQuizForCreator(c.env.DB, parsed.data.quizId, creator.id);
   if (!quiz) {
     return rfc7807Error(c, 404, 'not_found', 'Quiz not found or unauthorized');
+  }
+  if (parsed.data.target === 'question' && !quiz.questions.some((question) => question.id === parsed.data.questionId)) {
+    return rfc7807Error(c, 404, 'not_found', 'Question not found in this quiz');
   }
 
   try {

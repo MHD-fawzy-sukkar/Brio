@@ -51,7 +51,7 @@ export class BrioRoomSocket {
         const msg: SocketMessage = JSON.parse(event.data);
         if (msg.type === 'room.snapshot') {
           for (const listener of this.snapshotListeners) {
-            listener(msg.payload);
+            listener({ ...msg.payload, serverNow: msg.serverNow || Date.now() });
           }
         } else if (msg.type === 'answer.receipt' && msg.requestId) {
           const cb = this.receiptListeners.get(msg.requestId);

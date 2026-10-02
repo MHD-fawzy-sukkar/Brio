@@ -80,6 +80,22 @@ export const PlayerSnapshotDtoSchema = z.object({
 
 export type PlayerSnapshotDto = z.infer<typeof PlayerSnapshotDtoSchema>;
 
+export const LeaderboardEntrySchema = z.object({
+  id: z.string(),
+  nickname: z.string(),
+  avatarId: z.string(),
+  score: z.number().int(),
+  rank: z.number().int()
+});
+
+export const AnswerStatSchema = z.object({
+  optionId: z.string().nullable(),
+  label: z.string(),
+  count: z.number().int().nonnegative(),
+  percentage: z.number().min(0).max(100),
+  isCorrect: z.boolean().optional()
+});
+
 /**
  * Host Snapshot DTO - Contains host administrative state & live response counts
  */
@@ -96,7 +112,9 @@ export const HostSnapshotDtoSchema = z.object({
   playerCount: z.number().int(),
   lobbyPlayers: z.array(z.object({ id: z.string(), nickname: z.string(), avatarId: z.string() })),
   acceptedAnswersCount: z.number().int().optional(),
-  question: PublicQuestionSchema.nullable()
+  question: PublicQuestionSchema.nullable(),
+  answerStats: z.array(AnswerStatSchema),
+  leaderboard: z.array(LeaderboardEntrySchema)
 });
 
 export type HostSnapshotDto = z.infer<typeof HostSnapshotDtoSchema>;

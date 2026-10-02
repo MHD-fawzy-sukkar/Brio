@@ -11,6 +11,13 @@ import type {
 } from '../engine/types';
 import { calculateCompetitionRanks } from '../scoring/rules';
 
+function phaseEndsAt(state: GameState): number {
+  if (!state.activeRound) return 0;
+  if (state.phase === 'STATS') return state.activeRound.statsEndsAt;
+  if (state.phase === 'LEADERBOARD') return state.activeRound.rankingEndsAt;
+  return state.activeRound.endsAt;
+}
+
 /**
  * Serializes a published question for public player/host consumption.
  * ABSOLUTELY REDACTS all `isCorrect` flags and accepted alternatives!
@@ -82,7 +89,7 @@ export function toPublicPlayerSnapshot(
     roundId: state.activeRound ? state.activeRound.roundId : null,
     questionIndex: state.currentQuestionIndex >= 0 ? state.currentQuestionIndex : null,
     phaseStartedAt: state.activeRound ? state.activeRound.startsAt : 0,
-    phaseEndsAt: state.activeRound ? state.activeRound.endsAt : 0,
+    phaseEndsAt: phaseEndsAt(state),
     question: publicQuestion,
     ownScore,
     ownRank,
@@ -114,6 +121,34 @@ export function toPublicHostSnapshot(
     }
   }
 
+  const ranked = calculateCompetitionRanks(Array.from(state.players.values()).map((player) => ({
+    id: player.id, score: player.score, joinedAt: player.joinedAt
+  })));
+  const leaderboard = ranked.slice(0, 10).map((entry) => {
+    const player = state.players.get(entry.id)!;
+    return { id: player.id, nickname: player.nickname, avatarId: player.avatarId, score: entry.score, rank: entry.rank };
+  });
+
+  const answerStats: Array<{ optionId: string | null; label: string; count: number; percentage: number; isCorrect?: boolean }> = [];
+  if (state.activeRound && ['STATS', 'LEADERBOARD', 'FINISHED'].includes(state.phase)) {
+    const question = quiz.questions[state.currentQuestionIndex];
+    const answers = Array.from(state.answers.values()).filter((answer) => answer.roundId === state.activeRound!.roundId && answer.status === 'accepted');
+    const denominator = Math.max(1, answers.length);
+    if (question.type === 'ShortAnswer') {
+      const correct = answers.filter((answer) => answer.isCorrect).length;
+      const incorrect = answers.length - correct;
+      answerStats.push(
+        { optionId: null, label: 'إجابات صحيحة', count: correct, percentage: Math.round(correct / denominator * 100), isCorrect: true },
+        { optionId: null, label: 'إجابات أخرى', count: incorrect, percentage: Math.round(incorrect / denominator * 100), isCorrect: false }
+      );
+    } else {
+      for (const option of question.options) {
+        const count = answers.filter((answer) => answer.optionId === option.id).length;
+        answerStats.push({ optionId: option.id, label: option.text, count, percentage: Math.round(count / denominator * 100), ...(question.type !== 'Poll' ? { isCorrect: option.isCorrect } : {}) });
+      }
+    }
+  }
+
   return {
     role: 'host',
     roomId: state.roomId,
@@ -123,10 +158,12 @@ export function toPublicHostSnapshot(
     roundId: state.activeRound ? state.activeRound.roundId : null,
     questionIndex: state.currentQuestionIndex >= 0 ? state.currentQuestionIndex : null,
     phaseStartedAt: state.activeRound ? state.activeRound.startsAt : 0,
-    phaseEndsAt: state.activeRound ? state.activeRound.endsAt : 0,
+    phaseEndsAt: phaseEndsAt(state),
     playerCount: state.players.size,
     lobbyPlayers: Array.from(state.players.values()).map((p) => ({ id: p.id, nickname: p.nickname, avatarId: p.avatarId })),
     acceptedAnswersCount,
-    question: publicQuestion
+    question: publicQuestion,
+    answerStats,
+    leaderboard
   };
 }

@@ -269,6 +269,7 @@ export function reconcileDeadlines(
 
     effects.push(
       { type: 'PERSIST_STATE' },
+      { type: 'PERSIST_SCORES' },
       { type: 'BROADCAST_STATE' },
       { type: 'SCHEDULE_ALARM', dueAt: statsEndsAt, actionName: 'reconcile_deadlines' }
     );

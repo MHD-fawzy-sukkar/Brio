@@ -1,10 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { AuthoringQuestion } from '@brio/contracts';
 import { AuthGuard } from '../../components/AuthGuard';
-import { uploadQuizCover } from '../../services/media-upload';
+import { backgroundUploads, type UploadTask } from '../../services/background-upload';
+import { PageSkeleton, Spinner } from '../../components/Loading';
 
 interface QuizDetail { id:string; title:string; cover_image_url?:string|null; revision:number; questions:Array<AuthoringQuestion & { id:string; duration_ms?:number; options:Array<{id?:string;text:string;is_correct?:number;isCorrect?:boolean}> }> }
 
@@ -18,8 +19,8 @@ function Builder() {
   const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [uploadTasks,setUploadTasks]=useState<UploadTask[]>([]);
+  const handledUploads=useRef(new Set<string>());
   const [starting, setStarting] = useState(false);
 
   const load = async () => {
@@ -37,6 +38,16 @@ function Builder() {
     load().catch((cause) => setError(cause.message));
   }, [quizId]);
 
+  useEffect(()=>{
+    const update=()=>{
+      if(!quizId)return;
+      const tasks=backgroundUploads.list(quizId); setUploadTasks(tasks);
+      const completed=tasks.find((task)=>task.state==='completed'&&!handledUploads.current.has(task.id));
+      if(completed){handledUploads.current.add(completed.id);void load();}
+    };
+    update(); return backgroundUploads.subscribe(update);
+  },[quizId]);
+
   const saveDetails = async () => {
     if (!quizId) return;
     setBusy(true); setError(null); setMessage(null);
@@ -47,14 +58,10 @@ function Builder() {
     setMessage('تم حفظ تفاصيل المسابقة.');
   };
 
-  const uploadCover = async (file?: File) => {
+  const uploadCover = (file?: File) => {
     if (!file || !quizId) return;
-    setUploadingCover(true); setError(null); setMessage(null);
-    try {
-      const variants = await uploadQuizCover(quizId, file);
-      setCover(variants.hostUrl); setMessage('تم رفع صورة الغلاف وحفظها.');
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'تعذر رفع الغلاف.'); }
-    finally { setUploadingCover(false); }
+    setError(null); setMessage('بدأ رفع الغلاف في الخلفية، ويمكنك متابعة العمل.');
+    backgroundUploads.enqueueCover(quizId,file);
   };
 
   const removeQuestion = async (questionId: string) => {
@@ -98,25 +105,18 @@ function Builder() {
     } catch (cause) { setError(cause instanceof Error?cause.message:'تعذر بدء اللعبة.'); setStarting(false); }
   };
 
-  const deleteQuiz = async () => {
-    if (!quizId) return;
-    setBusy(true); setError(null);
-    const response = await fetch(`/api/quizzes/${quizId}`, { method:'DELETE' });
-    const body = await response.json().catch(()=>null);
-    if (!response.ok) { setBusy(false); setDeleteOpen(false); return setError(body?.detail || 'تعذر حذف المسابقة.'); }
-    window.location.assign('/dashboard/');
-  };
 
-  if (!quiz && !error) return <div className="card p-14 text-center text-slate-400">جاري فتح الاستوديو…</div>;
+  if (!quiz && !error) return <PageSkeleton/>;
 
   return (
     <div className="space-y-7">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div><a href="/dashboard/" className="text-sm font-bold text-violet-600">→ مسابقاتي</a><h1 className="mt-2 text-3xl font-black text-slate-900">استوديو المسابقة</h1><p className="mt-1 text-sm text-slate-500">التفاصيل هنا، وكل سؤال يُحرّر في صفحة هادئة مستقلة.</p></div>
-        <div className="flex flex-wrap gap-2"><button onClick={startGame} disabled={starting || !quiz?.questions.length} className="primary-btn">{starting?'جاري تجهيز الغرفة…':'▶ ابدأ اللعبة'}</button><button onClick={publish} disabled={busy || !quiz?.questions.length} className="secondary-btn">نشر فقط</button><button onClick={()=>setDeleteOpen(true)} className="rounded-xl px-4 py-2 text-sm font-black text-rose-600 hover:bg-rose-50">حذف</button></div>
+        <div className="flex flex-wrap gap-2"><button onClick={startGame} disabled={starting || !quiz?.questions.length} className="primary-btn">{starting?'جاري تجهيز الغرفة…':'▶ ابدأ اللعبة'}</button><button onClick={publish} disabled={busy || !quiz?.questions.length} className="secondary-btn">نشر فقط</button></div>
       </div>
       {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}</div>}
       {warning && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{warning}<button onClick={()=>setWarning(null)} className="float-left text-amber-600" aria-label="إغلاق التنبيه">×</button></div>}
+      {uploadTasks.map((task)=><div key={task.id} role="status" className={`flex items-center justify-between rounded-xl border p-4 text-sm font-bold ${task.state==='failed'?'border-rose-200 bg-rose-50 text-rose-700':task.state==='completed'?'border-emerald-200 bg-emerald-50 text-emerald-700':'border-violet-200 bg-violet-50 text-violet-700'}`}><span className="inline-flex items-center gap-2">{task.state==='uploading'&&<Spinner/>}{task.label}</span>{task.state!=='uploading'&&<button onClick={()=>backgroundUploads.dismiss(task.id)} aria-label="إغلاق">×</button>}</div>)}
       {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">{message}</div>}
       {quiz && (
         <>
@@ -126,7 +126,7 @@ function Builder() {
             </div>
             <div className="space-y-4">
               <div><label className="label">عنوان المسابقة</label><input className="field" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} /></div>
-              <div><label className="label">صورة الغلاف <span className="font-normal text-slate-400">(اختيارية)</span></label><div className="flex flex-wrap gap-2"><label className="secondary-btn inline-flex cursor-pointer justify-center text-center text-sm">{uploadingCover?'جاري رفع الصورة…':cover?'استبدال صورة الغلاف':'اختيار صورة من الجهاز'}<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" disabled={uploadingCover} onChange={(e) => uploadCover(e.target.files?.[0])} /></label>{cover&&<button type="button" onClick={removeCover} disabled={busy||uploadingCover} className="rounded-xl px-3 py-2 text-sm font-black text-rose-600 hover:bg-rose-50">إزالة الصورة</button>}</div><p className="mt-2 text-xs text-slate-400">JPG أو PNG أو WebP أو AVIF، بحد أقصى 5MB. يفضّل مقاس 16:9.</p></div>
+              <div><label className="label">صورة الغلاف <span className="font-normal text-slate-400">(اختيارية)</span></label><div className="flex flex-wrap gap-2"><label className="secondary-btn inline-flex cursor-pointer justify-center text-center text-sm">{cover?'استبدال صورة الغلاف':'اختيار صورة من الجهاز'}<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" onChange={(e) => uploadCover(e.target.files?.[0])} /></label>{cover&&<button type="button" onClick={removeCover} disabled={busy} className="rounded-xl px-3 py-2 text-sm font-black text-rose-600 hover:bg-rose-50">إزالة الصورة</button>}</div><p className="mt-2 text-xs text-slate-400">يتم الرفع في الخلفية. يمكنك إضافة الأسئلة أثناء اكتماله.</p></div>
               <button onClick={saveDetails} disabled={busy || !title.trim()} className="secondary-btn">حفظ التفاصيل</button>
             </div>
           </section>
@@ -144,11 +144,10 @@ function Builder() {
           </section>
         </>
       )}
-      {deleteOpen&&<div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setDeleteOpen(false);}}><section role="dialog" aria-modal="true" aria-labelledby="delete-title" className="card w-full max-w-md p-7"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-100 text-2xl">🗑️</div><h2 id="delete-title" className="mt-4 text-xl font-black text-slate-900">حذف المسابقة؟</h2><p className="mt-2 text-sm leading-6 text-slate-500">سيتم حذف «{title}» من لوحة التحكم. لا يمكن التراجع عن هذا الإجراء.</p><div className="mt-7 flex gap-3"><button onClick={deleteQuiz} disabled={busy} className="flex-1 rounded-xl bg-rose-600 px-4 py-3 text-sm font-black text-white hover:bg-rose-700">{busy?'جاري الحذف…':'نعم، احذفها'}</button><button onClick={()=>setDeleteOpen(false)} disabled={busy} className="secondary-btn flex-1">إلغاء</button></div></section></div>}
     </div>
   );
 }
 
 export default function BuilderPage() {
-  return <AuthGuard><Suspense fallback={<div className="card p-14 text-center">جاري التحميل…</div>}><Builder /></Suspense></AuthGuard>;
+  return <AuthGuard><Suspense fallback={<PageSkeleton/>}><Builder /></Suspense></AuthGuard>;
 }

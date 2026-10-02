@@ -20,6 +20,7 @@ import {
   loadQuizSnapshotFromDb,
   saveQuizSnapshotToDb,
   savePlayerToDb,
+  savePlayerScoreToDb,
   saveRoundToDb,
   saveAnswerToDb,
   saveRoomMetaToDb
@@ -102,6 +103,14 @@ export class GameRoomDO {
         saveRoomMetaToDb(sql, this.state);
         if (this.state.activeRound) {
           saveRoundToDb(sql, this.state.activeRound);
+        }
+      } else if (effect.type === 'PERSIST_SCORES') {
+        for (const player of this.state.players.values()) savePlayerScoreToDb(sql, player);
+        const roundId = this.state.activeRound?.roundId;
+        if (roundId) {
+          for (const answer of this.state.answers.values()) {
+            if (answer.roundId === roundId) saveAnswerToDb(sql, answer);
+          }
         }
       } else if (effect.type === 'BROADCAST_STATE') {
         this.broadcastState();

@@ -80,6 +80,10 @@ export class MediaPrefetchEngine {
     return this.memoryCache.has(url);
   }
 
+  resolveUrl(url: string): string {
+    return this.memoryCache.get(url)?.blobUrl || url;
+  }
+
   getState(url: string): PrefetchState | undefined {
     if (this.memoryCache.has(url)) {
       return { status: 'loaded', url, isEssential: true, decoded: true };

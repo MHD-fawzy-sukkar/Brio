@@ -30,6 +30,7 @@ export const UploadCompleteRequestSchema = z.object({
   target: z.enum(['question', 'cover']).default('question'),
   publicId: z.string().min(1),
   format: z.string().min(1),
+  version: z.number().int().positive().optional(),
   width: z.number().positive(),
   height: z.number().positive(),
   byteSize: z.number().positive().max(MAX_MEDIA_BYTE_SIZE),

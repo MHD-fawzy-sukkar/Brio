@@ -450,6 +450,12 @@ describe('Phase P4 — Integration Tests', () => {
       assert.equal(doInstance.state.players.get('p2')!.score, 0);
       assert.ok(doInstance.state.players.get('p3')!.score > 0);
 
+      // Score persistence survives a Durable Object cold wake (prefix sum source of truth).
+      const coldWake = new GameRoomDO(mockCtx as any, {} as any);
+      await coldWake.ensureInitialized();
+      assert.equal(coldWake.state.players.get('p1')!.score, doInstance.state.players.get('p1')!.score);
+      assert.equal(coldWake.state.players.get('p2')!.score, 0);
+
       // 5. Trigger Alarm -> Advances to LEADERBOARD phase
       round1.statsEndsAt = Date.now() - 1000;
       await doInstance.alarm();
