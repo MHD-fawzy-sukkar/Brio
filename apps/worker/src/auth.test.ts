@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { verifyGoogleIdToken } from './auth/google';
+import { buildSessionCookie, createSessionInfo } from './auth/session';
 import { validateQuestionTypeRules } from './repositories/quiz.repository';
 import type { AuthoringQuestion } from '@brio/contracts';
 
@@ -29,7 +30,20 @@ test('verifyGoogleIdToken allows mock bypass only when explicit dev flag is pass
   });
 });
 
-test('validateQuestionTypeRules validates MultipleChoice questions (exactly 4 options, 1 correct)', () => {
+test('remember me creates a persistent secure cookie only when requested', async () => {
+  const regular = buildSessionCookie('token', true, false);
+  const remembered = buildSessionCookie('token', true, true);
+  assert.equal(regular.includes('Max-Age='), false);
+  assert.equal(regular.includes('SameSite=Lax'), true);
+  assert.equal(regular.includes('Secure'), true);
+  assert.equal(remembered.includes('Max-Age=2592000'), true);
+
+  const shortSession = await createSessionInfo(false);
+  const longSession = await createSessionInfo(true);
+  assert.ok(Date.parse(longSession.expiresAt) > Date.parse(shortSession.expiresAt));
+});
+
+test('validateQuestionTypeRules validates MultipleChoice questions (2+ dynamic options, 1 correct)', () => {
   const validMCQ: AuthoringQuestion = {
     type: 'MultipleChoice',
     text: 'ما هي عاصمة السعودية؟',
@@ -46,12 +60,17 @@ test('validateQuestionTypeRules validates MultipleChoice questions (exactly 4 op
 
   assert.doesNotThrow(() => validateQuestionTypeRules(validMCQ));
 
-  // Invalid: only 3 options
+  assert.doesNotThrow(() => validateQuestionTypeRules({
+    ...validMCQ,
+    options: [...validMCQ.options, { text: 'الخبر', isCorrect: false }, { text: 'أبها', isCorrect: false }]
+  }));
+
+  // Invalid: fewer than 2 options
   const invalidMCQCount: AuthoringQuestion = {
     ...validMCQ,
-    options: validMCQ.options.slice(0, 3)
+    options: validMCQ.options.slice(0, 1)
   };
-  assert.throws(() => validateQuestionTypeRules(invalidMCQCount), /must have exactly 4 options/);
+  assert.throws(() => validateQuestionTypeRules(invalidMCQCount), /must have at least 2 options/);
 
   // Invalid: 2 correct options
   const invalidMCQCorrect: AuthoringQuestion = {
@@ -91,7 +110,7 @@ test('validateQuestionTypeRules validates TrueFalse questions (exactly 2 options
   assert.throws(() => validateQuestionTypeRules(invalidTF), /must have exactly 1 correct option/);
 });
 
-test('validateQuestionTypeRules validates Poll questions (2-4 options, 0 correct)', () => {
+test('validateQuestionTypeRules validates Poll questions (2+ dynamic options, 0 correct)', () => {
   const validPoll: AuthoringQuestion = {
     type: 'Poll',
     text: 'ما هو لوناك المفضل؟',
@@ -106,6 +125,10 @@ test('validateQuestionTypeRules validates Poll questions (2-4 options, 0 correct
   };
 
   assert.doesNotThrow(() => validateQuestionTypeRules(validPoll));
+  assert.doesNotThrow(() => validateQuestionTypeRules({
+    ...validPoll,
+    options: Array.from({ length: 8 }, (_, index) => ({ text: `خيار ${index + 1}`, isCorrect: false }))
+  }));
 
   const invalidPoll: AuthoringQuestion = {
     ...validPoll,

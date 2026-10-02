@@ -7,14 +7,25 @@ export const BASE_POINTS = {
 } as const;
 
 /**
- * Calculates awarded points based on correctness and multiplier.
- * No speed component in MVP (per SRS-Architecture.md Section 3).
+ * Correct answers keep at least 50% of their value. The remaining 50% is a
+ * smooth speed bonus based on server-observed answer time, so fast answers are
+ * rewarded without making a correct late answer feel worthless.
  */
-export function calculatePoints(isCorrect: boolean, multiplier: PointsMultiplier): number {
+export function calculatePoints(
+  isCorrect: boolean,
+  multiplier: PointsMultiplier,
+  responseTimeMs?: number,
+  durationMs?: number
+): number {
   if (!isCorrect || multiplier === 'Zero') {
     return 0;
   }
-  return BASE_POINTS[multiplier as keyof typeof BASE_POINTS] ?? 1000;
+  const base = BASE_POINTS[multiplier as keyof typeof BASE_POINTS] ?? 1000;
+  if (responseTimeMs === undefined || durationMs === undefined || durationMs <= 0) return base;
+
+  const elapsedRatio = Math.min(1, Math.max(0, responseTimeMs / durationMs));
+  const speedFactor = 1 - elapsedRatio;
+  return Math.round(base * (0.5 + speedFactor * 0.5));
 }
 
 export interface PlayerScoreEntry {

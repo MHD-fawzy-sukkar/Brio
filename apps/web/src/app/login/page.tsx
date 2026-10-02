@@ -1,86 +1,126 @@
 'use client';
 
-import { useState } from 'react';
+import Script from 'next/script';
+import { useEffect, useRef, useState } from 'react';
+
+interface GoogleIdentityApi {
+  initialize(options: {
+    client_id: string;
+    ux_mode: 'popup';
+    auto_select: boolean;
+    callback: (response: { credential?: string }) => void;
+  }): void;
+  renderButton(element: HTMLElement, options: Record<string, string | number>): void;
+}
+
+declare global {
+  interface Window {
+    google?: { accounts?: { id?: GoogleIdentityApi } };
+  }
+}
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
+  const rememberRef = useRef(false);
+  const [remember, setRemember] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setErrorMsg(null);
+  useEffect(() => {
+    if (!scriptLoaded || initializedRef.current) return;
+    const identity = window.google?.accounts?.id;
+    if (!identity || !buttonRef.current) return;
+    if (!clientId) {
+      setError('معرّف Google غير مهيأ. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID ثم أعد بناء التطبيق.');
+      setLoading(false);
+      return;
+    }
 
+    let active = true;
     try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          idToken: 'mock:google-sub-1:creator@brio.com:منشئ المسابقات'
-        })
+      initializedRef.current = true;
+      identity.initialize({
+        client_id: clientId,
+        ux_mode: 'popup',
+        auto_select: false,
+        callback: async (response) => {
+          if (!active) return;
+          if (!response.credential) {
+            setError('لم يصل رمز المصادقة من Google.');
+            return;
+          }
+          setLoading(true);
+          setError(null);
+          try {
+            const result = await fetch('/api/auth/google', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ idToken: response.credential, remember: rememberRef.current })
+            });
+            if (!result.ok) {
+              const problem = await result.json().catch(() => null);
+              throw new Error(problem?.detail || 'تعذر تسجيل الدخول.');
+            }
+            const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+            window.location.replace(returnTo?.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard/');
+          } catch (cause) {
+            if (active) {
+              setError(cause instanceof Error ? cause.message : 'تعذر تسجيل الدخول.');
+              setLoading(false);
+            }
+          }
+        }
       });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({ detail: 'فشلت عملية المصادقة' }));
-        throw new Error(errData.detail || 'فشلت عملية المصادقة');
-      }
-
-      window.location.href = '/dashboard/';
-    } catch (err: any) {
-      setErrorMsg(err.message || 'حدث خطأ غير متوقع أثناء تسجيل الدخول');
+      // React never renders children into this node. Google owns its contents.
+      buttonRef.current.replaceChildren();
+      const buttonWidth = Math.min(360, Math.max(240, Math.floor(buttonRef.current.getBoundingClientRect().width)));
+      identity.renderButton(buttonRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        shape: 'rectangular',
+        text: 'continue_with',
+        logo_alignment: 'left',
+        width: buttonWidth,
+        locale: 'ar'
+      });
       setLoading(false);
+    } catch (cause) {
+      initializedRef.current = false;
+      setLoading(false);
+      setError(cause instanceof Error ? cause.message : 'تعذر تهيئة تسجيل الدخول بواسطة Google.');
     }
-  };
+
+    return () => {
+      active = false;
+      // Do not remove children here: Google owns the iframe and React does not.
+      initializedRef.current = false;
+    };
+  }, [scriptLoaded, clientId]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] max-w-md mx-auto">
-      <div className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6 text-center">
-        <div className="space-y-2">
-          <div className="text-4xl">🔐</div>
-          <h1 className="text-2xl font-bold text-white">تسجيل دخول المنشئ</h1>
-          <p className="text-sm text-slate-400">سجّل دخولك لحساب Google لإدارة وإنشاء المسابقات</p>
+    <div className="relative mx-auto flex min-h-[72vh] max-w-5xl items-center justify-center overflow-hidden py-8">
+      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => setScriptLoaded(true)} onError={() => { setError('تعذر تحميل خدمة Google. تحقق من اتصالك ثم أعد المحاولة.'); setLoading(false); }} />
+      <div className="absolute right-1/4 top-12 h-56 w-56 rounded-full bg-violet-200/40 blur-3xl" />
+      <div className="absolute bottom-10 left-1/4 h-48 w-48 rounded-full bg-amber-100/70 blur-3xl" />
+      <section className="card relative w-full max-w-md p-7 sm:p-10">
+        <div className="mb-8 text-center">
+          <a href="/" className="mx-auto flex w-fit items-center gap-2 text-xl font-black text-slate-900"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-200">⚡</span><span>Brio</span></a>
+          <h1 className="mt-7 text-2xl font-black text-slate-900">تسجيل الدخول</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">تابع إلى مساحة مسابقاتك باستخدام حساب Google.</p>
         </div>
-
-        {errorMsg && (
-          <div className="p-3.5 bg-red-950/50 border border-red-500/40 rounded-xl text-xs text-red-300 text-right">
-            ⚠️ <strong>خطأ:</strong> {errorMsg}
-          </div>
-        )}
-
-        <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-400 space-y-2 text-right">
-          <p className="font-semibold text-slate-300">💡 التحقق من المصادقة:</p>
-          <p>تتم عملية التحقق من التوكن عبر خدمة Google OAuth JWKS التشفيرية الرسمية مع حظر أي تجاوز صوري في بيئة الإنتاج.</p>
-        </div>
-
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-md cursor-pointer disabled:opacity-50"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.15C3.25 21.3 7.31 24 12 24z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.27C.46 8.2.0 10.04.0 12s.46 3.8 1.27 5.42l4.01-3.15z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.58l4.01 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-            />
-          </svg>
-          <span>{loading ? 'جاري تسجيل الدخول...' : 'التسجيل بواسطة حساب Google'}</span>
-        </button>
-
-        <a href="/" className="block text-xs text-slate-500 hover:text-slate-400">
-          ← العودة للصفحة الرئيسية
-        </a>
-      </div>
+        {error && <div role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
+        <div className="flex min-h-12 w-full justify-center overflow-hidden" ref={buttonRef} aria-label="تسجيل الدخول بواسطة Google" />
+        {loading && <p className="mt-2 text-center text-sm text-slate-400">جاري تحميل تسجيل الدخول…</p>}
+        <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm font-bold text-slate-600"><input type="checkbox" checked={remember} onChange={(event) => { setRemember(event.target.checked); rememberRef.current = event.target.checked; }} className="h-4 w-4 accent-violet-600" />تذكّرني على هذا الجهاز لمدة 30 يوماً</label>
+        <div className="my-6 flex items-center gap-3 text-xs text-slate-300"><span className="h-px flex-1 bg-slate-200" /><span>دخول آمن</span><span className="h-px flex-1 bg-slate-200" /></div>
+        <p className="text-center text-xs leading-6 text-slate-400">لن يحصل Brio على كلمة مرور Google. بالمتابعة أنت توافق على استخدام جلسة آمنة لإدارة مسابقاتك.</p>
+      </section>
     </div>
   );
 }

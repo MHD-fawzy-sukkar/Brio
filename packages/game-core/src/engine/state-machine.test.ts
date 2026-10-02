@@ -7,7 +7,8 @@ import {
   reconcileDeadlines,
   requestPause,
   requestResume,
-  handleOverdueRecovery
+  handleOverdueRecovery,
+  endQuiz
 } from './state-machine';
 import {
   toPublicPlayerSnapshot,
@@ -59,6 +60,16 @@ const SAMPLE_QUIZ: PublishedQuizSnapshot = {
   ]
 };
 
+test('Host end transitions any active room to FINISHED and cancels its alarm idempotently', () => {
+  const state = createInitialGameState('room-end', SAMPLE_QUIZ.id);
+  startQuiz(state, SAMPLE_QUIZ, 1_000);
+  const effects = endQuiz(state);
+  assert.equal(state.phase, 'FINISHED');
+  assert.equal(state.activeRound?.closed, true);
+  assert.ok(effects.some((effect) => effect.type === 'CANCEL_ALARM'));
+  assert.deepEqual(endQuiz(state), []);
+});
+
 test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LEADERBOARD -> FINISHED', () => {
   let now = 1000000;
   const state = createInitialGameState('room-1', 'version-1');
@@ -105,7 +116,7 @@ test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LE
 
   // 3. Transferred to STATS phase & Scored
   assert.equal(state.phase, 'STATS');
-  assert.equal(state.players.get('p1')?.score, 1000); // Correct Standard = 1000 pts
+  assert.equal(state.players.get('p1')?.score, 975); // Correct in 1s of a 20s round
   assert.equal(state.players.get('p2')?.score, 0);    // Wrong = 0 pts
   assert.equal(state.players.get('p3')?.score, 0);    // Missed = 0 pts
 
@@ -132,7 +143,7 @@ test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LE
   // Advance through STATS and LEADERBOARD for Question 2
   now += 15000;
   reconcileDeadlines(state, SAMPLE_QUIZ, now); // STATS
-  assert.equal(state.players.get('p1')?.score, 1000); // Poll gives 0 points
+  assert.equal(state.players.get('p1')?.score, 975); // Poll gives 0 points
 
   now += 3000;
   reconcileDeadlines(state, SAMPLE_QUIZ, now); // LEADERBOARD
@@ -154,7 +165,7 @@ test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LE
 
   now += 20000;
   reconcileDeadlines(state, SAMPLE_QUIZ, now); // STATS
-  assert.equal(state.players.get('p2')?.score, 2000); // 0 + 2000 = 2000 pts
+  assert.equal(state.players.get('p2')?.score, 1950); // Fast correct answer earns a speed-adjusted double score
 
   now += 3000;
   reconcileDeadlines(state, SAMPLE_QUIZ, now); // LEADERBOARD
@@ -223,7 +234,7 @@ test('Answer Idempotency: Duplicate submissionId returns saved receipt even afte
     playerId: 'p1', roundId, submissionId: 'sub-idem-1', optionId: 'o1'
   }, now + 5000);
   assert.equal(sub3.status, 'accepted');
-  assert.equal(state.players.get('p1')?.score, 1000); // Score remains 1000, NOT 2000
+  assert.equal(state.players.get('p1')?.score, 975); // Score remains unchanged, not awarded twice
 });
 
 test('Overdue Server Transition (>5s) Triggers RECOVERY_PAUSED and Supports void_and_replay', () => {
@@ -260,8 +271,10 @@ test('Public Serializers Redact Answer Keys and Accepted Alternatives', () => {
   const playerSnapshot = toPublicPlayerSnapshot(state, 'p1', SAMPLE_QUIZ);
   assert.equal(playerSnapshot.role, 'player');
   assert.equal(playerSnapshot.ownScore, 1000);
+  assert.equal(playerSnapshot.lobbyPlayers.length, 1);
 
   const hostSnapshot = toPublicHostSnapshot(state, SAMPLE_QUIZ);
   assert.equal(hostSnapshot.role, 'host');
   assert.equal(hostSnapshot.playerCount, 1);
+  assert.equal(hostSnapshot.lobbyPlayers[0].nickname, 'أحمد');
 });

@@ -1,97 +1,61 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-const AVATARS = [
-  '/avatars/avatar-1.svg',
-  '/avatars/avatar-2.svg',
-  '/avatars/avatar-3.svg',
-  '/avatars/avatar-4.svg',
-  '/avatars/avatar-5.svg',
-  '/avatars/avatar-6.svg',
-];
+function normalizePin(value: string) {
+  return value.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/\D/g, '').slice(0, 6);
+}
 
 export default function HomePage() {
   const [code, setCode] = useState('');
-  const [nickname, setNickname] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
 
-  const handleJoin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!code || !nickname) return;
-    window.location.href = `/play/?code=${encodeURIComponent(code)}&nickname=${encodeURIComponent(nickname)}&avatar=${encodeURIComponent(selectedAvatar)}`;
+  useEffect(() => () => { requestRef.current?.abort(); requestRef.current = null; }, []);
+
+  const continueToLobby = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const pin = normalizePin(code);
+    if (pin.length !== 6) return setError('أدخل رمز اللعبة المكوّن من 6 أرقام.');
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setChecking(true); setError(null);
+    try {
+      const response = await fetch(`/api/rooms/by-code/${encodeURIComponent(pin)}`, { signal: controller.signal });
+      const room = await response.json().catch(() => null);
+      if (response.status === 404) throw new Error('اللعبة غير موجودة. تحقق من الرمز وحاول مرة أخرى.');
+      if (!response.ok || !room?.roomId) throw new Error(room?.detail || 'تعذر التحقق من رمز اللعبة.');
+      window.location.assign(`/join/?${new URLSearchParams({ roomId: room.roomId, code: pin })}`);
+    } catch (cause) {
+      if ((cause as Error)?.name !== 'AbortError') setError(cause instanceof Error ? cause.message : 'تعذر العثور على اللعبة.');
+    } finally {
+      if (requestRef.current === controller) { requestRef.current = null; setChecking(false); }
+    }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[75vh] max-w-md mx-auto">
-      <div className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-extrabold text-white">انضم للمسابقة الحية</h1>
-          <p className="text-sm text-slate-400">أدخل رمز الغرفة واسم المستعار للبدء مباشرة</p>
+    <div className="relative mx-auto flex min-h-[72vh] max-w-6xl items-center justify-center overflow-hidden py-8">
+      <div className="absolute right-8 top-8 h-52 w-52 rounded-full bg-violet-200/50 blur-3xl" />
+      <div className="absolute bottom-6 left-6 h-52 w-52 rounded-full bg-amber-200/50 blur-3xl" />
+      <section className="relative grid w-full overflow-hidden rounded-[2rem] border border-white bg-white/90 shadow-2xl shadow-violet-100/70 lg:grid-cols-[1.1fr_.9fr]">
+        <div className="bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-600 p-9 text-white sm:p-14">
+          <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-black ring-1 ring-white/20">لعب حي وتفاعل فوري</span>
+          <h1 className="mt-7 text-4xl font-black leading-tight sm:text-5xl">مسابقتك تبدأ<br />برمز واحد.</h1>
+          <p className="mt-5 max-w-lg text-base leading-8 text-violet-100 sm:text-lg">أدخل PIN اللعبة الآن. ستختار اسمك وصورتك في الخطوة التالية قبل دخول غرفة الانتظار.</p>
+          <div className="mt-10 flex flex-wrap gap-6 text-sm font-bold text-violet-100"><span>✓ دخول فوري</span><span>✓ بلا تسجيل</span><span>✓ نتائج مباشرة</span></div>
         </div>
-
-        <form onSubmit={handleJoin} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">رمز الغرفة (PIN)</label>
-            <input
-              type="text"
-              maxLength={6}
-              placeholder="مثال: 123456"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl tracking-widest font-mono text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">الاسم المستعار</label>
-            <input
-              type="text"
-              maxLength={24}
-              placeholder="أدخل اسمك الشائع"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">اختر الصورة الرمزية (الأفاتار)</label>
-            <div className="grid grid-cols-6 gap-2">
-              {AVATARS.map((avatar, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => setSelectedAvatar(avatar)}
-                  className={`relative p-1 rounded-xl border-2 transition-all ${
-                    selectedAvatar === avatar ? 'border-indigo-500 bg-indigo-500/10 scale-105' : 'border-transparent hover:border-slate-700'
-                  }`}
-                >
-                  <img src={avatar} alt={`Avatar ${idx + 1}`} className="w-full h-auto rounded-lg" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-colors text-base cursor-pointer"
-          >
-            دخول المسابقة 🚀
-          </button>
-        </form>
-
-        <div className="border-t border-slate-800 pt-4 text-center">
-          <p className="text-xs text-slate-400">
-            أنت منشئ مسابقات؟{' '}
-            <a href="/login/" className="text-indigo-400 hover:underline font-semibold">
-              سجل دخولك من هنا
-            </a>
-          </p>
+        <div className="flex items-center p-7 sm:p-12">
+          <form onSubmit={continueToLobby} className="w-full space-y-6">
+            <div className="text-center"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-100 text-2xl">🎮</div><h2 className="mt-4 text-2xl font-black text-slate-900">انضم إلى اللعبة</h2><p className="mt-2 text-sm text-slate-500">يمكنك الحصول على الرمز من مقدّم المسابقة</p></div>
+            {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
+            <div><label htmlFor="game-pin" className="label">رمز اللعبة (PIN)</label><input id="game-pin" value={code} onChange={(event) => setCode(normalizePin(event.target.value))} inputMode="numeric" autoComplete="one-time-code" placeholder="123456" className="field py-4 text-center text-3xl font-black tracking-[.32em] placeholder:tracking-[.18em] placeholder:text-slate-300" /></div>
+            <button type="submit" disabled={checking || code.length !== 6} className="primary-btn w-full py-3.5 text-base">{checking ? 'جاري التحقق…' : 'متابعة'}</button>
+            <p className="text-center text-xs text-slate-400">هل تريد إنشاء مسابقة؟ <a href="/login/" className="font-black text-violet-600 hover:underline">دخول المنشئين</a></p>
+          </form>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

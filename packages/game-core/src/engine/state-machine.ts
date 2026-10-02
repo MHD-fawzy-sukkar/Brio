@@ -70,6 +70,18 @@ export function startQuiz(
   ];
 }
 
+export function endQuiz(state: GameState): EngineEffect[] {
+  if (state.phase === 'FINISHED') return [];
+  state.phase = 'FINISHED';
+  state.stateVersion++;
+  if (state.activeRound) state.activeRound.closed = true;
+  return [
+    { type: 'PERSIST_STATE' },
+    { type: 'BROADCAST_STATE' },
+    { type: 'CANCEL_ALARM' }
+  ];
+}
+
 export function processAnswerSubmission(
   state: GameState,
   quiz: PublishedQuizSnapshot,
@@ -175,7 +187,8 @@ export function scoreRound(
       isCorrect = false; // Polls have no correctness
     }
 
-    const points = calculatePoints(isCorrect, question.multiplier);
+    const responseTimeMs = Math.max(0, ans.receivedAt - state.activeRound.startsAt);
+    const points = calculatePoints(isCorrect, question.multiplier, responseTimeMs, question.durationMs);
     ans.isCorrect = isCorrect;
     ans.pointsAwarded = points;
 

@@ -1,0 +1,11 @@
+# Copy this file to .dev.vars, then replace every placeholder.
+# Never commit the resulting .dev.vars file.
+
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+DEV_AUTH_BYPASS=false
+DEV_MEDIA_BYPASS=false

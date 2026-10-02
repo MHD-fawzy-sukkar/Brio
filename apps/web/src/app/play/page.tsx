@@ -1,288 +1,137 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BrioRoomSocket } from '../../services/socket';
 import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { registerServiceWorker } from '../../services/sw-register';
 
+type SubmissionState = 'idle' | 'submitting' | 'accepted' | 'rejected';
+
 function PlayContent() {
-  const searchParams = useSearchParams();
-  const roomId = searchParams.get('roomId') || 'demo-room';
-  const code = searchParams.get('code') || '123456';
-  const playerId = searchParams.get('playerId') || 'p_demo';
-  const nickname = searchParams.get('nickname') || 'لاعب جديد';
-  const avatar = searchParams.get('avatar') || '/avatars/avatar-1.svg';
+  const params = useSearchParams();
+  const roomId = params.get('roomId') || '';
+  const code = params.get('code') || '';
+  const playerId = params.get('playerId') || '';
+  const nickname = params.get('nickname') || '';
+  const avatar = params.get('avatar') || '';
+  const validJoin = Boolean(roomId && playerId && nickname && avatar && /^\d{6}$/.test(code));
 
   const [snapshot, setSnapshot] = useState<any>(null);
   const [socket, setSocket] = useState<BrioRoomSocket | null>(null);
-  const [isConnected, setIsConnected] = useState<boolean>(true);
-
+  const [connection, setConnection] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [textAnswerInput, setTextAnswerInput] = useState<string>('');
-  const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'accepted' | 'rejected'>('idle');
-  const [rejectionReason, setRejectionReason] = useState<string>('');
-
-  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
-  const [imageError, setImageError] = useState<boolean>(false);
+  const [textAnswer, setTextAnswer] = useState('');
+  const [submission, setSubmission] = useState<SubmissionState>('idle');
+  const [rejection, setRejection] = useState('');
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    // Register Service Worker and handle foreground resync
-    registerServiceWorker(() => {
-      if (socket) {
-        socket.connect();
+    if (!validJoin) {
+      window.location.replace('/');
+      return;
+    }
+    sessionStorage.setItem('brio_active_game', 'true');
+    const roomSocket = new BrioRoomSocket(roomId, 'player', playerId);
+    const unsubscribeSnapshot = roomSocket.onSnapshot((data) => {
+      setSnapshot(data);
+      const imageUrl = data?.question?.essentialImage;
+      setImageError(false);
+      if (!imageUrl) setImageLoaded(true);
+      else if (globalMediaPrefetchEngine.isLoaded(imageUrl)) setImageLoaded(true);
+      else {
+        setImageLoaded(false);
+        globalMediaPrefetchEngine.queueImages([{ url:imageUrl, questionId:data.question.id, isEssential:true, priority:1 }]);
       }
     });
-  }, [socket]);
-
-  useEffect(() => {
-    if (!roomId) return;
-    const roomSocket = new BrioRoomSocket(roomId, 'player', playerId);
+    const unsubscribeConnection = roomSocket.onConnectionState(setConnection);
+    const unregisterServiceWorker = registerServiceWorker(() => roomSocket.connect());
     roomSocket.connect();
     setSocket(roomSocket);
-    setIsConnected(true);
-
-    const unsubscribe = roomSocket.onSnapshot((data) => {
-      setSnapshot(data);
-      setIsConnected(true);
-
-      // Trigger prefetch for current and upcoming images
-      if (data?.question?.essentialImage) {
-        const imageUrl = data.question.essentialImage;
-        const isEssential = data.question.essentialImageEssential !== false;
-
-        if (globalMediaPrefetchEngine.isLoaded(imageUrl)) {
-          setImageLoaded(true);
-        } else {
-          setImageLoaded(false);
-          globalMediaPrefetchEngine.queueImages([{
-            url: imageUrl,
-            questionId: data.question.id,
-            isEssential,
-            priority: 1
-          }]);
-        }
-      } else {
-        setImageLoaded(true);
-      }
-    });
 
     return () => {
-      unsubscribe();
+      unsubscribeSnapshot();
+      unsubscribeConnection();
+      unregisterServiceWorker();
       roomSocket.close();
+      sessionStorage.removeItem('brio_active_game');
+      setSnapshot(null);
+      setSocket(null);
+      setSubmission('idle');
     };
-  }, [roomId, playerId]);
+  }, [validJoin, roomId, playerId]);
 
-  // Listen to prefetch engine changes
   useEffect(() => {
-    const unsub = globalMediaPrefetchEngine.subscribe((states) => {
-      if (snapshot?.question?.essentialImage) {
-        const state = states.get(snapshot.question.essentialImage);
-        if (state?.status === 'loaded') {
-          setImageLoaded(true);
-        } else if (state?.status === 'error') {
-          setImageError(true);
-        }
-      }
-    });
-    return unsub;
-  }, [snapshot]);
+    setSelectedOption(null); setTextAnswer(''); setSubmission('idle'); setRejection('');
+  }, [snapshot?.roundId]);
 
-  const currentQuestion = snapshot?.question;
+  useEffect(() => globalMediaPrefetchEngine.subscribe((states) => {
+    const url = snapshot?.question?.essentialImage;
+    if (!url) return;
+    const state = states.get(url);
+    if (state?.status === 'loaded') setImageLoaded(true);
+    if (state?.status === 'error') setImageError(true);
+  }), [snapshot?.question?.essentialImage]);
+
+  if (!validJoin) return <div className="card mx-auto max-w-md p-10 text-center text-sm font-bold text-slate-500">بيانات الانضمام غير مكتملة. جاري إعادتك…</div>;
+
   const phase = snapshot?.phase || 'LOBBY';
+  const currentQuestion = snapshot?.question;
   const roundId = snapshot?.roundId || '';
   const ownScore = snapshot?.ownScore ?? 0;
+  const players = snapshot?.lobbyPlayers || [{ id:playerId, nickname, avatarId:avatar }];
+  const imageBlocking = Boolean(currentQuestion?.essentialImage && !imageLoaded && !imageError);
 
-  const isEssentialImage = currentQuestion?.essentialImage && currentQuestion?.essentialImageEssential !== false;
-  // CRITICAL REQUIREMENT: Disable answer buttons ONLY if an ESSENTIAL image is still loading
-  const isAnswerBlockedByImage = isEssentialImage && !imageLoaded && !imageError;
-
-  const handleSubmit = async (optionId?: string) => {
-    if (!socket || !roundId || isAnswerBlockedByImage || submissionStatus === 'submitting' || submissionStatus === 'accepted') return;
-
-    if (optionId) {
-      setSelectedOption(optionId);
-    }
-    setSubmissionStatus('submitting');
-    const submissionId = 'sub_' + Math.random().toString(36).substring(2, 9);
-
+  const submit = async (optionId?:string) => {
+    if (!socket || !roundId || imageBlocking || submission === 'submitting' || submission === 'accepted') return;
+    if (optionId) setSelectedOption(optionId);
+    setSubmission('submitting'); setRejection('');
     try {
-      await socket.submitAnswer(roundId, submissionId, {
-        optionId,
-        textAnswer: currentQuestion?.type === 'ShortAnswer' ? textAnswerInput : undefined
-      });
-      setSubmissionStatus('accepted');
-    } catch (err: any) {
-      setSubmissionStatus('rejected');
-      setRejectionReason(err.message || 'الإجابة مرفوضة');
+      await socket.submitAnswer(roundId, crypto.randomUUID(), { optionId, textAnswer:currentQuestion?.type === 'ShortAnswer' ? textAnswer : undefined });
+      setSubmission('accepted');
+    } catch (cause) {
+      setSubmission('rejected'); setRejection(cause instanceof Error ? cause.message : 'تعذر إرسال الإجابة.');
     }
   };
 
   return (
-    <div className="space-y-6 max-w-md mx-auto">
-      {/* Top Header Card */}
-      <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={avatar} alt="Avatar" className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700" />
-          <div>
-            <h1 className="text-sm font-bold text-white flex items-center gap-2">
-              {nickname}
-              {!isConnected && (
-                <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-semibold animate-pulse">
-                  جاري إعادة الاتصال... 🔴
-                </span>
-              )}
-            </h1>
-            <p className="text-xs text-slate-400">رمز الغرفة: {code}</p>
+    <div className="mx-auto max-w-4xl space-y-5">
+      <header className="card flex items-center justify-between p-4 sm:p-5">
+        <div className="flex items-center gap-3"><img src={avatar} alt="" className="h-11 w-11 rounded-xl bg-violet-50"/><div><h1 className="font-black text-slate-900">{nickname}</h1><p className="text-xs font-bold text-slate-400">رمز اللعبة {code}</p></div></div>
+        <div className="flex items-center gap-4"><span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${connection==='connected'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{connection==='connected'?'متصل':'جاري الاتصال…'}</span><div className="text-left"><span className="block text-[10px] font-bold text-slate-400">نقاطك</span><b className="text-xl text-violet-700">{ownScore}</b></div></div>
+      </header>
+
+      {phase === 'LOBBY' && (
+        <section className="card relative min-h-[520px] overflow-hidden p-6 text-center">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,92,231,.12),transparent_55%)]"/>
+          <div className="relative z-10 mx-auto max-w-xl pt-6"><span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">تم الانضمام بنجاح</span><h2 className="mt-4 text-3xl font-black text-slate-900">أنت في ساحة الانتظار</h2><p className="mt-2 text-slate-500">بانتظار أن يبدأ المضيف المسابقة…</p><div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"/>{players.length} {players.length === 1 ? 'لاعب' : 'لاعبين'} في الساحة</div></div>
+          <div className="relative z-10 mx-auto mt-10 grid max-w-2xl grid-cols-3 gap-5 sm:grid-cols-5">
+            {players.map((player:any,index:number) => <div key={player.id} className="lobby-avatar flex flex-col items-center gap-2" style={{animationDelay:`${(index%7)*-.35}s`}}><div className={`rounded-2xl border-2 bg-white p-2 shadow-lg ${player.id===playerId?'border-violet-500 shadow-violet-100':'border-white'}`}><img src={player.avatarId} alt="" className="h-14 w-14 rounded-xl sm:h-16 sm:w-16"/></div><span className="max-w-24 truncate rounded-full bg-white/90 px-2 py-1 text-xs font-black text-slate-700 shadow-sm">{player.nickname}{player.id===playerId?' (أنت)':''}</span></div>)}
           </div>
-        </div>
-        <div className="text-left">
-          <span className="block text-[10px] text-slate-400">النقاط الحالية</span>
-          <span className="text-lg font-extrabold text-emerald-400 font-mono">{ownScore}</span>
-        </div>
-      </div>
+          <p className="relative z-10 mt-10 text-xs font-bold text-slate-400">ستنتقل الشاشة تلقائياً لحظة بدء المضيف.</p>
+        </section>
+      )}
 
-      {/* Main Game Card */}
-      <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-4">
-        {phase === 'LOBBY' && (
-          <div className="text-center py-8 space-y-2">
-            <div className="text-3xl motion-reduce:animate-none animate-bounce">⏳</div>
-            <h2 className="text-base font-bold text-white">أنت الآن في غرفة الانتظار</h2>
-            <p className="text-xs text-slate-400">سيبدأ المستضيف المسابقة قريبًا...</p>
-          </div>
-        )}
+      {phase === 'COUNTDOWN' && <section className="card grid min-h-[430px] place-items-center text-center"><div><div className="mx-auto grid h-28 w-28 place-items-center rounded-full bg-violet-600 text-6xl font-black text-white shadow-2xl shadow-violet-200">3</div><h2 className="mt-7 text-3xl font-black">استعد!</h2><p className="mt-2 text-slate-500">المسابقة تبدأ الآن</p></div></section>}
 
-        {phase === 'COUNTDOWN' && (
-          <div className="text-center py-8 space-y-2">
-            <div className="text-4xl font-extrabold text-indigo-400 font-mono">3</div>
-            <h2 className="text-lg font-bold text-white">استعد! المسابقة تبدأ الآن</h2>
-          </div>
-        )}
+      {phase === 'QUESTION' && currentQuestion && (
+        <section className="card space-y-5 p-5 sm:p-7">
+          <div className="flex items-center justify-between"><span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">السؤال {(snapshot.questionIndex ?? 0)+1}</span><span className="text-xs font-black text-rose-600">● مباشر</span></div>
+          {currentQuestion.essentialImage && <div className="relative grid min-h-44 place-items-center overflow-hidden rounded-2xl bg-slate-100">{!imageLoaded&&!imageError&&<p className="text-sm font-bold text-slate-500">جاري تحميل الصورة، وقت السؤال مستمر…</p>}<img src={currentQuestion.essentialImage} alt="صورة السؤال" onLoad={()=>setImageLoaded(true)} onError={()=>setImageError(true)} className={`max-h-72 w-full object-contain ${imageLoaded?'block':'hidden'}`}/></div>}
+          <h2 className="py-3 text-center text-2xl font-black text-slate-900">{currentQuestion.text}</h2>
+          {currentQuestion.options?.length>0&&<div className="grid gap-3 sm:grid-cols-2">{currentQuestion.options.map((option:any)=><button key={option.id} disabled={imageBlocking||submission==='submitting'||submission==='accepted'} onClick={()=>submit(option.id)} className={`min-h-16 rounded-2xl border-2 px-4 font-black transition ${selectedOption===option.id?'border-violet-600 bg-violet-600 text-white':'border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50'} disabled:cursor-not-allowed disabled:opacity-60`}>{option.text}</button>)}</div>}
+          {currentQuestion.type==='ShortAnswer'&&<div className="space-y-3"><input className="field py-4 text-center text-lg font-bold" value={textAnswer} onChange={(e)=>setTextAnswer(e.target.value)} disabled={imageBlocking||submission==='accepted'} placeholder="اكتب إجابتك…"/><button className="primary-btn w-full" onClick={()=>submit()} disabled={!textAnswer.trim()||imageBlocking||submission==='submitting'||submission==='accepted'}>إرسال الإجابة</button></div>}
+          {submission==='submitting'&&<div className="rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-700">جاري توثيق إجابتك…</div>}
+          {submission==='accepted'&&<div className="rounded-xl bg-emerald-50 p-3 text-center text-sm font-bold text-emerald-700">✓ تم استلام إجابتك</div>}
+          {submission==='rejected'&&<div className="rounded-xl bg-rose-50 p-3 text-center text-sm font-bold text-rose-700">{rejection}</div>}
+        </section>
+      )}
 
-        {phase === 'QUESTION' && currentQuestion && (
-          <>
-            <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-2">
-              <span>السؤال (نوع: {currentQuestion.type})</span>
-              <span className="font-mono text-amber-400 font-bold text-sm">مباشر</span>
-            </div>
-
-            {/* Essential / Decorative Image Rendering */}
-            {currentQuestion.essentialImage && (
-              <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 my-2 min-h-[160px] flex items-center justify-center">
-                {!imageLoaded && !imageError && (
-                  <div className="text-center p-4 space-y-2">
-                    <div className="text-xs text-amber-300 font-semibold animate-pulse">
-                      جاري تحميل صورة السؤال الأساسية... 🖼️
-                    </div>
-                    {isEssentialImage && (
-                      <span className="inline-block text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full">
-                        image-delayed: الإجابات معطلة مؤقتًا لحين اكتمال التحميل
-                      </span>
-                    )}
-                  </div>
-                )}
-                <img
-                  src={currentQuestion.essentialImage}
-                  alt="Question Media"
-                  onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageError(true)}
-                  className={`w-full max-h-56 object-contain rounded-xl transition-opacity duration-300 ${
-                    imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
-                  }`}
-                />
-              </div>
-            )}
-
-            <h2 className="text-base font-bold text-white text-center py-2">
-              {currentQuestion.text}
-            </h2>
-
-            {/* Multiple Choice / True False / Poll options */}
-            {currentQuestion.options && currentQuestion.options.length > 0 && (
-              <div className="grid grid-cols-1 gap-3 pt-2">
-                {currentQuestion.options.map((opt: any) => {
-                  const isSelected = selectedOption === opt.id;
-                  const isDisabled = isAnswerBlockedByImage || submissionStatus === 'submitting' || submissionStatus === 'accepted';
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleSubmit(opt.id)}
-                      disabled={isDisabled}
-                      className={`w-full py-3.5 px-4 rounded-xl text-sm font-bold transition-all text-center border ${
-                        isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                      } ${
-                        isSelected
-                          ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg scale-[1.02]'
-                          : submissionStatus === 'accepted'
-                          ? 'bg-slate-900/60 border-slate-800 text-slate-500'
-                          : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-100 hover:border-slate-600'
-                      }`}
-                    >
-                      {opt.text}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Short Answer Input */}
-            {currentQuestion.type === 'ShortAnswer' && (
-              <div className="space-y-3 pt-2">
-                <input
-                  type="text"
-                  value={textAnswerInput}
-                  onChange={(e) => setTextAnswerInput(e.target.value)}
-                  disabled={isAnswerBlockedByImage || submissionStatus === 'submitting' || submissionStatus === 'accepted'}
-                  placeholder="اكتب الإجابة القصيرة هنا..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
-                />
-                <button
-                  onClick={() => handleSubmit()}
-                  disabled={isAnswerBlockedByImage || !textAnswerInput.trim() || submissionStatus === 'submitting' || submissionStatus === 'accepted'}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white font-bold py-3 rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  إرسال الإجابة 🚀
-                </button>
-              </div>
-            )}
-
-            {/* State indicators */}
-            {submissionStatus === 'submitting' && (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center text-xs text-amber-300 font-semibold animate-pulse">
-                جاري إرسال الإجابة والحصول على إيصال التوثيق... ⏳
-              </div>
-            )}
-
-            {submissionStatus === 'accepted' && (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center text-xs text-emerald-300 font-semibold">
-                accepted: تم توثيق إجابتك بحفظ دائم (Durable ACK)! ⚡
-              </div>
-            )}
-
-            {submissionStatus === 'rejected' && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-center text-xs text-rose-300 font-semibold">
-                فشل توثيق الإجابة: {rejectionReason}
-              </div>
-            )}
-          </>
-        )}
-
-        {phase === 'FINISHED' && (
-          <div className="text-center py-8 space-y-2">
-            <div className="text-4xl">🎉</div>
-            <h2 className="text-lg font-bold text-white">انتهت اللعبة!</h2>
-            <p className="text-xs text-slate-400">مجموع نقاطك النهائي: <strong className="text-emerald-400 font-mono">{ownScore}</strong></p>
-          </div>
-        )}
-      </div>
+      {(phase==='STATS'||phase==='LEADERBOARD')&&<section className="card p-8 text-center"><div className="text-5xl">{phase==='STATS'?'📊':'🏅'}</div><h2 className="mt-4 text-2xl font-black">{phase==='STATS'?'تم إغلاق السؤال':'الترتيب الحالي'}</h2><p className="mt-2 text-slate-500">نقاطك الحالية: <b className="text-violet-700">{ownScore}</b></p>{phase==='LEADERBOARD'&&<div className="mx-auto mt-6 max-w-md space-y-2">{(snapshot?.topPlayers||[]).map((player:any)=><div key={player.nickname} className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm font-bold"><span>{player.rank}. {player.nickname}</span><span className="text-violet-700">{player.score}</span></div>)}</div>}</section>}
+      {phase==='FINISHED'&&<section className="card p-12 text-center"><div className="text-6xl">🏆</div><h2 className="mt-4 text-3xl font-black">انتهت المسابقة!</h2><p className="mt-2 text-slate-500">مجموعك النهائي <b className="text-violet-700">{ownScore} نقطة</b></p><a href="/" className="secondary-btn mt-6 inline-block">العودة للرئيسية</a></section>}
     </div>
   );
 }
 
-export default function PlayPage() {
-  return (
-    <Suspense fallback={<div className="text-center py-10 text-slate-400">جاري تحميل شاشة اللاعب...</div>}>
-      <PlayContent />
-    </Suspense>
-  );
-}
+export default function PlayPage(){ return <Suspense fallback={<div className="card mx-auto max-w-md p-10 text-center">جاري تجهيز اللعبة…</div>}><PlayContent/></Suspense>; }

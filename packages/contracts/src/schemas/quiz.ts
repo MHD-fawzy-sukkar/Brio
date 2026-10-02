@@ -74,6 +74,7 @@ export type AuthoringQuestion = z.infer<typeof AuthoringQuestionSchema>;
  */
 export const SaveQuizRequestSchema = z.object({
   title: z.string().min(1).max(120),
+  coverImageUrl: z.string().url().max(2048).nullable().optional(),
   questions: z.array(AuthoringQuestionSchema).default([])
 });
 
@@ -85,6 +86,7 @@ export type SaveQuizRequest = z.infer<typeof SaveQuizRequestSchema>;
 export const QuizSummaryDtoSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
+  coverImageUrl: z.string().nullable().optional(),
   questionCount: z.number().int(),
   createdAt: z.string(),
   updatedAt: z.string()

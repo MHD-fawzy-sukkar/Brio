@@ -22,6 +22,9 @@ test('calculatePoints calculates correct standard, double, zero points', () => {
   assert.equal(calculatePoints(true, 'Double'), 2000);
   assert.equal(calculatePoints(true, 'Zero'), 0);
   assert.equal(calculatePoints(false, 'Standard'), 0);
+  assert.equal(calculatePoints(true, 'Standard', 0, 20000), 1000);
+  assert.equal(calculatePoints(true, 'Standard', 10000, 20000), 750);
+  assert.equal(calculatePoints(true, 'Standard', 20000, 20000), 500);
 });
 
 test('calculateCompetitionRanks calculates competition ranks (1,1,3) with join order tie-breaking for display', () => {

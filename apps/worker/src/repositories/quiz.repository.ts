@@ -15,6 +15,7 @@ export interface QuizRecord {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  cover_image_url: string | null;
 }
 
 export interface QuestionRecord {
@@ -26,6 +27,7 @@ export interface QuestionRecord {
   duration_ms: number;
   multiplier: PointsMultiplier;
   media_id: string | null;
+  media_url: string | null;
   essential: number;
   normalization_json: string | null;
 }
@@ -56,7 +58,7 @@ export interface QuizDetailRecord extends QuizRecord {
 export async function listQuizzesForCreator(db: D1Database, creatorId: string): Promise<QuizSummaryDto[]> {
   const { results } = await db
     .prepare(`
-      SELECT q.id, q.title, COUNT(qs.id) as questionCount, q.created_at as createdAt, q.updated_at as updatedAt
+      SELECT q.id, q.title, q.cover_image_url as coverImageUrl, COUNT(qs.id) as questionCount, q.created_at as createdAt, q.updated_at as updatedAt
       FROM quizzes q
       LEFT JOIN questions qs ON q.id = qs.quiz_id
       WHERE q.creator_id = ? AND q.archived_at IS NULL
@@ -75,7 +77,7 @@ export async function getQuizForCreator(
   creatorId: string
 ): Promise<QuizDetailRecord | null> {
   const quiz = await db
-    .prepare('SELECT id, creator_id, title, revision, created_at, updated_at, archived_at FROM quizzes WHERE id = ? AND creator_id = ? AND archived_at IS NULL')
+    .prepare('SELECT id, creator_id, title, revision, created_at, updated_at, archived_at, cover_image_url FROM quizzes WHERE id = ? AND creator_id = ? AND archived_at IS NULL')
     .bind(quizId, creatorId)
     .first<QuizRecord>();
 
@@ -84,7 +86,10 @@ export async function getQuizForCreator(
   }
 
   const { results: rawQuestions } = await db
-    .prepare('SELECT id, quiz_id, position, type, text, duration_ms, multiplier, media_id, essential, normalization_json FROM questions WHERE quiz_id = ? ORDER BY position ASC')
+    .prepare(`SELECT q.id, q.quiz_id, q.position, q.type, q.text, q.duration_ms, q.multiplier,
+      q.media_id, m.host_url AS media_url, q.essential, q.normalization_json
+      FROM questions q LEFT JOIN media m ON m.id = q.media_id
+      WHERE q.quiz_id = ? ORDER BY q.position ASC`)
     .bind(quizId)
     .all<QuestionRecord>();
 
@@ -118,14 +123,15 @@ export async function createQuizForCreator(
   db: D1Database,
   creatorId: string,
   title: string,
+  coverImageUrl?: string | null,
   initialQuestions?: AuthoringQuestion[]
 ): Promise<QuizDetailRecord> {
   const now = new Date().toISOString();
   const quizId = crypto.randomUUID();
 
   await db
-    .prepare('INSERT INTO quizzes (id, creator_id, title, revision, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)')
-    .bind(quizId, creatorId, title, now, now)
+    .prepare('INSERT INTO quizzes (id, creator_id, title, cover_image_url, revision, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)')
+    .bind(quizId, creatorId, title, coverImageUrl || null, now, now)
     .run();
 
   if (initialQuestions && initialQuestions.length > 0) {
@@ -157,6 +163,21 @@ export async function updateQuizTitle(
   }
 }
 
+export async function updateQuizDetails(
+  db: D1Database,
+  quizId: string,
+  creatorId: string,
+  title: string,
+  coverImageUrl?: string | null
+): Promise<void> {
+  const now = new Date().toISOString();
+  const res = await db
+    .prepare('UPDATE quizzes SET title = ?, cover_image_url = ?, updated_at = ? WHERE id = ? AND creator_id = ? AND archived_at IS NULL')
+    .bind(title, coverImageUrl || null, now, quizId, creatorId)
+    .run();
+  if (res.meta.changes === 0) throw new Error('Quiz not found or unauthorized');
+}
+
 export async function deleteQuizForCreator(db: D1Database, quizId: string, creatorId: string): Promise<void> {
   const now = new Date().toISOString();
   const res = await db
@@ -179,8 +200,8 @@ export function validateQuestionTypeRules(q: AuthoringQuestion): void {
 
   switch (q.type) {
     case 'MultipleChoice': {
-      if (!q.options || q.options.length !== 4) {
-        throw new Error('MultipleChoice questions must have exactly 4 options');
+      if (!q.options || q.options.length < 2) {
+        throw new Error('MultipleChoice questions must have at least 2 options');
       }
       const correctCount = q.options.filter((o) => o.isCorrect).length;
       if (correctCount !== 1) {
@@ -199,8 +220,8 @@ export function validateQuestionTypeRules(q: AuthoringQuestion): void {
       break;
     }
     case 'Poll': {
-      if (!q.options || q.options.length < 2 || q.options.length > 4) {
-        throw new Error('Poll questions must have between 2 and 4 options');
+      if (!q.options || q.options.length < 2) {
+        throw new Error('Poll questions must have at least 2 options');
       }
       const correctCount = q.options.filter((o) => o.isCorrect).length;
       if (correctCount !== 0) {
@@ -241,8 +262,8 @@ async function addQuestionToQuizInternal(
       q.text,
       q.durationMs,
       q.multiplier,
-      q.essentialImage || null,
-      q.essentialImage ? 1 : 0,
+      null,
+      0,
       null
     )
     .run();
@@ -288,6 +309,41 @@ export async function addQuestionToQuiz(
   await db.prepare('UPDATE quizzes SET updated_at = ? WHERE id = ?').bind(now, quizId).run();
 
   return questionId;
+}
+
+export async function updateQuestionInQuiz(
+  db: D1Database,
+  quizId: string,
+  questionId: string,
+  creatorId: string,
+  q: AuthoringQuestion
+): Promise<void> {
+  validateQuestionTypeRules(q);
+  const quiz = await getQuizForCreator(db, quizId, creatorId);
+  if (!quiz || !quiz.questions.some((question) => question.id === questionId)) {
+    throw new Error('Question not found or unauthorized');
+  }
+
+  await db.prepare(`
+    UPDATE questions
+    SET type = ?, text = ?, duration_ms = ?, multiplier = ?
+    WHERE id = ? AND quiz_id = ?
+  `).bind(q.type, q.text, q.durationMs, q.multiplier, questionId, quizId).run();
+
+  await db.prepare('DELETE FROM question_options WHERE question_id = ?').bind(questionId).run();
+  await db.prepare('DELETE FROM short_answer_alternatives WHERE question_id = ?').bind(questionId).run();
+
+  for (let index = 0; index < q.options.length; index++) {
+    const option = q.options[index];
+    await db.prepare('INSERT INTO question_options (id, question_id, position, text, is_correct) VALUES (?, ?, ?, ?, ?)')
+      .bind(crypto.randomUUID(), questionId, index + 1, option.text, option.isCorrect ? 1 : 0).run();
+  }
+  for (const alternative of q.acceptedAlternatives) {
+    await db.prepare('INSERT INTO short_answer_alternatives (id, question_id, normalized_value) VALUES (?, ?, ?)')
+      .bind(crypto.randomUUID(), questionId, normalizeShortAnswer(alternative)).run();
+  }
+
+  await db.prepare('UPDATE quizzes SET updated_at = ? WHERE id = ?').bind(new Date().toISOString(), quizId).run();
 }
 
 export async function deleteQuestionFromQuiz(
@@ -362,6 +418,7 @@ export async function publishQuizVersion(
   const privateSnapshot = {
     id: quiz.id,
     title: quiz.title,
+    coverImageUrl: quiz.cover_image_url,
     revision: newRevision,
     publishedAt: new Date().toISOString(),
     questions: quiz.questions.map((q) => ({
@@ -370,7 +427,7 @@ export async function publishQuizVersion(
       text: q.text,
       durationMs: q.duration_ms,
       multiplier: q.multiplier,
-      essentialImage: q.media_id,
+      essentialImage: q.media_url,
       options: q.options.map((o) => ({
         id: o.id,
         text: o.text,
@@ -419,4 +476,3 @@ export async function getLatestQuizVersion(
 
   return row || null;
 }
-

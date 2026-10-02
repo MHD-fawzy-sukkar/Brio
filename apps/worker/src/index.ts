@@ -22,9 +22,10 @@ import {
   listQuizzesForCreator,
   getQuizForCreator,
   createQuizForCreator,
-  updateQuizTitle,
+  updateQuizDetails,
   deleteQuizForCreator,
   addQuestionToQuiz,
+  updateQuestionInQuiz,
   deleteQuestionFromQuiz,
   reorderQuizQuestions,
   publishQuizVersion,
@@ -32,7 +33,10 @@ import {
 } from './repositories/quiz.repository';
 import {
   reserveRoomSlot,
-  findRoomByCode
+  findRoomByCode,
+  findJoinableRoomById,
+  findRoomForCreator,
+  finishRoomForCreator
 } from './repositories/room-directory.repository';
 import {
   GoogleAuthRequestSchema,
@@ -128,11 +132,11 @@ app.post('/api/auth/google', async (c) => {
     googlePayload.name
   );
 
-  const session = await createSessionInfo();
+  const session = await createSessionInfo(parsed.data.remember);
   await createSessionRecord(c.env.DB, creator.id, session.sessionHash, session.expiresAt);
 
   const isProd = (c.env as any).NODE_ENV === 'production';
-  const cookieHeader = buildSessionCookie(session.sessionToken, isProd);
+  const cookieHeader = buildSessionCookie(session.sessionToken, isProd, parsed.data.remember);
 
   c.header('Set-Cookie', cookieHeader);
 
@@ -216,7 +220,7 @@ app.post('/api/quizzes', async (c) => {
   }
 
   try {
-    const quiz = await createQuizForCreator(c.env.DB, creator.id, parsed.data.title, parsed.data.questions);
+    const quiz = await createQuizForCreator(c.env.DB, creator.id, parsed.data.title, parsed.data.coverImageUrl, parsed.data.questions);
     return c.json(quiz, 201);
   } catch (err: any) {
     return rfc7807Error(c, 400, 'business_rule_violation', err.message);
@@ -254,12 +258,11 @@ app.patch('/api/quizzes/:id', async (c) => {
     return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body');
   }
 
-  if (!body.title || typeof body.title !== 'string') {
-    return rfc7807Error(c, 400, 'validation_failed', 'Title string is required');
-  }
+  const parsed = SaveQuizRequestSchema.pick({ title: true, coverImageUrl: true }).safeParse(body);
+  if (!parsed.success) return rfc7807Error(c, 400, 'validation_failed', 'Valid title and optional cover image are required', parsed.error.flatten().fieldErrors);
 
   try {
-    await updateQuizTitle(c.env.DB, quizId, creator.id, body.title);
+    await updateQuizDetails(c.env.DB, quizId, creator.id, parsed.data.title, parsed.data.coverImageUrl);
     return c.json({ status: 'updated' });
   } catch (err: any) {
     return rfc7807Error(c, 404, 'not_found', err.message);
@@ -325,6 +328,21 @@ app.delete('/api/quizzes/:id/questions/:questionId', async (c) => {
     return c.json({ status: 'question_deleted' });
   } catch (err: any) {
     return rfc7807Error(c, 404, 'not_found', err.message);
+  }
+});
+
+app.put('/api/quizzes/:id/questions/:questionId', async (c) => {
+  const creator = await getAuthCreator(c);
+  if (!creator) return rfc7807Error(c, 401, 'unauthorized', 'Authentication required');
+  let body: unknown;
+  try { body = await c.req.json(); } catch { return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body'); }
+  const parsed = AuthoringQuestionSchema.safeParse(body);
+  if (!parsed.success) return rfc7807Error(c, 400, 'validation_failed', 'Validation failed for question data', parsed.error.flatten().fieldErrors);
+  try {
+    await updateQuestionInQuiz(c.env.DB, c.req.param('id'), c.req.param('questionId'), creator.id, parsed.data);
+    return c.json({ status: 'question_updated' });
+  } catch (err: any) {
+    return rfc7807Error(c, 400, 'business_rule_violation', err.message);
   }
 });
 
@@ -438,6 +456,9 @@ app.post('/api/media/complete', async (c) => {
 
 // 14.7 Mock Media Upload Fallback Endpoint (for dev/test environments)
 app.post('/api/media/mock-upload', async (c) => {
+  if (c.env.DEV_MEDIA_BYPASS !== 'true') {
+    return rfc7807Error(c, 404, 'not_found', 'Route not found');
+  }
   return c.json({
     public_id: 'mock_uploaded_img',
     format: 'webp',
@@ -480,6 +501,13 @@ app.post('/api/rooms', async (c) => {
   try {
     const reservation = await reserveRoomSlot(c.env.DB, creator.id, versionRecord.id);
 
+    // Close replaced Durable Objects after their directory slots are released.
+    // A failed best-effort close cannot lock the creator out again because D1 is authoritative.
+    await Promise.allSettled(reservation.replacedRoomIds.map(async (roomId) => {
+      const oldId = c.env.GAME_ROOM.idFromName(roomId);
+      await c.env.GAME_ROOM.get(oldId).fetch(new Request('http://internal/close', { method: 'POST' }));
+    }));
+
     const doId = c.env.GAME_ROOM.idFromName(reservation.roomId);
     const stub = c.env.GAME_ROOM.get(doId);
 
@@ -497,6 +525,7 @@ app.post('/api/rooms', async (c) => {
     );
 
     if (!setupRes.ok) {
+      await finishRoomForCreator(c.env.DB, reservation.roomId, creator.id);
       return rfc7807Error(c, 500, 'do_setup_failed', 'Failed to initialize room Durable Object');
     }
 
@@ -504,6 +533,20 @@ app.post('/api/rooms', async (c) => {
   } catch (err: any) {
     return rfc7807Error(c, 400, 'room_creation_denied', err.message);
   }
+});
+
+// Explicitly finish a room owned by the authenticated creator.
+app.delete('/api/rooms/:roomId', async (c) => {
+  const creator = await getAuthCreator(c);
+  if (!creator) return rfc7807Error(c, 401, 'unauthorized', 'Authentication required');
+  const roomId = c.req.param('roomId');
+  const room = await findRoomForCreator(c.env.DB, roomId, creator.id);
+  if (!room) return rfc7807Error(c, 404, 'room_not_found', 'Room not found or access denied');
+
+  await finishRoomForCreator(c.env.DB, roomId, creator.id);
+  const id = c.env.GAME_ROOM.idFromName(roomId);
+  await c.env.GAME_ROOM.get(id).fetch(new Request('http://internal/close', { method: 'POST' })).catch(() => null);
+  return c.json({ status: 'finished' });
 });
 
 // 16. PIN Lookup Route
@@ -525,6 +568,8 @@ app.get('/api/rooms/by-code/:code', async (c) => {
 // 17. Player Join Endpoint
 app.post('/api/rooms/:roomId/join', async (c) => {
   const roomId = c.req.param('roomId');
+  const room = await findJoinableRoomById(c.env.DB, roomId);
+  if (!room) return rfc7807Error(c, 404, 'room_not_found', 'Game not found or no longer accepting players');
   let body: any;
   try {
     body = await c.req.json();
@@ -555,7 +600,8 @@ app.post('/api/rooms/:roomId/join', async (c) => {
   );
 
   if (!joinRes.ok) {
-    return rfc7807Error(c, 400, 'join_failed', 'Failed to join room');
+    const problem = await joinRes.json().catch(() => null) as { detail?: string } | null;
+    return rfc7807Error(c, joinRes.status === 409 ? 409 : 400, 'join_failed', problem?.detail || 'Failed to join room');
   }
 
   return c.json({
@@ -623,6 +669,13 @@ app.all('/ws/rooms/:roomId', async (c) => {
 
   if (!validateOrigin(c.req.raw)) {
     return rfc7807Error(c, 403, 'forbidden_origin', 'Cross-origin WebSocket upgrade denied');
+  }
+
+  const room = await findJoinableRoomById(c.env.DB, roomId);
+  if (!room) return rfc7807Error(c, 404, 'room_not_found', 'Game not found or expired');
+  if (c.req.query('role') === 'host') {
+    const creator = await getAuthCreator(c);
+    if (!creator || creator.id !== room.creator_id) return rfc7807Error(c, 401, 'unauthorized', 'Host authentication required');
   }
 
   const id = c.env.GAME_ROOM.idFromName(roomId);

@@ -1,6 +1,38 @@
 # Brio — Project Memory and Current Decisions
 
-Updated: 2026-09-30. Read this on every engineering iteration; update only with observed work/evidence.
+Updated: 2026-10-02. Read this on every engineering iteration; update only with observed work/evidence.
+
+## 2026-10-02 — Production UX, quiz CRUD, join flow, and media hardening
+
+- Confirmed the live D1 `quizzes` and `media` tables were still on the old schema. Applied additive migration `0002_quiz_covers_and_media_columns.sql`; no tables or user rows were deleted.
+- Fixed quiz listing/creation compatibility with the live schema and deployed final Worker version `bf0c3a46-d7c0-4a57-872c-159f828e0a91`.
+- Moved quiz creation to `/quizzes/new/`; the dashboard now focuses on metrics and recent quizzes.
+- Quiz covers are selected as image files (JPG/PNG/WebP/AVIF, up to 5MB), not pasted URLs. The shared client pipeline signs, uploads to Cloudinary, and records responsive variants.
+- Production currently has only `GOOGLE_CLIENT_ID`; `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` remain externally pending. Missing media credentials now fail explicitly instead of returning fake/broken fixture URLs.
+- Merged the duplicate home/join navigation. `/` validates only the six-digit PIN, `/join/` collects nickname/avatar, and `/play/` owns the live waiting lobby.
+- Reworked login into a centered standard Google Identity card while keeping Google-owned DOM isolated from React.
+- Changed the service worker to never cache navigation HTML, eliminating stale HTML/new-chunk hydration mismatches (React error #418) after deployments.
+- Evidence: TypeScript passed for all workspaces; 36 tests passed; Next production export generated 13 pages; live smoke checks returned 200 for health/home/login/join/new-quiz and the expected 401 JSON response for unauthenticated `/api/quizzes`.
+
+## 2026-10-02 — Room lifecycle, quiz management, dynamic options, and live Cloudinary
+
+- Fixed the creator room lockout at the authoritative layers: natural/explicit DO finish updates D1; starting a room replaces stale creator rooms; `/api/rooms/:roomId` supports an owner-authenticated explicit finish; old DO clients are closed best-effort.
+- Added migration `0003_room_lifecycle_indexes.sql`, which repairs historical duplicate active slots and enforces one active directory row per creator with a partial unique index. Applied successfully to production.
+- Added host “End game”, builder “Start game”, quiz deletion confirmation dialog, cover removal, and graceful create-then-cover-upload failure handling.
+- Multiple-choice and poll questions now accept 2+ dynamic options with add/remove controls. Correct-answer and remove controls are skipped during Tab traversal so answer text inputs remain consecutive.
+- Question media is a file upload directly below the question text. Question persistence and media persistence are separate; a failed image upload does not lose the saved question.
+- Corrected published question media to use the Cloudinary host URL rather than an internal media UUID.
+- Stored `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` as encrypted Worker secrets. No credential was added to frontend code or tracked environment files.
+- Evidence: all workspace TypeScript checks passed; 35 focused unit/integration tests passed, including start/end/immediate-restart and DO-to-D1 finish synchronization; Next exported all 13 pages; live UI QA verified Google sign-in rendering, invalid PIN recovery, and zero browser console errors.
+- Production Worker version: `65cf5fce-2f24-4e32-b2b7-6cccf3863862`.
+
+## 2026-10-02 — Environment file consolidation
+
+- Removed redundant root `.env.example`, `apps/web/.env`, and `apps/web/.env.production` files.
+- The only local runtime files are now `apps/web/.env.local` for the public Google browser client ID and `apps/worker/.dev.vars` for Worker-only Google/Cloudinary values.
+- Added safe committed templates beside each runtime file: `apps/web/.env.example` and `apps/worker/.dev.vars.example`.
+- Verified both real runtime files are ignored by Git and documented exact setup/production commands in `docs/13-Environment-Setup.md`.
+- TypeScript checks passed and the production web export succeeded using only `.env.local` (13 pages).
 
 ## 1. Current decision
 Target architecture v2: TypeScript, static Next.js frontend, Cloudflare Worker API, SQLite Durable Object per room, D1 authoring/archive, Cloudinary media. This is the selected plan proposed in response to the user's permission to change stack if given clear docs/prompts. It has NOT been implemented or deployed by the documentation task.
@@ -61,6 +93,30 @@ The previous document says builds and tests passed, but no source or test output
 Account owner opens Cloudflare Dashboard to enable free `workers.dev` subdomain, then runs `pnpm --filter @brio/worker wrangler deploy`. Do NOT automatically begin P8.
 
 ## 8. Per-phase update log
+
+### Auth routing and real-time lobby enhancement (2026-10-02)
+- Added reusable creator route guards plus route/global error boundaries so missing or expired sessions redirect safely instead of rendering protected pages and crashing.
+- Removed demo join fallbacks. The join form now validates the six-digit code through D1, joins through the API, cancels stale requests on unmount, and displays bounded errors.
+- Added room existence checks for HTTP joins and WebSocket upgrades, creator authentication for host sockets, and late-join rejection after the lobby closes.
+- Added live lobby roster data to role-safe snapshots. Player and host lobby screens update from Durable Object broadcasts and animate participant avatars until the host starts.
+- Rebuilt player and host live views in light mode and applied Cairo as the Arabic UI font with system fallbacks.
+- Improved WebSocket connection state, bounded reconnect, pending-request cleanup, and service-worker listener cleanup.
+- Verification: TypeScript checks passed, 43 tests passed, and Next production static export generated all 11 pages.
+
+### Login DOM ownership and anonymous auth state fix (2026-10-02)
+- Added `AuthProvider` as the single auth state source. A 401 from `/api/auth/me` now becomes `user = null` and `loading = false`; it is never thrown as a route error. The login route skips the probe entirely.
+- Added a permanent, React-empty Google button container. Google owns only the container contents, while React owns the surrounding layout; effect cleanup no longer removes or replaces Google-managed nodes.
+- Added guarded Google script initialization, callback cancellation on unmount, and safe script-load error rendering.
+- Verification: TypeScript checks passed, 43 tests passed, and the Next production static export completed successfully.
+
+### Creator UX and scoring enhancement (2026-10-02)
+- Replaced the duplicated Google OAuth controls with one official Google Identity Services button and added an optional 30-day remembered session.
+- Added a visible logout action to the shared navigation and removed dashboard authentication/mock-data fallbacks.
+- Split authoring into dashboard, quiz overview/settings, and a dedicated create/update question route.
+- Added optional quiz cover metadata and a follow-up D1 migration; empty quizzes no longer receive sample questions.
+- Added real question update API/repository support and editable MCQ, true/false, poll, and short-answer fields.
+- Changed correct-answer scoring to award 50–100% of the selected base value using server-recorded response time.
+- Verification: direct TypeScript checks passed, 42 tests passed, and Next static production build exported all 11 pages including /questions.
 
 ### P7 — Free cloud staging/pilot deployment (2026-10-01)
 - **Date / phase:** 2026-10-01 / P7 Free cloud staging/pilot deployment.
@@ -379,4 +435,3 @@ Account owner opens Cloudflare Dashboard to enable free `workers.dev` subdomain,
   - Resolved document conflicts by establishing v2 docs as canonical and archiving v1 docs in `docs/archive/`.
 - **Current phase status:** COMPLETED (Audit Gate PASSED).
 - **Exact next action:** Execute Phase P1 prompt (`pnpm` workspace, `apps/web`, `apps/worker`, `packages/contracts`, `packages/game-core`).
-

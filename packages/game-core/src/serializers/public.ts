@@ -65,6 +65,7 @@ export function toPublicPlayerSnapshot(
       rank: r.rank
     };
   });
+  const lobbyPlayers = Array.from(state.players.values()).map((p) => ({ id: p.id, nickname: p.nickname, avatarId: p.avatarId }));
 
   // Current public question (redacted)
   let publicQuestion: PublicQuestion | null = null;
@@ -85,7 +86,8 @@ export function toPublicPlayerSnapshot(
     question: publicQuestion,
     ownScore,
     ownRank,
-    topPlayers
+    topPlayers,
+    lobbyPlayers
   };
 }
 
@@ -115,7 +117,7 @@ export function toPublicHostSnapshot(
   return {
     role: 'host',
     roomId: state.roomId,
-    code: state.roomId,
+    code: quiz.roomCode || state.roomId,
     phase: state.phase,
     stateVersion: state.stateVersion,
     roundId: state.activeRound ? state.activeRound.roundId : null,
@@ -123,6 +125,7 @@ export function toPublicHostSnapshot(
     phaseStartedAt: state.activeRound ? state.activeRound.startsAt : 0,
     phaseEndsAt: state.activeRound ? state.activeRound.endsAt : 0,
     playerCount: state.players.size,
+    lobbyPlayers: Array.from(state.players.values()).map((p) => ({ id: p.id, nickname: p.nickname, avatarId: p.avatarId })),
     acceptedAnswersCount,
     question: publicQuestion
   };

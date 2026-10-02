@@ -21,20 +21,26 @@ export async function reserveRoomSlot(
   db: D1Database,
   creatorId: string,
   quizVersionId: string
-): Promise<{ roomId: string; code: string }> {
+): Promise<{ roomId: string; code: string; replacedRoomIds: string[] }> {
   const nowIso = new Date().toISOString();
 
-  // 1. Check Creator Limit: max 1 active room per creator
-  const creatorActive = await db
-    .prepare("SELECT COUNT(*) as cnt FROM room_directory WHERE creator_id = ? AND status IN ('reserved', 'active') AND event_expires_at > ?")
-    .bind(creatorId, nowIso)
-    .first<{ cnt: number }>();
+  // Expired rows must never consume pilot capacity, even if housekeeping was delayed.
+  await db.prepare("UPDATE room_directory SET status = 'expired' WHERE status IN ('reserved', 'active') AND event_expires_at <= ?")
+    .bind(nowIso).run();
 
-  if (creatorActive && creatorActive.cnt >= 1) {
-    throw new Error('Creator quota exceeded: At most 1 active room per creator is allowed');
+  // A creator starting a new room replaces any previous room. This is the
+  // server-side safety net for closed tabs, network loss, and interrupted hosts.
+  const { results: previousRooms } = await db
+    .prepare("SELECT room_id FROM room_directory WHERE creator_id = ? AND status IN ('reserved', 'active')")
+    .bind(creatorId)
+    .all<{ room_id: string }>();
+  const replacedRoomIds = (previousRooms || []).map((room) => room.room_id);
+  if (replacedRoomIds.length > 0) {
+    await db.prepare("UPDATE room_directory SET status = 'finished', event_expires_at = ? WHERE creator_id = ? AND status IN ('reserved', 'active')")
+      .bind(nowIso, creatorId).run();
   }
 
-  // 2. Check Global Pilot Ceiling: max 2 active rooms deployment-wide
+  // Global Pilot Ceiling: max 2 active rooms deployment-wide.
   const globalActive = await db
     .prepare("SELECT COUNT(*) as cnt FROM room_directory WHERE status IN ('reserved', 'active') AND event_expires_at > ?")
     .bind(nowIso)
@@ -58,7 +64,30 @@ export async function reserveRoomSlot(
     .bind(roomId, code, creatorId, quizVersionId, reservationExpiresAt, eventExpiresAt)
     .run();
 
-  return { roomId, code };
+  return { roomId, code, replacedRoomIds };
+}
+
+export async function markRoomFinished(db: D1Database, roomId: string): Promise<void> {
+  await db
+    .prepare("UPDATE room_directory SET status = 'finished', event_expires_at = ? WHERE room_id = ? AND status IN ('reserved', 'active')")
+    .bind(new Date().toISOString(), roomId)
+    .run();
+}
+
+export async function finishRoomForCreator(db: D1Database, roomId: string, creatorId: string): Promise<boolean> {
+  const result = await db
+    .prepare("UPDATE room_directory SET status = 'finished', event_expires_at = ? WHERE room_id = ? AND creator_id = ? AND status IN ('reserved', 'active')")
+    .bind(new Date().toISOString(), roomId, creatorId)
+    .run();
+  return Number(result.meta.changes) > 0;
+}
+
+export async function findRoomForCreator(db: D1Database, roomId: string, creatorId: string): Promise<RoomDirectoryRecord | null> {
+  const row = await db
+    .prepare('SELECT room_id, code, creator_id, quiz_version_id, status, reservation_expires_at, event_expires_at FROM room_directory WHERE room_id = ? AND creator_id = ?')
+    .bind(roomId, creatorId)
+    .first<RoomDirectoryRecord>();
+  return row || null;
 }
 
 export async function findRoomByCode(
@@ -71,5 +100,11 @@ export async function findRoomByCode(
     .bind(code, nowIso)
     .first<RoomDirectoryRecord>();
 
+  return row || null;
+}
+
+export async function findJoinableRoomById(db: D1Database, roomId: string): Promise<RoomDirectoryRecord | null> {
+  const row = await db.prepare("SELECT room_id, code, creator_id, quiz_version_id, status, reservation_expires_at, event_expires_at FROM room_directory WHERE room_id = ? AND status IN ('reserved', 'active') AND event_expires_at > ?")
+    .bind(roomId, new Date().toISOString()).first<RoomDirectoryRecord>();
   return row || null;
 }

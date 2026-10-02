@@ -96,6 +96,7 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
       const sig = await generateCloudinarySignature(mockEnv, 'creator_1', {
         quizId: '11111111-1111-1111-1111-111111111111',
         questionId: '22222222-2222-2222-2222-222222222222',
+        target: 'question',
         byteSize: 1024 * 500,
         mimeType: 'image/webp',
         isEssential: true
@@ -117,6 +118,20 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
 
       const result = UploadSignatureRequestSchema.safeParse(invalidPayload);
       assert.equal(result.success, false);
+    });
+
+    it('fails closed when Cloudinary credentials are absent outside explicit development bypass', async () => {
+      await assert.rejects(
+        () => generateCloudinarySignature({}, 'creator_1', {
+          quizId: '11111111-1111-1111-1111-111111111111',
+          questionId: '22222222-2222-2222-2222-222222222222',
+          target: 'question',
+          byteSize: 1024,
+          mimeType: 'image/png',
+          isEssential: true
+        }),
+        /Cloudinary|رفع الصور/
+      );
     });
   });
 

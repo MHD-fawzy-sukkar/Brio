@@ -28,6 +28,7 @@ export interface PublishedQuizSnapshot {
   id: string;
   title: string;
   revision: number;
+  roomCode?: string;
   questions: PublishedQuestion[];
 }
 

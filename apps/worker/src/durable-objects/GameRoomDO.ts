@@ -1,6 +1,7 @@
 import {
   createInitialGameState,
   startQuiz,
+  endQuiz,
   processAnswerSubmission,
   reconcileDeadlines,
   requestPause,
@@ -23,11 +24,18 @@ import {
   saveAnswerToDb,
   saveRoomMetaToDb
 } from '../rooms/room-storage';
+import { markRoomFinished } from '../repositories/room-directory.repository';
 
 export interface Env {
   DB: D1Database;
   GAME_ROOM: any;
   ASSETS: any;
+  GOOGLE_CLIENT_ID?: string;
+  CLOUDINARY_CLOUD_NAME?: string;
+  CLOUDINARY_API_KEY?: string;
+  CLOUDINARY_API_SECRET?: string;
+  DEV_AUTH_BYPASS?: string;
+  DEV_MEDIA_BYPASS?: string;
 }
 
 export interface RoomMetrics {
@@ -103,6 +111,10 @@ export class GameRoomDO {
         await this.ctx.storage.deleteAlarm();
       }
     }
+
+    if (this.state.phase === 'FINISHED' && this.state.roomId && this.env.DB) {
+      await markRoomFinished(this.env.DB, this.state.roomId);
+    }
   }
 
   broadcastState(): void {
@@ -149,15 +161,24 @@ export class GameRoomDO {
     if (url.pathname.endsWith('/setup') && request.method === 'POST') {
       const body = (await request.json()) as any;
       if (body.quizSnapshot) {
-        await this.initQuizSnapshot(body.quizSnapshot);
+        this.state.roomId = body.roomId;
+        await this.initQuizSnapshot({ ...body.quizSnapshot, roomCode: body.code });
         return new Response(JSON.stringify({ status: 'ok', roomId: this.ctx.id.toString() }), {
           headers: { 'Content-Type': 'application/json' }
         });
       }
     }
 
+    if (url.pathname.endsWith('/close') && request.method === 'POST') {
+      const effects = endQuiz(this.state);
+      await this.applyEffects(effects);
+      return new Response(JSON.stringify({ status: 'finished' }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     // 2. Player Join HTTP endpoint
     if (url.pathname.endsWith('/join') && request.method === 'POST') {
+      if (!this.quizSnapshot) return new Response(JSON.stringify({ detail: 'Game not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+      if (this.state.phase !== 'LOBBY') return new Response(JSON.stringify({ detail: 'Game has already started' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
       const body = (await request.json()) as any;
       const { playerId, nickname, avatarId, sessionHash } = body;
 
@@ -440,6 +461,12 @@ export class GameRoomDO {
       // 3. Host Controls
       if (data.type === 'host.start') {
         const effects = startQuiz(this.state, this.quizSnapshot, now);
+        await this.applyEffects(effects);
+        return;
+      }
+
+      if (data.type === 'host.end') {
+        const effects = endQuiz(this.state);
         await this.applyEffects(effects);
         return;
       }

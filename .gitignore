@@ -20,6 +20,13 @@ packages/*/dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+.dev.vars
+apps/**/.env
+apps/**/.env.*
+apps/**/.dev.vars
+!.env.example
+!apps/**/.env.example
 
 # Logs
 npm-debug.log*

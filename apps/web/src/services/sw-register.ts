@@ -1,9 +1,9 @@
-export function registerServiceWorker(onForegroundResync?: () => void): void {
+export function registerServiceWorker(onForegroundResync?: () => void): () => void {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-    return;
+    return () => {};
   }
 
-  window.addEventListener('load', () => {
+  const register = () => {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
@@ -29,12 +29,19 @@ export function registerServiceWorker(onForegroundResync?: () => void): void {
       .catch((err) => {
         console.warn('Service Worker registration failed:', err);
       });
-  });
+  };
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
 
   // Handle tab foreground resync
-  document.addEventListener('visibilitychange', () => {
+  const onVisibility = () => {
     if (document.visibilityState === 'visible' && onForegroundResync) {
       onForegroundResync();
     }
-  });
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+  return () => {
+    window.removeEventListener('load', register);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
 }

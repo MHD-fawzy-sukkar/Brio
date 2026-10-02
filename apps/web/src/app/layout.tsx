@@ -1,42 +1,39 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AuthNav } from '../components/AuthNav';
+import { AuthProvider } from '../components/AuthProvider';
 
 export const metadata: Metadata = {
-  title: 'Brio — منصة المسابقات التفاعلية الحية',
-  description: 'منصة مسابقات تفاعلية حية بدون رسوم أو اشتراكات',
+  title: 'Brio — مسابقات تفاعلية حية',
+  description: 'أنشئ مسابقات ممتعة وشاركها مباشرة مع جمهورك.'
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
-        <header className="w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2 text-xl font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
-              <span className="text-2xl">⚡</span>
-              <span>بريو | Brio</span>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      </head>
+      <body className="min-h-screen flex flex-col antialiased">
+        <AuthProvider>
+        <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+          <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
+            <a href="/" className="flex items-center gap-2.5 text-xl font-black text-slate-900">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-violet-600 text-white shadow-lg shadow-violet-200">⚡</span>
+              <span>Brio</span>
             </a>
-            <nav className="flex items-center gap-4 text-sm font-medium">
-              <a href="/play/" className="text-slate-300 hover:text-white transition-colors">الانضمام للعبة</a>
-              <a href="/login/" className="text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg hover:border-indigo-500/60 transition-colors">تسجيل المنشئ</a>
+            <nav className="hidden items-center gap-2 md:flex" aria-label="التنقل الرئيسي">
+              <a href="/" className="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100">انضم للعبة</a>
+              <a href="/dashboard/" className="rounded-xl px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100">مسابقاتي</a>
             </nav>
+            <AuthNav />
           </div>
         </header>
-
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
-          {children}
-        </main>
-
-        <footer className="w-full border-t border-slate-800 py-4 text-center text-xs text-slate-500">
-          <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-2">
-            <p>جميع الحقوق محفوظة منصة Brio © 2026</p>
-            <p className="font-mono text-slate-600">نسخة النظام: v2.0-p1</p>
-          </div>
-        </footer>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+        <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-500">Brio © 2026 — متعة أكثر، إعداد أقل.</footer>
+        </AuthProvider>
       </body>
     </html>
   );

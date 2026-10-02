@@ -74,7 +74,8 @@ export const PlayerSnapshotDtoSchema = z.object({
       score: z.number().int(),
       rank: z.number().int()
     })
-  )
+  ),
+  lobbyPlayers: z.array(z.object({ id: z.string(), nickname: z.string(), avatarId: z.string() }))
 });
 
 export type PlayerSnapshotDto = z.infer<typeof PlayerSnapshotDtoSchema>;
@@ -93,6 +94,7 @@ export const HostSnapshotDtoSchema = z.object({
   phaseStartedAt: z.number().int(),
   phaseEndsAt: z.number().int(),
   playerCount: z.number().int(),
+  lobbyPlayers: z.array(z.object({ id: z.string(), nickname: z.string(), avatarId: z.string() })),
   acceptedAnswersCount: z.number().int().optional(),
   question: PublicQuestionSchema.nullable()
 });

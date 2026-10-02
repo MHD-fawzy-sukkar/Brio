@@ -3,7 +3,8 @@
  */
 
 export const SESSION_COOKIE_NAME = 'brio_creator_session';
-export const SESSION_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 hours
+export const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000;
+export const REMEMBERED_SESSION_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 
 export interface SessionInfo {
   sessionToken: string;
@@ -19,10 +20,10 @@ export async function hashSessionToken(token: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export async function createSessionInfo(): Promise<SessionInfo> {
+export async function createSessionInfo(remember = false): Promise<SessionInfo> {
   const sessionToken = crypto.randomUUID() + '-' + crypto.randomUUID();
   const sessionHash = await hashSessionToken(sessionToken);
-  const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS).toISOString();
+  const expiresAt = new Date(Date.now() + (remember ? REMEMBERED_SESSION_LIFETIME_MS : SESSION_LIFETIME_MS)).toISOString();
 
   return {
     sessionToken,
@@ -46,15 +47,15 @@ export function parseCookies(cookieHeader: string | null): Record<string, string
   return cookies;
 }
 
-export function buildSessionCookie(token: string, isProduction: boolean): string {
-  const sameSite = isProduction ? 'None' : 'Lax';
+export function buildSessionCookie(token: string, isProduction: boolean, remember = false): string {
+  const sameSite = 'Lax';
   const secure = isProduction ? '; Secure' : '';
-  const maxAge = Math.floor(SESSION_LIFETIME_MS / 1000);
-  return `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=${maxAge}${secure}`;
+  const persistent = remember ? `; Max-Age=${Math.floor(REMEMBERED_SESSION_LIFETIME_MS / 1000)}` : '';
+  return `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=${sameSite}${persistent}${secure}`;
 }
 
 export function buildLogoutCookie(isProduction: boolean): string {
-  const sameSite = isProduction ? 'None' : 'Lax';
+  const sameSite = 'Lax';
   const secure = isProduction ? '; Secure' : '';
   return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=0${secure}`;
 }
