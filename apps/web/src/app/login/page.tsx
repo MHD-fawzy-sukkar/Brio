@@ -106,18 +106,18 @@ export default function LoginPage() {
   return (
     <div className="relative mx-auto flex min-h-[72vh] max-w-5xl items-center justify-center overflow-hidden py-8">
       <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => setScriptLoaded(true)} onError={() => { setError('تعذر تحميل خدمة Google. تحقق من اتصالك ثم أعد المحاولة.'); setLoading(false); }} />
-      <div className="absolute right-1/4 top-12 h-56 w-56 rounded-full bg-violet-200/40 blur-3xl" />
+      <div className="absolute right-1/4 top-12 h-56 w-56 rounded-full bg-brand-200/40 blur-3xl" />
       <div className="absolute bottom-10 left-1/4 h-48 w-48 rounded-full bg-amber-100/70 blur-3xl" />
       <section className="card relative w-full max-w-md p-7 sm:p-10">
         <div className="mb-8 text-center">
-          <a href="/" className="mx-auto flex w-fit items-center gap-2 text-xl font-black text-slate-900"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-200">⚡</span><span>Brio</span></a>
+          <a href="/" className="mx-auto flex w-fit items-center gap-2 text-xl font-black text-slate-900"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-200">⚡</span><span>Brio</span></a>
           <h1 className="mt-7 text-2xl font-black text-slate-900">تسجيل الدخول</h1>
           <p className="mt-2 text-sm leading-6 text-slate-500">تابع إلى مساحة مسابقاتك باستخدام حساب Google.</p>
         </div>
         {error && <div role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
         <div className="flex min-h-12 w-full justify-center overflow-hidden" ref={buttonRef} aria-label="تسجيل الدخول بواسطة Google" />
         {loading && <p className="mt-2 text-center text-sm text-slate-400">جاري تحميل تسجيل الدخول…</p>}
-        <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm font-bold text-slate-600"><input type="checkbox" checked={remember} onChange={(event) => { setRemember(event.target.checked); rememberRef.current = event.target.checked; }} className="h-4 w-4 accent-violet-600" />تذكّرني على هذا الجهاز لمدة 30 يوماً</label>
+        <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm font-bold text-slate-600"><input type="checkbox" checked={remember} onChange={(event) => { setRemember(event.target.checked); rememberRef.current = event.target.checked; }} className="h-4 w-4 accent-brand-600" />تذكّرني على هذا الجهاز لمدة 30 يوماً</label>
         <div className="my-6 flex items-center gap-3 text-xs text-slate-300"><span className="h-px flex-1 bg-slate-200" /><span>دخول آمن</span><span className="h-px flex-1 bg-slate-200" /></div>
         <p className="text-center text-xs leading-6 text-slate-400">لن يحصل Brio على كلمة مرور Google. بالمتابعة أنت توافق على استخدام جلسة آمنة لإدارة مسابقاتك.</p>
       </section>

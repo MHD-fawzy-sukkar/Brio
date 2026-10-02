@@ -1,28 +1,33 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ButtonContent } from '../components/Loading';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../components/AuthProvider';
+import { ButtonContent, PageSkeleton } from '../components/Loading';
+import { normalizePin, resolveHomeExperience } from '../services/home-routing';
 
-function normalizePin(value: string) {
-  return value.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/\D/g, '').slice(0, 6);
-}
-
-export default function HomePage() {
+function GuestJoinGame() {
   const [code, setCode] = useState('');
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestRef = useRef<AbortController | null>(null);
 
-  useEffect(() => () => { requestRef.current?.abort(); requestRef.current = null; }, []);
+  useEffect(() => () => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+  }, []);
 
   const continueToLobby = async (event: React.FormEvent) => {
     event.preventDefault();
     const pin = normalizePin(code);
     if (pin.length !== 6) return setError('أدخل رمز اللعبة المكوّن من 6 أرقام.');
+
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
-    setChecking(true); setError(null);
+    setChecking(true);
+    setError(null);
+
     try {
       const response = await fetch(`/api/rooms/by-code/${encodeURIComponent(pin)}`, { signal: controller.signal });
       const room = await response.json().catch(() => null);
@@ -32,23 +37,50 @@ export default function HomePage() {
     } catch (cause) {
       if ((cause as Error)?.name !== 'AbortError') setError(cause instanceof Error ? cause.message : 'تعذر العثور على اللعبة.');
     } finally {
-      if (requestRef.current === controller) { requestRef.current = null; setChecking(false); }
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setChecking(false);
+      }
     }
   };
 
-  return (
-    <div className="relative mx-auto min-h-[76vh] max-w-7xl overflow-hidden rounded-[2.5rem] border border-violet-100 bg-gradient-to-br from-white via-violet-50 to-cyan-50 px-5 py-8 shadow-2xl shadow-violet-100/60 sm:px-10 lg:py-12">
-      <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-fuchsia-200/50 blur-3xl"/><div className="absolute -bottom-32 left-1/4 h-96 w-96 rounded-full bg-cyan-200/50 blur-3xl"/>
-      <section className="relative z-10 grid min-h-[65vh] items-center gap-10 lg:grid-cols-[1.05fr_.95fr]">
-        <div className="text-slate-900"><span className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white px-4 py-2 text-xs font-black text-cyan-700"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"/>مسابقات حية في الوقت الحقيقي</span><h1 className="mt-7 text-5xl font-black leading-[1.15] sm:text-6xl">حوّل كل سؤال<br/><span className="bg-gradient-to-l from-violet-600 via-pink-500 to-cyan-600 bg-clip-text text-transparent">إلى لحظة حماس.</span></h1><p className="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">أدخل الرمز، اختر شخصيتك، وابدأ التحدي. نقاط تراكمية، ترتيب مباشر، ونهاية تستحق الاحتفال.</p><div className="mt-8 flex flex-wrap gap-3">{['⚡ دخول فوري','🏆 ترتيب حي','🎨 تجربة مبهجة'].map((item)=><span key={item} className="rounded-2xl border border-violet-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">{item}</span>)}</div><div className="relative mt-10 hidden h-28 max-w-lg lg:block"><div className="absolute right-2 top-2 grid h-24 w-24 rotate-6 place-items-center rounded-[2rem] bg-gradient-to-br from-amber-200 to-orange-300 text-5xl shadow-xl">🤩</div><div className="absolute right-24 top-8 rounded-2xl rounded-br-sm bg-white px-5 py-3 text-sm font-black text-slate-900 shadow-xl">أنا جاهز… وأنت؟</div></div></div>
-        <div className="rounded-[2rem] bg-white p-6 shadow-2xl sm:p-9"><form onSubmit={continueToLobby} className="space-y-6">
-            <div className="text-center"><div className="mx-auto grid h-16 w-16 -rotate-3 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-3xl text-white shadow-lg shadow-violet-200">🎮</div><h2 className="mt-5 text-3xl font-black text-slate-900">ادخل ساحة اللعب</h2><p className="mt-2 text-sm text-slate-500">اكتب رمز PIN الذي شاركه المضيف</p></div>
-            {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
-            <div><label htmlFor="game-pin" className="label">رمز اللعبة (PIN)</label><input id="game-pin" value={code} onChange={(event) => setCode(normalizePin(event.target.value))} inputMode="numeric" autoComplete="one-time-code" placeholder="123456" className="field py-4 text-center text-3xl font-black tracking-[.32em] placeholder:tracking-[.18em] placeholder:text-slate-300" /></div>
-            <button type="submit" disabled={checking || code.length !== 6} className="primary-btn w-full py-4 text-base"><ButtonContent busy={checking} busyText="جاري التحقق…">متابعة إلى شخصيتك</ButtonContent></button>
-            <p className="text-center text-xs text-slate-400">هل تريد إنشاء مسابقة؟ <a href="/login/" className="font-black text-violet-600 hover:underline">دخول المنشئين</a></p>
-          </form></div>
-      </section>
+  return <section className="relative mx-auto grid min-h-[72vh] max-w-5xl place-items-center overflow-hidden rounded-[2.5rem] border border-brand-100 bg-gradient-to-br from-white via-brand-50 to-amber-50 px-4 py-10 shadow-2xl shadow-brand-100/60 sm:px-8">
+    <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-200/35 blur-3xl" />
+    <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-amber-200/45 blur-3xl" />
+    <div className="relative z-10 w-full max-w-lg rounded-[2rem] border border-white/80 bg-white/95 p-6 shadow-2xl sm:p-9">
+      <form onSubmit={continueToLobby} className="space-y-6">
+        <div className="text-center">
+          <div className="mx-auto grid h-16 w-16 -rotate-3 place-items-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-400 text-3xl text-white shadow-lg shadow-brand-200">🎮</div>
+          <p className="mt-5 text-xs font-black text-brand-600">انضم فوراً</p>
+          <h1 className="mt-1 text-3xl font-black text-slate-950 sm:text-4xl">ادخل ساحة اللعب</h1>
+          <p className="mt-2 text-sm font-bold text-slate-500">اكتب الرمز الذي شاركه المضيف، وسنتحقق منه مباشرة.</p>
+        </div>
+
+        {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
+
+        <div>
+          <label htmlFor="game-pin" className="label">رمز اللعبة (PIN)</label>
+          <input id="game-pin" value={code} onChange={(event) => setCode(normalizePin(event.target.value))} inputMode="numeric" autoComplete="one-time-code" autoFocus placeholder="123456" className="field py-4 text-center text-3xl font-black tracking-[.32em] placeholder:tracking-[.18em] placeholder:text-slate-300" />
+        </div>
+
+        <button type="submit" disabled={checking || code.length !== 6} className="primary-btn w-full py-4 text-base">
+          <ButtonContent busy={checking} busyText="جاري التحقق…">متابعة إلى شخصيتك</ButtonContent>
+        </button>
+        <p className="text-center text-xs text-slate-400">هل تريد إنشاء مسابقة؟ <a href="/login/" className="font-black text-brand-600 hover:underline">دخول المنشئين</a></p>
+      </form>
     </div>
-  );
+  </section>;
+}
+
+export default function HomePage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const experience = resolveHomeExperience(loading, Boolean(user));
+
+  useEffect(() => {
+    if (experience === 'dashboard') router.replace('/dashboard/');
+  }, [experience, router]);
+
+  if (experience !== 'join') return <PageSkeleton />;
+  return <GuestJoinGame />;
 }

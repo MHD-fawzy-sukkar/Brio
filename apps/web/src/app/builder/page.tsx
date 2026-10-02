@@ -111,17 +111,17 @@ function Builder() {
   return (
     <div className="space-y-7">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div><a href="/dashboard/" className="text-sm font-bold text-violet-600">→ مسابقاتي</a><h1 className="mt-2 text-3xl font-black text-slate-900">استوديو المسابقة</h1><p className="mt-1 text-sm text-slate-500">التفاصيل هنا، وكل سؤال يُحرّر في صفحة هادئة مستقلة.</p></div>
+        <div><a href="/dashboard/" className="text-sm font-bold text-brand-600">→ مسابقاتي</a><h1 className="mt-2 text-3xl font-black text-slate-900">استوديو المسابقة</h1><p className="mt-1 text-sm text-slate-500">التفاصيل هنا، وكل سؤال يُحرّر في صفحة هادئة مستقلة.</p></div>
         <div className="flex flex-wrap gap-2"><button onClick={startGame} disabled={starting || !quiz?.questions.length} className="primary-btn">{starting?'جاري تجهيز الغرفة…':'▶ ابدأ اللعبة'}</button><button onClick={publish} disabled={busy || !quiz?.questions.length} className="secondary-btn">نشر فقط</button></div>
       </div>
       {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}</div>}
       {warning && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{warning}<button onClick={()=>setWarning(null)} className="float-left text-amber-600" aria-label="إغلاق التنبيه">×</button></div>}
-      {uploadTasks.map((task)=><div key={task.id} role="status" className={`flex items-center justify-between rounded-xl border p-4 text-sm font-bold ${task.state==='failed'?'border-rose-200 bg-rose-50 text-rose-700':task.state==='completed'?'border-emerald-200 bg-emerald-50 text-emerald-700':'border-violet-200 bg-violet-50 text-violet-700'}`}><span className="inline-flex items-center gap-2">{task.state==='uploading'&&<Spinner/>}{task.label}</span>{task.state!=='uploading'&&<button onClick={()=>backgroundUploads.dismiss(task.id)} aria-label="إغلاق">×</button>}</div>)}
+      {uploadTasks.map((task)=><div key={task.id} role="status" className={`flex items-center justify-between rounded-xl border p-4 text-sm font-bold ${task.state==='failed'?'border-rose-200 bg-rose-50 text-rose-700':task.state==='completed'?'border-emerald-200 bg-emerald-50 text-emerald-700':'border-brand-200 bg-brand-50 text-brand-700'}`}><span className="inline-flex items-center gap-2">{task.state==='uploading'&&<Spinner/>}{task.label}</span>{task.state!=='uploading'&&<button onClick={()=>backgroundUploads.dismiss(task.id)} aria-label="إغلاق">×</button>}</div>)}
       {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">{message}</div>}
       {quiz && (
         <>
           <section className="card grid gap-6 p-6 lg:grid-cols-[220px_1fr]">
-            <div className="aspect-[16/10] overflow-hidden rounded-2xl bg-gradient-to-br from-violet-100 to-amber-50">
+            <div className="aspect-[16/10] overflow-hidden rounded-2xl bg-gradient-to-br from-brand-100 to-amber-50">
               {cover ? <img src={cover} alt="غلاف المسابقة" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-center text-sm font-bold text-slate-400"><span><b className="block text-4xl">🖼️</b>غلاف اختياري</span></div>}
             </div>
             <div className="space-y-4">
@@ -135,7 +135,7 @@ function Builder() {
             {quiz.questions.length === 0 ? <div className="card p-14 text-center"><div className="text-4xl">✍️</div><h3 className="mt-3 font-black">أضف أول سؤال</h3><p className="mt-1 text-sm text-slate-500">ستظهر حقول الإجابات المناسبة بمجرد اختيار نوع السؤال.</p></div> : (
               <div className="space-y-3">{quiz.questions.map((question, index) => (
                 <article key={question.id} className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-100 font-black text-violet-700">{index + 1}</span>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-100 font-black text-brand-700">{index + 1}</span>
                   <div className="min-w-0 flex-1"><h3 className="truncate font-black text-slate-900">{question.text}</h3><p className="mt-1 text-xs font-bold text-slate-400">{question.type} · {(question.duration_ms || question.durationMs) / 1000} ثانية</p></div>
                   <div className="flex gap-2"><a href={`/questions/?quizId=${quizId}&questionId=${question.id}`} className="secondary-btn text-sm">تعديل</a><button onClick={() => removeQuestion(question.id)} className="rounded-xl px-3 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50">حذف</button></div>
                 </article>

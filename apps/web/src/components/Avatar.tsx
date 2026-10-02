@@ -1,4 +1,4 @@
-const palette=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+const palette=['#3b82f6','#10b981','#f59e0b','#bd4b5d','#ec4899','#06b6d4'];
 
 export const STATIC_AVATARS=palette.map((_,index)=>`/avatars/avatar-${index+1}.svg`);
 

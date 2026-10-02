@@ -1,6 +1,22 @@
 # Brio — Project Memory and Current Decisions
 
-Updated: 2026-10-02. Read this on every engineering iteration; update only with observed work/evidence.
+Updated: 2026-10-03. Read this on every engineering iteration; update only with observed work/evidence.
+
+## 2026-10-03 — Smart home routing and free-floating mascot preparation
+
+- The root route now waits for the shared authentication state, redirects authenticated creators to `/dashboard/`, and renders the PIN join form directly for guests. The previous generic marketing/landing step was removed.
+- Extracted the route decision and Arabic/Latin PIN normalization into pure `home-routing` helpers with focused tests, preventing authenticated or unknown auth states from flashing the guest form.
+- Moved the connection-aware host start action above the lobby content so it remains immediately visible before the QR and player grid.
+- Removed all reserved mascot columns, bordered placeholder cards, and placeholder copy from the homepage, host lobby, and final podium. These layouts are now complete without Bolt and remain compatible with a future absolute/fixed overlay.
+- Evidence: web TypeScript passed, all 58 repository tests passed, and the Next production export compiled and generated all 13 routes. This iteration was not deployed.
+
+## 2026-10-02 — Bordeaux brand theme and host lobby refactor
+
+- Replaced the former purple primary system with an independent Tailwind `brand` palette built around Bordeaux/Carmine (`#9f3043` primary, `#84263a` hover). Destructive and error actions continue to use the separate rose semantic palette.
+- Migrated creator, player, authentication, join, results, podium, and shared component accents to the new brand tokens; QR foreground and the remaining purple avatar asset were updated as well.
+- Refactored the host waiting room into `HostLobby`, `JoinInfoCard`, `PlayerList`, and pure lobby model helpers. The PIN is no longer duplicated in the host header.
+- The new lobby groups QR, PIN, and instructions into one join card; presents players in a responsive grid; places the start action in a dedicated connection-aware action bar; and reserves a desktop area for the future mascot.
+- Evidence: web TypeScript passed, all 55 repository tests passed, and Next production export compiled and generated all 13 pages successfully. This iteration was not deployed.
 
 ## 2026-10-02 — Production UX, quiz CRUD, join flow, and media hardening
 

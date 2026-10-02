@@ -1,11 +1,25 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-50: #fff7f7;
+  --color-brand-100: #fdebed;
+  --color-brand-200: #f8d4d8;
+  --color-brand-300: #edaeb6;
+  --color-brand-400: #d97886;
+  --color-brand-500: #bd4b5d;
+  --color-brand-600: #9f3043;
+  --color-brand-700: #84263a;
+  --color-brand-800: #6d2335;
+  --color-brand-900: #5a2131;
+  --color-brand-950: #35101b;
+}
+
 :root {
   --ink: #172033;
   --muted: #68748a;
   --line: #e6e9f0;
-  --primary: #6547e8;
-  --primary-dark: #5135cf;
+  --primary: #9f3043;
+  --primary-dark: #84263a;
   --surface: #ffffff;
   --canvas: #f7f8fc;
 }
@@ -16,20 +30,20 @@ body {
   min-height: 100vh;
   direction: rtl;
   color: var(--ink);
-  background: radial-gradient(circle at 92% 0%, rgba(101, 71, 232, .10), transparent 25rem), var(--canvas);
+  background: radial-gradient(circle at 92% 0%, rgba(159, 48, 67, .10), transparent 25rem), var(--canvas);
   font-family: "Cairo", Tahoma, Arial, system-ui, sans-serif;
 }
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 .card { background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 1.5rem; box-shadow: 0 18px 50px rgba(35,42,68,.07); }
 .field { width:100%; border:1px solid #dfe3eb; border-radius:.9rem; background:#fff; color:var(--ink); padding:.8rem 1rem; outline:none; transition:border-color .2s,box-shadow .2s; }
-.field:focus { border-color:#8c77ee; box-shadow:0 0 0 4px rgba(101,71,232,.10); }
+.field:focus { border-color:#bd4b5d; box-shadow:0 0 0 4px rgba(159,48,67,.11); }
 .label { display:block; margin-bottom:.45rem; color:#465168; font-size:.8rem; font-weight:700; }
-.primary-btn { border:0; border-radius:.9rem; background:var(--primary); color:#fff; padding:.78rem 1.1rem; font-weight:800; cursor:pointer; box-shadow:0 8px 18px rgba(101,71,232,.20); }
+.primary-btn { border:0; border-radius:.9rem; background:var(--primary); color:#fff; padding:.78rem 1.1rem; font-weight:800; cursor:pointer; box-shadow:0 8px 18px rgba(159,48,67,.22); }
 .primary-btn:hover { background:var(--primary-dark); }
 .primary-btn:disabled { opacity:.55; cursor:not-allowed; }
 .secondary-btn { border:1px solid #dde1ea; border-radius:.9rem; background:#fff; color:#374258; padding:.72rem 1rem; font-weight:700; cursor:pointer; }
-.secondary-btn:hover { background:#f8f7ff; border-color:#cfc6f7; }
+.secondary-btn:hover { background:#fff7f7; border-color:#edaeb6; }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; } }
 
 @keyframes lobby-float {
@@ -51,7 +65,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @keyframes podium-glow { 0%,100% { filter:brightness(1); } 50% { filter:brightness(1.08); } }
 .podium-winner { animation:winner-float 3.2s ease-in-out infinite; }
 .podium-step-1 { animation:podium-glow 2.4s ease-in-out infinite; box-shadow:0 -10px 35px rgba(251,191,36,.24); }
-.podium-step-2,.podium-step-3 { box-shadow:0 -8px 26px rgba(124,92,231,.10); }
+.podium-step-2,.podium-step-3 { box-shadow:0 -8px 26px rgba(159,48,67,.10); }
 @media (max-width: 639px) {
   .card { border-radius:1.2rem; }
   .primary-btn,.secondary-btn { min-height:44px; }
