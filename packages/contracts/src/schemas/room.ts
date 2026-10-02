@@ -111,7 +111,7 @@ export const HostSnapshotDtoSchema = z.object({
   phaseEndsAt: z.number().int(),
   playerCount: z.number().int(),
   lobbyPlayers: z.array(z.object({ id: z.string(), nickname: z.string(), avatarId: z.string() })),
-  acceptedAnswersCount: z.number().int().optional(),
+  acceptedAnswersCount: z.number().int().nonnegative(),
   question: PublicQuestionSchema.nullable(),
   answerStats: z.array(AnswerStatSchema),
   leaderboard: z.array(LeaderboardEntrySchema)

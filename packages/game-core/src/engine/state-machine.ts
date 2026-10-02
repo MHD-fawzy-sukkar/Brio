@@ -153,6 +153,8 @@ export function processAnswerSubmission(
 
   state.answers.set(key, record);
   state.submissionIds.add(submissionId);
+  // Every accepted answer is observable room state and must receive a new version.
+  state.stateVersion++;
 
   return {
     status: 'accepted',
@@ -278,6 +280,13 @@ export function reconcileDeadlines(
 
   // 3. STATS -> LEADERBOARD
   if (state.phase === 'STATS' && now >= state.activeRound.statsEndsAt) {
+    if (state.currentQuestionIndex >= quiz.questions.length - 1) {
+      state.phase = 'FINISHED';
+      state.stateVersion++;
+      effects.push({ type: 'PERSIST_STATE' }, { type: 'BROADCAST_STATE' });
+      return effects;
+    }
+
     state.phase = 'LEADERBOARD';
     state.stateVersion++;
 

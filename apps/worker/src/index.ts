@@ -49,6 +49,7 @@ import {
   generateCloudinarySignature,
   saveMediaRecord
 } from './repositories/media.repository';
+import { localizeProblemDetail } from './problem-copy';
 
 export { GameRoomDO };
 
@@ -62,7 +63,7 @@ function rfc7807Error(c: any, status: number, code: string, detail: string, erro
     status,
     code,
     traceId: crypto.randomUUID(),
-    detail,
+    detail: localizeProblemDetail(detail),
     errors
   }, status);
 }
@@ -587,7 +588,7 @@ app.post('/api/rooms/:roomId/join', async (c) => {
   const avatarId = body.avatarId || 'avatar_1';
 
   if (!nickname || nickname.length < 2 || nickname.length > 20) {
-    return rfc7807Error(c, 400, 'validation_failed', 'Nickname must be between 2 and 20 characters');
+    return rfc7807Error(c, 400, 'validation_failed', 'اكتب اسماً مستعاراً بين حرفين و20 حرفاً.');
   }
 
   const playerId = 'p_' + crypto.randomUUID();
@@ -607,7 +608,7 @@ app.post('/api/rooms/:roomId/join', async (c) => {
 
   if (!joinRes.ok) {
     const problem = await joinRes.json().catch(() => null) as { detail?: string } | null;
-    return rfc7807Error(c, joinRes.status === 409 ? 409 : 400, 'join_failed', problem?.detail || 'Failed to join room');
+    return rfc7807Error(c, joinRes.status === 409 ? 409 : 400, 'join_failed', joinRes.status===409?'بدأت اللعبة وأُغلق باب الانضمام. جرّب لعبة أخرى.':problem?.detail || 'تعذر الانضمام إلى الغرفة.');
   }
 
   return c.json({
@@ -617,6 +618,20 @@ app.post('/api/rooms/:roomId/join', async (c) => {
     avatarId,
     sessionToken
   }, 201);
+});
+
+// Player-initiated lobby exit. The opaque session token prevents removing another player.
+app.post('/api/rooms/:roomId/leave', async (c) => {
+  const roomId=c.req.param('roomId');
+  let body:any;
+  try { body=await c.req.json(); } catch { return rfc7807Error(c,400,'bad_request','تعذر قراءة طلب الخروج.'); }
+  if(typeof body?.playerId!=='string'||typeof body?.sessionToken!=='string') return rfc7807Error(c,400,'validation_failed','بيانات جلسة اللاعب غير مكتملة.');
+  const sessionHash=await hashSessionToken(body.sessionToken);
+  const id=c.env.GAME_ROOM.idFromName(roomId);
+  const response=await c.env.GAME_ROOM.get(id).fetch(new Request('http://internal/leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({playerId:body.playerId,sessionHash})}));
+  const result=await response.json().catch(()=>null) as any;
+  if(!response.ok) return rfc7807Error(c,response.status===409?409:404,'leave_failed',response.status===409?'بدأت اللعبة بالفعل؛ لا يمكن مغادرة غرفة الانتظار الآن.':'تعذر العثور على جلسة اللاعب.');
+  return c.json(result);
 });
 
 // 18. HTTP Public Room Snapshot

@@ -7,136 +7,58 @@ import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { registerServiceWorker } from '../../services/sw-register';
 import { useSynchronizedCountdown } from '../../hooks/use-synchronized-countdown';
 import { useRoomMediaPrefetch } from '../../hooks/use-room-media-prefetch';
-import { Spinner } from '../../components/Loading';
+import { PageSkeleton, Spinner } from '../../components/Loading';
+import { Avatar } from '../../components/Avatar';
 
-type SubmissionState = 'idle' | 'submitting' | 'accepted' | 'rejected';
+type SubmissionState='idle'|'submitting'|'accepted'|'rejected';
 
-function PlayContent() {
-  const params = useSearchParams();
-  const roomId = params.get('roomId') || '';
-  const code = params.get('code') || '';
-  const playerId = params.get('playerId') || '';
-  const nickname = params.get('nickname') || '';
-  const avatar = params.get('avatar') || '';
-  const validJoin = Boolean(roomId && playerId && nickname && avatar && /^\d{6}$/.test(code));
-
-  const [snapshot, setSnapshot] = useState<any>(null);
-  const [socket, setSocket] = useState<BrioRoomSocket | null>(null);
-  const [connection, setConnection] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [textAnswer, setTextAnswer] = useState('');
-  const [submission, setSubmission] = useState<SubmissionState>('idle');
-  const [rejection, setRejection] = useState('');
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const countdown=useSynchronizedCountdown(snapshot?.phaseEndsAt,snapshot?.serverNow);
-  useRoomMediaPrefetch(roomId,snapshot?.questionIndex);
-
-  useEffect(() => {
-    if (!validJoin) {
-      window.location.replace('/');
-      return;
-    }
-    sessionStorage.setItem('brio_active_game', 'true');
-    const roomSocket = new BrioRoomSocket(roomId, 'player', playerId);
-    const unsubscribeSnapshot = roomSocket.onSnapshot((data) => {
-      setSnapshot(data);
-      const imageUrl = data?.question?.essentialImage;
-      setImageError(false);
-      if (!imageUrl) setImageLoaded(true);
-      else if (globalMediaPrefetchEngine.isLoaded(imageUrl)) setImageLoaded(true);
-      else {
-        setImageLoaded(false);
-        globalMediaPrefetchEngine.queueImages([{ url:imageUrl, questionId:data.question.id, isEssential:true, priority:1 }]);
-      }
-    });
-    const unsubscribeConnection = roomSocket.onConnectionState(setConnection);
-    const unregisterServiceWorker = registerServiceWorker(() => roomSocket.connect());
-    roomSocket.connect();
-    setSocket(roomSocket);
-
-    return () => {
-      unsubscribeSnapshot();
-      unsubscribeConnection();
-      unregisterServiceWorker();
-      roomSocket.close();
-      sessionStorage.removeItem('brio_active_game');
-      setSnapshot(null);
-      setSocket(null);
-      setSubmission('idle');
-    };
-  }, [validJoin, roomId, playerId]);
-
-  useEffect(() => {
-    setSelectedOption(null); setTextAnswer(''); setSubmission('idle'); setRejection('');
-  }, [snapshot?.roundId]);
-
-  useEffect(() => globalMediaPrefetchEngine.subscribe((states) => {
-    const url = snapshot?.question?.essentialImage;
-    if (!url) return;
-    const state = states.get(url);
-    if (state?.status === 'loaded') setImageLoaded(true);
-    if (state?.status === 'error') setImageError(true);
-  }), [snapshot?.question?.essentialImage]);
-
-  if (!validJoin) return <div className="card mx-auto max-w-md p-10 text-center text-sm font-bold text-slate-500">بيانات الانضمام غير مكتملة. جاري إعادتك…</div>;
-
-  const phase = snapshot?.phase || 'LOBBY';
-  const currentQuestion = snapshot?.question;
-  const roundId = snapshot?.roundId || '';
-  const ownScore = snapshot?.ownScore ?? 0;
-  const players = snapshot?.lobbyPlayers || [{ id:playerId, nickname, avatarId:avatar }];
-  const imageBlocking = Boolean(currentQuestion?.essentialImage && !imageLoaded && !imageError);
-
-  const submit = async (optionId?:string) => {
-    if (!socket || !roundId || imageBlocking || submission === 'submitting' || submission === 'accepted') return;
-    if (optionId) setSelectedOption(optionId);
-    setSubmission('submitting'); setRejection('');
-    try {
-      await socket.submitAnswer(roundId, crypto.randomUUID(), { optionId, textAnswer:currentQuestion?.type === 'ShortAnswer' ? textAnswer : undefined });
-      setSubmission('accepted');
-    } catch (cause) {
-      setSubmission('rejected'); setRejection(cause instanceof Error ? cause.message : 'تعذر إرسال الإجابة.');
-    }
-  };
-
-  return (
-    <div className="mx-auto max-w-4xl space-y-5">
-      <header className="card flex items-center justify-between p-4 sm:p-5">
-        <div className="flex items-center gap-3"><img src={avatar} alt="" className="h-11 w-11 rounded-xl bg-violet-50"/><div><h1 className="font-black text-slate-900">{nickname}</h1><p className="text-xs font-bold text-slate-400">رمز اللعبة {code}</p></div></div>
-        <div className="flex items-center gap-4"><span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${connection==='connected'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{connection==='connected'?'متصل':'جاري الاتصال…'}</span><div className="text-left"><span className="block text-[10px] font-bold text-slate-400">نقاطك</span><b className="text-xl text-violet-700">{ownScore}</b></div></div>
-      </header>
-
-      {phase === 'LOBBY' && (
-        <section className="card relative min-h-[520px] overflow-hidden p-6 text-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(124,92,231,.12),transparent_55%)]"/>
-          <div className="relative z-10 mx-auto max-w-xl pt-6"><span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">تم الانضمام بنجاح</span><h2 className="mt-4 text-3xl font-black text-slate-900">أنت في ساحة الانتظار</h2><p className="mt-2 text-slate-500">بانتظار أن يبدأ المضيف المسابقة…</p><div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"/>{players.length} {players.length === 1 ? 'لاعب' : 'لاعبين'} في الساحة</div></div>
-          <div className="relative z-10 mx-auto mt-10 grid max-w-2xl grid-cols-3 gap-5 sm:grid-cols-5">
-            {players.map((player:any,index:number) => <div key={player.id} className="lobby-avatar flex flex-col items-center gap-2" style={{animationDelay:`${(index%7)*-.35}s`}}><div className={`rounded-2xl border-2 bg-white p-2 shadow-lg ${player.id===playerId?'border-violet-500 shadow-violet-100':'border-white'}`}><img src={player.avatarId} alt="" className="h-14 w-14 rounded-xl sm:h-16 sm:w-16"/></div><span className="max-w-24 truncate rounded-full bg-white/90 px-2 py-1 text-xs font-black text-slate-700 shadow-sm">{player.nickname}{player.id===playerId?' (أنت)':''}</span></div>)}
-          </div>
-          <p className="relative z-10 mt-10 text-xs font-bold text-slate-400">ستنتقل الشاشة تلقائياً لحظة بدء المضيف.</p>
-        </section>
-      )}
-
-      {phase === 'COUNTDOWN' && <section className="card grid min-h-[430px] place-items-center text-center"><div><div className="mx-auto grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-6xl font-black text-white shadow-2xl shadow-violet-200">{countdown.seconds}</div><h2 className="mt-7 text-3xl font-black">استعد!</h2><p className="mt-2 text-slate-500">المسابقة تبدأ الآن</p></div></section>}
-
-      {phase === 'QUESTION' && currentQuestion && (
-        <section className="card space-y-5 p-5 sm:p-7">
-          <div className="flex items-center justify-between"><span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">السؤال {(snapshot.questionIndex ?? 0)+1}</span><span className="rounded-xl bg-slate-950 px-3 py-1 text-lg font-black text-white">{countdown.seconds}</span></div>
-          {currentQuestion.essentialImage && <div className="relative grid min-h-44 place-items-center overflow-hidden rounded-2xl bg-slate-100">{!imageLoaded&&!imageError&&<p className="text-sm font-bold text-slate-500">جاري تحميل الصورة، وقت السؤال مستمر…</p>}<img src={currentQuestion.essentialImage} alt="صورة السؤال" onLoad={()=>setImageLoaded(true)} onError={()=>setImageError(true)} className={`max-h-72 w-full object-contain ${imageLoaded?'block':'hidden'}`}/></div>}
-          <h2 className="py-3 text-center text-2xl font-black text-slate-900">{currentQuestion.text}</h2>
-          {currentQuestion.options?.length>0&&<div className="grid gap-3 sm:grid-cols-2">{currentQuestion.options.map((option:any)=><button key={option.id} disabled={imageBlocking||submission==='submitting'||submission==='accepted'} onClick={()=>submit(option.id)} className={`min-h-16 rounded-2xl border-2 px-4 font-black transition ${selectedOption===option.id?'border-violet-600 bg-violet-600 text-white':'border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50'} disabled:cursor-not-allowed disabled:opacity-60`}>{option.text}</button>)}</div>}
-          {currentQuestion.type==='ShortAnswer'&&<div className="space-y-3"><input className="field py-4 text-center text-lg font-bold" value={textAnswer} onChange={(e)=>setTextAnswer(e.target.value)} disabled={imageBlocking||submission==='accepted'} placeholder="اكتب إجابتك…"/><button className="primary-btn w-full" onClick={()=>submit()} disabled={!textAnswer.trim()||imageBlocking||submission==='submitting'||submission==='accepted'}>إرسال الإجابة</button></div>}
-          {submission==='submitting'&&<div className="rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-700"><Spinner className="ml-2 h-4 w-4"/>جاري توثيق إجابتك…</div>}
-          {submission==='accepted'&&<div className="rounded-xl bg-emerald-50 p-3 text-center text-sm font-bold text-emerald-700">✓ تم استلام إجابتك</div>}
-          {submission==='rejected'&&<div className="rounded-xl bg-rose-50 p-3 text-center text-sm font-bold text-rose-700">{rejection}</div>}
-        </section>
-      )}
-
-      {(phase==='STATS'||phase==='LEADERBOARD')&&<section className="card p-8 text-center"><div className="text-5xl">{phase==='STATS'?'📊':'🏅'}</div><h2 className="mt-4 text-2xl font-black">{phase==='STATS'?'تم إغلاق السؤال':'الترتيب الحالي'}</h2><p className="mt-2 text-slate-500">نقاطك الحالية: <b className="text-violet-700">{ownScore}</b></p>{phase==='LEADERBOARD'&&<div className="mx-auto mt-6 max-w-md space-y-2">{(snapshot?.topPlayers||[]).map((player:any)=><div key={player.nickname} className="flex items-center justify-between rounded-xl bg-slate-50 p-3 text-sm font-bold"><span>{player.rank}. {player.nickname}</span><span className="text-violet-700">{player.score}</span></div>)}</div>}</section>}
-      {phase==='FINISHED'&&<section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-violet-700 via-indigo-700 to-slate-950 p-8 text-center text-white shadow-2xl sm:p-12"><div className="pointer-events-none absolute inset-0">{Array.from({length:18},(_,i)=><i key={i} className="confetti-piece" style={{left:`${(i*43)%100}%`,animationDelay:`-${(i%8)*.3}s`,background:['#fbbf24','#34d399','#fb7185','#fff'][i%4]}}/>)}</div><div className="relative z-10"><div className="mx-auto grid h-24 w-24 place-items-center rounded-3xl bg-white/10 text-6xl ring-1 ring-white/20">{(snapshot?.ownRank||99)<=3?'🏆':'✨'}</div><p className="mt-6 text-sm font-black text-violet-200">نتيجتك النهائية</p><h2 className="mt-2 text-4xl font-black">{(snapshot?.ownRank||99)===1?'أنت البطل!':(snapshot?.ownRank||99)<=3?'أداء مذهل!':'أحسنت، استمر!'}</h2><div className="mx-auto mt-8 grid max-w-md grid-cols-2 gap-3"><div className="rounded-2xl bg-white/10 p-5 ring-1 ring-white/10"><span className="text-xs text-violet-200">ترتيبك</span><b className="mt-1 block text-4xl">#{snapshot?.ownRank||'—'}</b></div><div className="rounded-2xl bg-white/10 p-5 ring-1 ring-white/10"><span className="text-xs text-violet-200">مجموع النقاط</span><b className="mt-1 block text-3xl">{ownScore.toLocaleString('ar')}</b></div></div><p className="mx-auto mt-6 max-w-md text-sm leading-7 text-violet-100">شكراً لمشاركتك. كل إجابة صحيحة أضيفت إلى مجموعك التراكمي عبر جميع الجولات.</p><a href="/" className="mt-8 inline-block rounded-xl bg-white px-6 py-3 font-black text-violet-700 shadow-xl">العودة للرئيسية</a></div></section>}
-    </div>
-  );
+function SubmittedAnswer(){
+  return <div role="status" aria-live="polite" className="answer-confirmation rounded-[1.75rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-5 py-9 text-center shadow-sm"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-500 text-4xl text-white shadow-lg shadow-emerald-200">✓</div><h3 className="mt-5 text-2xl font-black text-emerald-950">تم تسجيل إجابتك بنجاح!</h3><p className="mx-auto mt-2 max-w-sm text-sm font-bold leading-7 text-emerald-700">إجابتك محفوظة. بانتظار باقي اللاعبين وانتهاء الوقت…</p><div className="mx-auto mt-5 flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-black text-emerald-700"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"/>لا تحتاج إلى الضغط مرة أخرى</div></div>;
 }
 
-export default function PlayPage(){ return <Suspense fallback={<div className="card mx-auto max-w-md p-10 text-center">جاري تجهيز اللعبة…</div>}><PlayContent/></Suspense>; }
+function PlayerFinale({rank,score}:{rank:number|null;score:number}){
+  const topThree=Boolean(rank&&rank<=3);
+  return <section className="relative overflow-hidden rounded-[2rem] border border-violet-100 bg-gradient-to-br from-white via-violet-50 to-amber-50 p-6 text-center text-slate-900 shadow-xl shadow-violet-100/60 sm:p-12"><div className="pointer-events-none absolute inset-0">{Array.from({length:18},(_,i)=><i key={i} className="confetti-piece" style={{left:`${(i*43)%100}%`,animationDelay:`-${(i%8)*.3}s`,background:['#fbbf24','#34d399','#fb7185','#8b5cf6'][i%4]}}/>)}</div><div className="relative z-10"><div className="mx-auto grid h-24 w-24 place-items-center rounded-3xl border border-amber-200 bg-white text-6xl shadow-lg shadow-amber-100">{topThree?'🏆':'✨'}</div><p className="mt-6 text-sm font-black text-violet-600">اكتملت المسابقة</p><h2 className="mt-2 text-3xl font-black text-violet-950 sm:text-4xl">{rank===1?'أنت بطل الجولة!':topThree?'مركز رائع، أحسنت!':'لعب جميل ومحاولة تستحق التصفيق!'}</h2><div className="mx-auto mt-8 grid max-w-md grid-cols-2 gap-3"><div className="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm"><span className="text-xs font-bold text-slate-500">ترتيبك النهائي</span><b className="mt-1 block text-4xl text-violet-700">#{rank||'—'}</b></div><div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm"><span className="text-xs font-bold text-slate-500">مجموع نقاطك</span><b className="mt-1 block text-3xl text-amber-600">{score.toLocaleString('ar')}</b></div></div><p className="mx-auto mt-6 max-w-md text-sm font-bold leading-7 text-slate-600">شكراً لمشاركتك! كل إجابة صحيحة وسريعة ساهمت في مجموعك النهائي.</p><a href="/" className="primary-btn mt-8 inline-block">العودة إلى الصفحة الرئيسية</a></div></section>;
+}
+
+function PlayContent(){
+  const params=useSearchParams();
+  const roomId=params.get('roomId')||''; const code=params.get('code')||''; const playerId=params.get('playerId')||'';
+  const nickname=params.get('nickname')||''; const avatar=params.get('avatar')||'';
+  const playerSessionKey=`brio_player_session:${roomId}:${playerId}`;
+  const validJoin=Boolean(roomId&&playerId&&nickname&&avatar&&/^\d{6}$/.test(code));
+  const [snapshot,setSnapshot]=useState<any>(null); const [socket,setSocket]=useState<BrioRoomSocket|null>(null);
+  const [connection,setConnection]=useState<'connecting'|'connected'|'disconnected'>('connecting');
+  const [selectedOption,setSelectedOption]=useState<string|null>(null); const [textAnswer,setTextAnswer]=useState('');
+  const [submission,setSubmission]=useState<SubmissionState>('idle'); const [rejection,setRejection]=useState('');
+  const [imageLoaded,setImageLoaded]=useState(false); const [imageError,setImageError]=useState(false); const [leaving,setLeaving]=useState(false);
+  const countdown=useSynchronizedCountdown(snapshot?.phaseEndsAt,snapshot?.serverNow); useRoomMediaPrefetch(roomId,snapshot?.questionIndex);
+
+  useEffect(()=>{
+    if(!validJoin){window.location.replace('/');return;}
+    sessionStorage.setItem('brio_active_game','true');
+    const roomSocket=new BrioRoomSocket(roomId,'player',playerId);
+    const offSnapshot=roomSocket.onSnapshot((data)=>{setSnapshot(data);const imageUrl=data?.question?.essentialImage;setImageError(false);if(!imageUrl||globalMediaPrefetchEngine.isLoaded(imageUrl))setImageLoaded(true);else{setImageLoaded(false);globalMediaPrefetchEngine.queueImages([{url:imageUrl,questionId:data.question.id,isEssential:true,priority:1}]);}});
+    const offConnection=roomSocket.onConnectionState(setConnection); const unregister=registerServiceWorker(()=>roomSocket.connect()); roomSocket.connect();setSocket(roomSocket);
+    return()=>{offSnapshot();offConnection();unregister();roomSocket.close();sessionStorage.removeItem('brio_active_game');setSnapshot(null);setSocket(null);};
+  },[validJoin,roomId,playerId]);
+  useEffect(()=>{setSelectedOption(null);setTextAnswer('');setSubmission('idle');setRejection('');},[snapshot?.roundId]);
+  useEffect(()=>globalMediaPrefetchEngine.subscribe((states)=>{const url=snapshot?.question?.essentialImage;if(!url)return;const state=states.get(url);if(state?.status==='loaded')setImageLoaded(true);if(state?.status==='error')setImageError(true);}),[snapshot?.question?.essentialImage]);
+
+  if(!validJoin)return <div className="card mx-auto max-w-md p-10 text-center text-sm font-bold text-slate-500">بيانات الدخول غير مكتملة؛ سنعيدك إلى الصفحة الرئيسية.</div>;
+  const phase=snapshot?.phase||'LOBBY'; const question=snapshot?.question; const roundId=snapshot?.roundId||''; const ownScore=snapshot?.ownScore??0;
+  const players=snapshot?.lobbyPlayers||[{id:playerId,nickname,avatarId:avatar}]; const imageBlocking=Boolean(question?.essentialImage&&!imageLoaded&&!imageError);
+  const submit=async(optionId?:string)=>{if(!socket||!roundId||imageBlocking||submission==='submitting'||submission==='accepted')return;if(optionId)setSelectedOption(optionId);setSubmission('submitting');setRejection('');try{await socket.submitAnswer(roundId,crypto.randomUUID(),{optionId,textAnswer:question?.type==='ShortAnswer'?textAnswer:undefined});setSubmission('accepted');}catch(cause){setSubmission('rejected');setRejection(cause instanceof Error?cause.message:'لم نتمكن من إرسال الإجابة. تحقق من اتصالك وحاول مجدداً.');}};
+  const leaveLobby=()=>{if(leaving)return;setLeaving(true);socket?.close();sessionStorage.removeItem('brio_active_game');const sessionToken=sessionStorage.getItem(playerSessionKey)||'';sessionStorage.removeItem(playerSessionKey);const request=sessionToken?fetch(`/api/rooms/${encodeURIComponent(roomId)}/leave`,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({playerId,sessionToken})}):Promise.resolve();void request.finally(()=>window.location.replace('/'));};
+
+  return <div className="mx-auto max-w-4xl space-y-4 pb-4 sm:space-y-5">
+    <header className="card flex items-center justify-between gap-3 p-3.5 sm:p-5"><div className="flex min-w-0 items-center gap-3"><Avatar src={avatar} label={nickname} className="h-11 w-11 shrink-0 rounded-xl"/><div className="min-w-0"><h1 className="truncate font-black text-slate-900">{nickname}</h1>{phase==='LOBBY'?<p className="text-xs font-bold text-violet-600">رمز اللعبة {code}</p>:<p className="text-xs font-bold text-slate-400">أنت داخل المسابقة الآن</p>}</div></div><div className="flex shrink-0 items-center gap-3"><span className={`hidden rounded-full px-2.5 py-1 text-[11px] font-black min-[390px]:inline ${connection==='connected'?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{connection==='connected'?'متصل':'نعيد الاتصال…'}</span><div className="text-left"><span className="block text-[10px] font-bold text-slate-400">نقاطك</span><b className="text-lg text-violet-700 sm:text-xl">{ownScore}</b></div></div></header>
+    {phase==='LOBBY'&&<section className="card relative min-h-[calc(100svh-13rem)] overflow-hidden p-5 text-center sm:min-h-[520px] sm:p-6"><div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(124,92,231,.13),transparent_55%)]"/><div className="relative z-10 mx-auto max-w-xl pt-4"><span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">✓ تم انضمامك</span><h2 className="mt-4 text-2xl font-black text-slate-900 sm:text-3xl">مكانك جاهز في غرفة الانتظار</h2><p className="mt-2 text-sm leading-7 text-slate-500">ستبدأ اللعبة تلقائياً عندما يضغط المضيف زر البدء.</p><div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"/>{players.length} {players.length===1?'لاعب جاهز':'لاعبون جاهزون'}</div></div><div className="relative z-10 mx-auto mt-9 grid max-w-2xl grid-cols-3 gap-4 sm:grid-cols-5 sm:gap-5">{players.map((player:any,index:number)=><div key={player.id} className="lobby-avatar flex min-w-0 flex-col items-center gap-2" style={{animationDelay:`${(index%7)*-.35}s`}}><div className={`rounded-2xl border-2 bg-white p-2 shadow-md ${player.id===playerId?'border-violet-500 shadow-violet-100':'border-violet-50'}`}><Avatar src={player.avatarId} label={player.nickname} className="h-14 w-14 rounded-xl sm:h-16 sm:w-16"/></div><span className="max-w-full truncate rounded-full bg-white px-2 py-1 text-[11px] font-black text-slate-700 shadow-sm">{player.nickname}{player.id===playerId?' · أنت':''}</span></div>)}</div><div className="relative z-10 mt-9"><button onClick={leaveLobby} disabled={leaving} className="rounded-xl border border-rose-200 bg-white px-5 py-2.5 text-sm font-black text-rose-600 transition hover:bg-rose-50 disabled:opacity-60">{leaving?'جاري مغادرة الغرفة…':'مغادرة غرفة الانتظار'}</button></div></section>}
+    {phase==='COUNTDOWN'&&<section className="card grid min-h-[calc(100svh-13rem)] place-items-center p-5 text-center sm:min-h-[430px]"><div><div className="mx-auto grid h-28 w-28 place-items-center rounded-full border-4 border-violet-100 bg-violet-50 text-6xl font-black text-violet-700 shadow-xl shadow-violet-100">{countdown.seconds}</div><h2 className="mt-7 text-3xl font-black">استعد… سنبدأ!</h2><p className="mt-2 text-slate-500">ركّز، فكل ثانية تصنع فرقاً في نقاطك.</p></div></section>}
+    {phase==='QUESTION'&&question&&<section className="card space-y-4 p-4 sm:space-y-5 sm:p-7"><div className="flex items-center justify-between"><span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-violet-700">السؤال {(snapshot.questionIndex??0)+1}</span><span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1 text-lg font-black text-amber-700">{countdown.seconds}</span></div>{question.essentialImage&&<div className="relative grid min-h-36 place-items-center overflow-hidden rounded-2xl bg-slate-50 sm:min-h-44">{!imageLoaded&&!imageError&&<p className="px-4 text-center text-sm font-bold text-slate-500">نجهّز صورة السؤال… يمكنك متابعة قراءة النص.</p>}<img src={question.essentialImage} alt="صورة السؤال" onLoad={()=>setImageLoaded(true)} onError={()=>setImageError(true)} className={`max-h-64 w-full object-contain ${imageLoaded?'block':'hidden'}`}/></div>}<h2 className="py-2 text-center text-xl font-black leading-9 text-slate-900 sm:py-3 sm:text-2xl">{question.text}</h2>{submission==='accepted'?<SubmittedAnswer/>:<>{question.options?.length>0&&<div className="grid gap-3 sm:grid-cols-2">{question.options.map((option:any)=><button key={option.id} disabled={imageBlocking||submission==='submitting'} onClick={()=>submit(option.id)} className={`min-h-16 rounded-2xl border-2 px-4 py-3 font-black transition active:scale-[.98] ${selectedOption===option.id?'border-violet-500 bg-violet-50 text-violet-800':'border-slate-200 bg-white text-slate-700 hover:border-violet-300 hover:bg-violet-50'} disabled:cursor-not-allowed disabled:opacity-60`}>{option.text}</button>)}</div>}{question.type==='ShortAnswer'&&<div className="space-y-3"><input className="field py-4 text-center text-lg font-bold" value={textAnswer} onChange={(e)=>setTextAnswer(e.target.value)} disabled={imageBlocking} placeholder="اكتب إجابتك هنا…"/><button className="primary-btn w-full py-3.5" onClick={()=>submit()} disabled={!textAnswer.trim()||imageBlocking||submission==='submitting'}>تسجيل الإجابة</button></div>}</>}{submission==='submitting'&&<div className="rounded-xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-700"><Spinner className="ml-2 h-4 w-4"/>جاري حفظ إجابتك بأمان…</div>}{submission==='rejected'&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-center text-sm font-bold text-rose-700">{rejection}</div>}</section>}
+    {(phase==='STATS'||phase==='LEADERBOARD')&&<section className="card p-6 text-center sm:p-8"><div className="text-5xl">{phase==='STATS'?'📊':'🏅'}</div><h2 className="mt-4 text-2xl font-black">{phase==='STATS'?'اكتمل وقت الإجابة':'ترتيب الجولة حتى الآن'}</h2><p className="mt-2 text-slate-500">رصيدك الحالي: <b className="text-violet-700">{ownScore.toLocaleString('ar')} نقطة</b></p>{phase==='LEADERBOARD'&&<div className="mx-auto mt-6 max-w-md space-y-2">{(snapshot?.topPlayers||[]).map((player:any)=><div key={`${player.rank}-${player.nickname}`} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-bold"><Avatar src={player.avatarId} className="h-9 w-9 rounded-lg"/><span className="flex-1 text-right">#{player.rank} {player.nickname}</span><span className="text-violet-700">{player.score.toLocaleString('ar')}</span></div>)}</div>}</section>}
+    {phase==='FINISHED'&&<PlayerFinale rank={snapshot?.ownRank??null} score={ownScore}/>} 
+  </div>;
+}
+
+export default function PlayPage(){return <Suspense fallback={<PageSkeleton/>}><PlayContent/></Suspense>;}

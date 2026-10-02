@@ -118,6 +118,14 @@ export function savePlayerScoreToDb(sql: SqlStorageLike, player: PlayerState): v
   sql.exec('UPDATE players SET score = ?, connection_generation = ? WHERE player_id = ?', player.score, player.connectionGeneration, player.id);
 }
 
+export function removeLobbyPlayerFromDb(sql: SqlStorageLike, playerId:string, sessionHash:string):boolean {
+  const rows=Array.from(sql.exec('SELECT session_hash FROM players WHERE player_id = ? LIMIT 1',playerId)) as any[];
+  const stored=rows[0]?.session_hash ?? rows[0]?.[0];
+  if(!stored || stored!==sessionHash) return false;
+  sql.exec('DELETE FROM players WHERE player_id = ? AND session_hash = ?',playerId,sessionHash);
+  return true;
+}
+
 export function saveRoundToDb(sql: SqlStorageLike, round: ActiveRoundState): void {
   sql.exec(
     `INSERT OR REPLACE INTO rounds (round_id, question_index, question_id, type, starts_at, ends_at, stats_ends_at, ranking_ends_at, closed, scored)

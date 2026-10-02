@@ -70,7 +70,7 @@ test('Host end transitions any active room to FINISHED and cancels its alarm ide
   assert.deepEqual(endQuiz(state), []);
 });
 
-test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LEADERBOARD -> FINISHED', () => {
+test('Full State Machine Workflow skips the intermediate leaderboard after the final question', () => {
   let now = 1000000;
   const state = createInitialGameState('room-1', 'version-1');
 
@@ -109,6 +109,7 @@ test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LE
     optionId: 'o2'
   }, now + 2000);
   assert.equal(subP2.status, 'accepted');
+  assert.equal(toPublicHostSnapshot(state,SAMPLE_QUIZ).acceptedAnswersCount,2);
 
   // Advance time to Question 1 endsAt
   now += 20000;
@@ -174,10 +175,6 @@ test('Full State Machine Workflow: LOBBY -> COUNTDOWN -> QUESTION -> STATS -> LE
   assert.equal(state.players.get('p1')?.score, 975); // Prefix sum preserves earlier rounds
 
   now += 3000;
-  reconcileDeadlines(state, SAMPLE_QUIZ, now); // LEADERBOARD
-
-  // Advance past last question -> FINISHED
-  now += 5000;
   reconcileDeadlines(state, SAMPLE_QUIZ, now);
   assert.equal(state.phase, 'FINISHED');
 });

@@ -389,10 +389,11 @@ describe('Phase P4 — Integration Tests', () => {
   describe('Full 3-Client + Host Game Simulation', () => {
     it('runs complete quiz timeline with 3 players and 2 questions', async () => {
       const storage = createMockDoStorage();
+      let broadcastHost:MockWebSocket|null=null;
       const mockCtx = {
         id: { toString: () => 'room_sim' },
         storage: storage,
-        getWebSockets: () => [],
+        getWebSockets: (tag:string) => tag==='role:host'&&broadcastHost?[broadcastHost]:[],
         acceptWebSocket: () => {}
       };
 
@@ -408,12 +409,20 @@ describe('Phase P4 — Integration Tests', () => {
       }
       assert.equal(doInstance.state.players.size, 3);
 
+      await doInstance.fetch(new Request('http://internal/join',{method:'POST',body:JSON.stringify({playerId:'leaving',nickname:'Leaving',avatarId:'avatar_2',sessionHash:'leave_hash'})}));
+      const leaveResponse=await doInstance.fetch(new Request('http://internal/leave',{method:'POST',body:JSON.stringify({playerId:'leaving',sessionHash:'leave_hash'})}));
+      assert.equal(leaveResponse.status,200);
+      assert.equal(doInstance.state.players.size,3);
+
       const hostWs = new MockWebSocket();
+      broadcastHost=hostWs;
 
       // 1. Host Starts Game -> COUNTDOWN
       await doInstance.webSocketMessage(hostWs as any, JSON.stringify({ type: 'host.start' }));
       assert.equal(doInstance.state.phase, 'COUNTDOWN');
       assert.equal(doInstance.state.currentQuestionIndex, 0);
+      const lateJoin=await doInstance.fetch(new Request('http://internal/join',{method:'POST',body:JSON.stringify({playerId:'late',nickname:'Late',avatarId:'avatar_2',sessionHash:'late_hash'})}));
+      assert.equal(lateJoin.status,409);
 
       // 2. Alarm triggers -> QUESTION 1 phase (Q1 MultipleChoice)
       doInstance.state.activeRound!.endsAt = Date.now() - 1000;
@@ -439,6 +448,8 @@ describe('Phase P4 — Integration Tests', () => {
         requestId: 'r1_p3',
         payload: { playerId: 'p3', roundId: round1.roundId, submissionId: 'sub_r1_p3', optionId: 'opt_2' }
       }));
+      const liveSnapshots=hostWs.sentMessages.map((message)=>JSON.parse(message)).filter((message)=>message.type==='room.snapshot');
+      assert.equal(liveSnapshots.at(-1)?.payload.acceptedAnswersCount,3);
 
       // 4. Trigger Alarm -> Advances to STATS phase (Q1 scored)
       round1.endsAt = Date.now() - 1000;
@@ -481,12 +492,10 @@ describe('Phase P4 — Integration Tests', () => {
         payload: { playerId: 'p2', roundId: round2.roundId, submissionId: 'sub_r2_p2', textAnswer: 'باريس' }
       }));
 
-      // 7. Complete Q2 timeline -> STATS -> LEADERBOARD -> FINISHED
+      // 7. Complete Q2 timeline -> STATS -> FINISHED (no final intermediate leaderboard)
       round2.endsAt = Date.now() - 1000;
       await doInstance.alarm(); // STATS
       round2.statsEndsAt = Date.now() - 1000;
-      await doInstance.alarm(); // LEADERBOARD
-      round2.rankingEndsAt = Date.now() - 1000;
       await doInstance.alarm(); // FINISHED
 
       assert.equal(doInstance.state.phase, 'FINISHED');

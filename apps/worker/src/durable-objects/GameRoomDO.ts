@@ -21,6 +21,7 @@ import {
   saveQuizSnapshotToDb,
   savePlayerToDb,
   savePlayerScoreToDb,
+  removeLobbyPlayerFromDb,
   saveRoundToDb,
   saveAnswerToDb,
   saveRoomMetaToDb
@@ -223,6 +224,17 @@ export class GameRoomDO {
           headers: { 'Content-Type': 'application/json' }
         }
       );
+    }
+
+    if (url.pathname.endsWith('/leave') && request.method === 'POST') {
+      if (this.state.phase !== 'LOBBY') return new Response(JSON.stringify({ detail:'The game has already started' }),{status:409,headers:{'Content-Type':'application/json'}});
+      const {playerId,sessionHash}=await request.json() as any;
+      const removed=removeLobbyPlayerFromDb(this.ctx.storage.sql,playerId,sessionHash);
+      if(!removed || !this.state.players.delete(playerId)) return new Response(JSON.stringify({detail:'Player session not found'}),{status:404,headers:{'Content-Type':'application/json'}});
+      this.state.stateVersion++;
+      saveRoomMetaToDb(this.ctx.storage.sql,this.state);
+      this.broadcastState();
+      return new Response(JSON.stringify({status:'left'}),{headers:{'Content-Type':'application/json'}});
     }
 
     // 3. Media Manifest endpoint
@@ -431,6 +443,10 @@ export class GameRoomDO {
           const answerRecord = this.state.answers.get(answerKey);
           if (answerRecord) {
             saveAnswerToDb(sql, answerRecord);
+          }
+          if (!isDuplicate && result.status === 'accepted') {
+            saveRoomMetaToDb(sql, this.state);
+            this.broadcastState();
           }
 
           const ackTime = Date.now();

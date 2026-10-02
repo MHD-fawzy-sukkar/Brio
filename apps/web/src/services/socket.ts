@@ -1,3 +1,5 @@
+import { friendlyGameError } from './game-copy';
+
 export interface SocketMessage {
   v: number;
   type: string;
@@ -63,7 +65,7 @@ export class BrioRoomSocket {
         } else if (msg.type === 'answer.rejected' && msg.requestId) {
           const cb = this.rejectedListeners.get(msg.requestId);
           if (cb) {
-            cb(msg.payload?.reason || 'Answer rejected');
+            cb(friendlyGameError(msg.payload?.reason || ''));
             this.receiptListeners.delete(msg.requestId);
             this.rejectedListeners.delete(msg.requestId);
           }
@@ -103,7 +105,7 @@ export class BrioRoomSocket {
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-        return reject(new Error('WebSocket connection is not open'));
+        return reject(new Error(friendlyGameError('WebSocket connection is not open')));
       }
 
       const requestId = 'req_' + Math.random().toString(36).substring(2, 9);

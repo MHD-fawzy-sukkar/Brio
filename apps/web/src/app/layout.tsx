@@ -31,7 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <AuthNav />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8">{children}</main>
         <footer className="border-t border-slate-200 bg-white py-5 text-center text-xs text-slate-500">Brio © 2026 — متعة أكثر، إعداد أقل.</footer>
         </AuthProvider>
       </body>

@@ -43,3 +43,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .confetti-piece { position:absolute; top:-20px; width:9px; height:15px; border-radius:3px; animation:confetti-fall 3.8s linear infinite; }
 .skeleton-shimmer { background:linear-gradient(90deg,#eef0f5 25%,#f8f9fc 50%,#eef0f5 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; }
 @keyframes shimmer { to { background-position:-200% 0; } }
+@keyframes answer-confirmed { 0% { opacity:0; transform:scale(.96) translateY(10px); } 100% { opacity:1; transform:none; } }
+.answer-confirmation { animation:answer-confirmed .35s cubic-bezier(.2,.8,.2,1) both; }
+@media (max-width: 639px) {
+  .card { border-radius:1.2rem; }
+  .primary-btn,.secondary-btn { min-height:44px; }
+}
