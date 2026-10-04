@@ -2,6 +2,21 @@
 
 Updated: 2026-10-03. Read this on every engineering iteration; update only with observed work/evidence.
 
+## 2026-10-03 — Lightweight entry hero and Google button cleanup
+
+- Replaced the solid Bordeaux entry panel with a reusable light `MarketingHero`; the Bordeaux/amber treatment now appears only as clipped heading text, supported by subtle background glows.
+- Added the compact “تجربة حماسية 🤩” badge and used the exact component structure on both guest join and creator login, with responsive mobile stacking.
+- Removed the border, background, padding, and nested label card around the Google-owned button. Its isolated container is visually transparent and adds only a small shadow/rounded clipping while GIS remains configured for Arabic and official minimal outline rendering.
+- Evidence: web TypeScript passed, all 14 web tests passed, and Next production export generated all 13 routes. This iteration was not deployed.
+
+## 2026-10-03 — Login and guest join visual refinement
+
+- Restored the Arabic brand message “حوّل كل سؤال إلى لحظة حماس” beside both the direct guest PIN form and Google creator login without reintroducing a generic landing step or mascot placeholder.
+- Extracted the shared responsive copy treatment into `EntryExperiencePanel`, with context-specific Arabic descriptions and highlights for join and creator login flows.
+- Kept the Google-owned button container isolated from React, retained Arabic GIS localization, changed the official control to a modern pill shape, and added a Cairo-styled Arabic heading around it because cross-origin Google iframe typography cannot safely be overridden.
+- Rebuilt Remember Me as an accessible custom checkbox with a selected state and a clear warning to use the 30-day session only on a personal device.
+- Evidence: web TypeScript passed, all 14 web tests passed, and Next production export generated all 13 routes. This iteration was not deployed.
+
 ## 2026-10-03 — Smart home routing and free-floating mascot preparation
 
 - The root route now waits for the shared authentication state, redirects authenticated creators to `/dashboard/`, and renders the PIN join form directly for guests. The previous generic marketing/landing step was removed.

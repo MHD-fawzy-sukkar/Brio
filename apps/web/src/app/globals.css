@@ -51,6 +51,99 @@ button, a { -webkit-tap-highlight-color: transparent; }
   50% { transform: translate3d(0, -13px, 0) rotate(2deg); }
 }
 .lobby-avatar { animation: lobby-float 3.2s ease-in-out infinite; }
+
+/* Bolt is a single bitmap body with an opaque visor mask and a live SVG face. */
+@keyframes animate-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+  50% { transform: translate3d(0, -4%, 0) rotate(1deg); }
+}
+@keyframes animate-blink {
+  0%, 42%, 46%, 50%, 100% { transform: scaleY(1); }
+  44%, 48% { transform: scaleY(.08); }
+}
+@keyframes animate-talk {
+  0%, 100% { transform: scaleY(.55); }
+  50% { transform: scaleY(1.35); }
+}
+.bolt-mascot {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+  vertical-align: middle;
+}
+.bolt-mascot__stage {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  direction: ltr;
+  transform-origin: 50% 58%;
+}
+.bolt-mascot__stage.animate-float { animation: animate-float 3.6s ease-in-out infinite; }
+.bolt-mascot__body {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+.bolt-mascot__visor-cover,
+.bolt-mascot__face-layer {
+  position: absolute;
+  left: 44.4%;
+  top: 36.5%;
+  width: 22.6%;
+  height: 26%;
+}
+.bolt-mascot__visor-cover {
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 31% 28% 29% 34% / 31% 35% 34% 38%;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(22, 34, 38, .98), #090d10 62%, #050708 100%);
+  box-shadow: inset 0 0 18px rgba(69, 105, 112, .28), 0 0 2px rgba(0, 0, 0, .95);
+  transform: rotate(1deg);
+}
+.bolt-mascot__visor-cover::after {
+  content: '';
+  position: absolute;
+  inset: 5% 7% 58%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(113, 145, 153, .13), transparent);
+  filter: blur(2px);
+}
+.bolt-mascot__face-layer {
+  z-index: 2;
+  display: block;
+  transform: rotate(1deg);
+}
+.mascot-face { display: block; width: 100%; height: 100%; overflow: visible; }
+.mascot-face__eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: animate-blink 4.8s ease-in-out infinite;
+}
+.mascot-face__led {
+  fill: #e9ffff;
+  filter: drop-shadow(0 0 3px #8dfaff) drop-shadow(0 0 7px rgba(58, 228, 255, .9));
+}
+.mascot-face__stroke {
+  fill: none;
+  stroke: #e9ffff;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px #8dfaff) drop-shadow(0 0 7px rgba(58, 228, 255, .9));
+}
+.mascot-face__stroke--wide { stroke-width: 8; }
+.mascot-face__mouth {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mascot-face__mouth--talking { animation: animate-talk .22s ease-in-out infinite; }
 @keyframes podium-rise { from { opacity:0; transform:translateY(35px) scale(.94); } to { opacity:1; transform:none; } }
 @keyframes confetti-fall { 0% { transform:translateY(-30px) rotate(0); opacity:0; } 15% { opacity:1; } 100% { transform:translateY(540px) rotate(520deg); opacity:0; } }
 .podium-rise { animation: podium-rise .7s cubic-bezier(.2,.8,.2,1) both; }
@@ -69,4 +162,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 639px) {
   .card { border-radius:1.2rem; }
   .primary-btn,.secondary-btn { min-height:44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bolt-mascot__stage.animate-float,
+  .mascot-face__eyes,
+  .mascot-face__mouth--talking { animation: none; }
 }

@@ -1,3 +1,4 @@
+import { BoltMascot } from '../BoltMascot';
 import { JoinQrCode } from '../JoinQrCode';
 
 export function JoinInfoCard({ code }: { code: string }) {
@@ -10,7 +11,10 @@ export function JoinInfoCard({ code }: { code: string }) {
       <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-xl shadow-sm">📱</span>
     </div>
 
-    <JoinQrCode pin={code} className="mx-auto mt-5 w-44 sm:w-48" />
+    <div className="mx-auto mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
+      <BoltMascot expression="waiting" label="Bolt ينتظر اللاعبين" className="w-32 shrink-0" />
+      <JoinQrCode pin={code} className="w-40 shrink-0" />
+    </div>
 
     <div className="mt-5 text-center">
       <p className="text-xs font-bold text-slate-500">امسح الرمز، أو أدخل رقم اللعبة</p>

@@ -1,6 +1,7 @@
-const CACHE_NAME = 'brio-static-v3';
+const CACHE_NAME = 'brio-static-v4';
 
 const APP_SHELL_ASSETS = [
+  '/bolt-original.png',
   '/avatars/avatar-1.svg',
   '/avatars/avatar-2.svg',
   '/avatars/avatar-3.svg',

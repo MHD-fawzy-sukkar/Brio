@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../components/AuthProvider';
 import { ButtonContent, PageSkeleton } from '../components/Loading';
+import { MarketingHero } from '../components/MarketingHero';
 import { normalizePin, resolveHomeExperience } from '../services/home-routing';
 
 function GuestJoinGame() {
@@ -44,11 +45,13 @@ function GuestJoinGame() {
     }
   };
 
-  return <section className="relative mx-auto grid min-h-[72vh] max-w-5xl place-items-center overflow-hidden rounded-[2.5rem] border border-brand-100 bg-gradient-to-br from-white via-brand-50 to-amber-50 px-4 py-10 shadow-2xl shadow-brand-100/60 sm:px-8">
+  return <section className="relative mx-auto min-h-[72vh] max-w-7xl overflow-hidden rounded-[2.5rem] border border-brand-100 bg-gradient-to-br from-white via-brand-50 to-amber-50 p-4 shadow-2xl shadow-brand-100/60 sm:p-6 lg:p-8">
     <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-200/35 blur-3xl" />
     <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full bg-amber-200/45 blur-3xl" />
-    <div className="relative z-10 w-full max-w-lg rounded-[2rem] border border-white/80 bg-white/95 p-6 shadow-2xl sm:p-9">
-      <form onSubmit={continueToLobby} className="space-y-6">
+    <div className="relative z-10 grid items-stretch gap-5 lg:grid-cols-[1.08fr_.92fr]">
+      <MarketingHero context="join" />
+      <div className="flex items-center rounded-[2rem] border border-white/80 bg-white/95 p-6 shadow-2xl sm:p-9">
+      <form onSubmit={continueToLobby} className="w-full space-y-6">
         <div className="text-center">
           <div className="mx-auto grid h-16 w-16 -rotate-3 place-items-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-400 text-3xl text-white shadow-lg shadow-brand-200">🎮</div>
           <p className="mt-5 text-xs font-black text-brand-600">انضم فوراً</p>
@@ -68,6 +71,7 @@ function GuestJoinGame() {
         </button>
         <p className="text-center text-xs text-slate-400">هل تريد إنشاء مسابقة؟ <a href="/login/" className="font-black text-brand-600 hover:underline">دخول المنشئين</a></p>
       </form>
+      </div>
     </div>
   </section>;
 }

@@ -1,19 +1,33 @@
-const palette=['#3b82f6','#10b981','#f59e0b','#bd4b5d','#ec4899','#06b6d4'];
+import { BoltMascot, type MascotExpression } from './BoltMascot';
 
-export const STATIC_AVATARS=palette.map((_,index)=>`/avatars/avatar-${index+1}.svg`);
+const avatarHues=[205,120,42,0,315,175];
 
-function staticAvatarColor(source:string):string|null {
+export const STATIC_AVATARS=avatarHues.map((_,index)=>`/avatars/avatar-${index+1}.svg`);
+
+function staticAvatarHue(source:string):number|null {
   const match=/\/avatars\/avatar-(\d+)\.svg$/.exec(source);
   if(!match)return null;
-  return palette[(Number(match[1])-1)%palette.length]||palette[0];
+  return avatarHues[(Number(match[1])-1)%avatarHues.length]??avatarHues[0];
 }
 
-export function Avatar({src,label='',className='h-12 w-12'}:{src:string;label?:string;className?:string}){
-  const color=staticAvatarColor(src);
-  if(!color)return <img src={src} alt={label} loading="eager" decoding="async" className={className}/>;
-  return <svg role={label?'img':undefined} aria-label={label||undefined} aria-hidden={label?undefined:true} viewBox="0 0 100 100" className={className}>
-    <circle cx="50" cy="50" r="48" fill={color}/>
-    <circle cx="50" cy="38" r="18" fill="#fff"/>
-    <path d="M22 82C22 62 78 62 78 82Z" fill="#fff"/>
-  </svg>;
+type AvatarProps = {
+  src:string;
+  label?:string;
+  className?:string;
+  expression?:MascotExpression;
+  isTalking?:boolean;
+  hueRotate?:number;
+};
+
+export function Avatar({src,label='',className='h-12 w-12',expression='idle',isTalking=false,hueRotate}:AvatarProps){
+  const generatedHue=hueRotate??staticAvatarHue(src);
+  if(generatedHue===null)return <img src={src} alt={label} loading="eager" decoding="async" className={className}/>;
+  return <BoltMascot
+    className={className}
+    label={label}
+    expression={expression}
+    isTalking={isTalking}
+    hueRotate={generatedHue}
+    animated={false}
+  />;
 }
