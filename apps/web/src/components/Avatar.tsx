@@ -24,7 +24,7 @@ type AvatarProps = {
 export function Avatar({src,label='',className='h-12 w-12',expression='idle',isTalking=false,hueRotate,playerIndex}:AvatarProps){
   const sourceIndex=staticAvatarIndex(src);
   if(src && sourceIndex===null && hueRotate===undefined)return <img src={src} alt={label} loading="eager" decoding="async" className={className}/>;
-  const personality = avatarVariant(playerIndex ?? sourceIndex ?? 0);
+  const personality = avatarVariant(sourceIndex ?? playerIndex ?? 0);
   const style = {
     '--avatar-direction': personality.direction,
     '--avatar-tilt': `${personality.tilt}deg`,
@@ -40,7 +40,7 @@ export function Avatar({src,label='',className='h-12 w-12',expression='idle',isT
         isTalking={isTalking}
         animated={false}
         pose="flat"
-        faceMode="expressive"
+        faceMode="original"
       />
     </span>
   </span>;

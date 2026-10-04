@@ -278,6 +278,7 @@ test('Public Serializers Redact Answer Keys and Accepted Alternatives', () => {
 
   const hostSnapshot = toPublicHostSnapshot(state, SAMPLE_QUIZ);
   assert.equal(hostSnapshot.role, 'host');
+  assert.equal(hostSnapshot.quizTitle, SAMPLE_QUIZ.title);
   assert.equal(hostSnapshot.playerCount, 1);
   assert.equal(hostSnapshot.lobbyPlayers[0].nickname, 'أحمد');
 });

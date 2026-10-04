@@ -10,7 +10,6 @@ export function JoinInfoCard({ code }: { code: string }) {
         <span className="inline-flex rounded-full bg-brand-100 px-3 py-1 text-[11px] font-black text-brand-700">الدخول السريع</span>
         <h2 id="join-info-title" className="mt-3 text-xl font-black text-slate-950">انضم إلى المسابقة</h2>
       </div>
-      <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-xl shadow-sm">📱</span>
     </div>
 
     <div className="mx-auto mt-5 flex flex-col items-center justify-center gap-4">

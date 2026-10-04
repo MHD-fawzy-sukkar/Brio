@@ -2,8 +2,8 @@ import { Avatar } from '../Avatar';
 import { LobbyPlayer, playerCountLabel } from './lobby-model';
 
 export function PlayerList({ players }: { players: LobbyPlayer[] }) {
-  return <section aria-labelledby="players-title" className="lobby-player-panel card min-h-[390px] p-5 sm:p-7">
-    <div data-bolt-flight-boundary className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
+  return <section data-bolt-flight-boundary aria-labelledby="players-title" className="lobby-player-panel card min-h-[390px] p-5 sm:p-7">
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
       <div>
         <p className="text-xs font-black text-brand-600">مباشر الآن</p>
         <h2 id="players-title" className="mt-1 text-xl font-black sm:text-2xl">اللاعبون في الغرفة</h2>

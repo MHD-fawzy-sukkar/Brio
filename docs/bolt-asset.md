@@ -1,6 +1,6 @@
 # Bolt mascot asset
 
-The final application asset is `apps/web/public/bolt-original.png` (1536 × 1024, RGBA). It was derived from the supplied front-facing JPG using the built-in imagegen tool to remove the green backdrop. The navbar displays the cutout without rotation. The lobby displays the original face without masking, tinting, or pose transforms, and flies throughout the host content above the bottom of the player-list heading, with responsive measured bounds, gentle whole-image 3D tilts, and no reserved layout space. Avatars explicitly opt into separate CSS expression layers.
+The final application asset is `apps/web/public/bolt-original.png` (1536 × 1024, RGBA). It was derived from the supplied front-facing JPG using the built-in imagegen tool to remove the green backdrop. The navbar displays the cutout without rotation. The lobby displays the original face without masking, tinting, or pose transforms, and flies throughout the host content above the start of the players panel, with responsive measured bounds, gentle whole-image 3D tilts, and no reserved layout space. Avatars also use the untouched original face, upright and unmirrored, enlarged within square cards. Stable avatar IDs preserve the chosen hue across the join screen and lobby.
 
 ## Generation prompt
 

@@ -96,6 +96,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 .game-controls {
   display: flex;
+  min-height: 11rem;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -112,8 +113,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
   left: 12px;
   top: 12px;
   z-index: 100;
-  --bolt-width: clamp(8rem, 14vw, 12rem);
-  width: var(--bolt-width);
+  --bolt-width: clamp(9rem, 16vw, 14rem);
+  width: min(var(--bolt-width), max(0px, calc((var(--flight-height, 200px) - 24px) * 1.5)));
   pointer-events: none;
   background: none;
   border: 0;
@@ -165,17 +166,31 @@ button, a { -webkit-tap-highlight-color: transparent; }
   filter: blur(9px);
 }
 .mascot-hero--lobby { width: min(100%, 22rem); }
-.avatar { display: inline-grid; place-items: center; vertical-align: middle; }
+.avatar { display: inline-grid; place-items: center; vertical-align: middle; aspect-ratio: 1; }
 .avatar .bolt-mascot__body { filter: hue-rotate(var(--avatar-hue, 0deg)); }
 .avatar__art {
   display: grid;
   place-items: center;
   width: 100%; height: 100%;
-  transform: rotate(var(--avatar-tilt, 0deg)) scaleX(var(--avatar-direction, 1));
+  overflow: hidden;
+  border-radius: inherit;
   filter: drop-shadow(0 3px 5px var(--avatar-glow, rgba(159, 48, 67, .4)));
   transition: transform .25s ease;
 }
-button:hover .avatar__art { transform: translateY(-3px) rotate(var(--avatar-tilt, 0deg)) scaleX(var(--avatar-direction, 1)); }
+.avatar__art > .bolt-mascot { width: 145%; max-width: none; height: auto; }
+.avatar-choice {
+  position: relative; display: grid; aspect-ratio: 1; padding: .25rem;
+  border: 2px solid #e8eaf0; border-radius: 1.25rem;
+  background: linear-gradient(145deg, #fff, #f5f6fa);
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.avatar-choice:hover { border-color: #d18a98; transform: translateY(-2px); }
+.avatar-choice[aria-pressed="true"] { border-color: var(--primary); background: #fff1f3; box-shadow: 0 0 0 3px rgba(159,48,67,.10); }
+.avatar-choice[aria-pressed="true"]::after {
+  content: '✓'; position: absolute; bottom: -.2rem; inset-inline-end: -.2rem;
+  display: grid; place-items: center; width: 1.3rem; height: 1.3rem;
+  border-radius: 50%; background: var(--primary); color: white; font-size: .75rem; font-weight: 900;
+}
 button:focus-visible, a:focus-visible { outline: 3px solid #bd4b5d; outline-offset: 4px; }
 .primary-btn, .secondary-btn { transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
 .primary-btn:hover:not(:disabled), .secondary-btn:hover:not(:disabled) { transform: translateY(-2px); }

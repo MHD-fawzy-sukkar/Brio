@@ -62,7 +62,7 @@ function JoinSetup() {
   };
 
   if(resolving)return <PageSkeleton/>;
-  if(!roomId||!code)return <div className="card mx-auto max-w-lg p-10 text-center"><div className="text-5xl">🔎</div><h1 className="mt-4 text-xl font-black">تعذر فتح رابط اللعبة</h1><p className="mt-2 text-sm font-bold leading-7 text-rose-600">{error}</p><a href="/" className="secondary-btn mt-6 inline-block">إدخال الرمز يدوياً</a></div>;
+  if(!roomId||!code)return <div className="card mx-auto max-w-lg p-10 text-center"><div className="text-5xl">🔎</div><h1 className="mt-4 text-xl font-black">تعذر فتح رابط اللعبة</h1><p className="mt-2 text-sm font-bold leading-7 text-rose-600">{error}</p><a href="/join-game/" className="secondary-btn mt-6 inline-block">إدخال الرمز يدوياً</a></div>;
 
   return (
     <div className="mx-auto flex min-h-[72vh] max-w-4xl items-center justify-center py-8">
@@ -76,9 +76,9 @@ function JoinSetup() {
           <div><h2 className="text-xl font-black text-slate-900">جاهز للدخول؟</h2><p className="mt-1 text-sm text-slate-500">يمكنك تعديل الاسم والصورة قبل الانضمام.</p></div>
           {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
           <div><label htmlFor="nickname" className="label">الاسم المستعار</label><input id="nickname" value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={2} maxLength={24} autoFocus className="field" placeholder="مثال: نور" /></div>
-          <fieldset><legend className="label">اختر صورتك</legend><div className="grid grid-cols-3 gap-3 sm:grid-cols-5">{AVATARS.map((item, index) => <button key={item} type="button" onClick={() => setAvatar(item)} aria-label={`الصورة ${index + 1}`} aria-pressed={avatar === item} className={`rounded-2xl border-2 p-1.5 transition ${avatar === item ? 'scale-105 border-brand-500 bg-brand-50 shadow-md' : 'border-slate-100 hover:border-brand-200'}`}><Avatar src={item} playerIndex={index} className="w-full rounded-xl" /></button>)}</div></fieldset>
+          <fieldset><legend className="label">اختر صورتك</legend><div className="grid grid-cols-3 gap-3 sm:grid-cols-5">{AVATARS.map((item, index) => <button key={item} type="button" onClick={() => setAvatar(item)} aria-label={`الصورة ${index + 1}`} aria-pressed={avatar === item} className="avatar-choice"><Avatar src={item} playerIndex={index} className="w-full rounded-xl" /></button>)}</div></fieldset>
           <button type="submit" disabled={joining || nickname.trim().length < 2} className="primary-btn w-full py-3.5">{joining ? 'لحظة، نجهّز مكانك…' : 'انضم إلى اللعبة'}</button>
-          <a href="/" className="block text-center text-sm font-bold text-slate-500 hover:text-brand-600">استخدام رمز مختلف</a>
+          <a href="/join-game/" className="block text-center text-sm font-bold text-slate-500 hover:text-brand-600">استخدام رمز مختلف</a>
         </form>
       </section>
     </div>

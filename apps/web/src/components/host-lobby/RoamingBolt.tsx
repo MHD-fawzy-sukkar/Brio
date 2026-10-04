@@ -5,7 +5,7 @@ import { BoltMascot } from '../BoltMascot';
 
 type FlightBounds = { height: number; x: number; y: number };
 
-/** The transparent flight area ends at the bottom of the player-list heading. */
+/** The overlay ends exactly where the players panel starts; it reserves no space. */
 export function RoamingBolt() {
   const areaRef = useRef<HTMLDivElement>(null);
   const boltRef = useRef<HTMLDivElement>(null);
@@ -19,7 +19,7 @@ export function RoamingBolt() {
       if (!boltRef.current || !root || !boundary) return;
       const rootRect = root.getBoundingClientRect();
       const boltRect = boltRef.current.getBoundingClientRect();
-      const height = Math.max(0, boundary.getBoundingClientRect().bottom - rootRect.top);
+      const height = Math.max(0, boundary.getBoundingClientRect().top - rootRect.top);
       const next = {
         height,
         x: Math.max(0, rootRect.width - boltRect.width - 24),
@@ -39,6 +39,7 @@ export function RoamingBolt() {
   const style = {
     height: bounds?.height ?? 0,
     visibility: bounds ? 'visible' : 'hidden',
+    '--flight-height': `${bounds?.height ?? 0}px`,
     '--wander-x': `${bounds?.x ?? 0}px`,
     '--wander-y': `${bounds?.y ?? 0}px`
   } as CSSProperties;

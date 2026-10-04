@@ -57,11 +57,10 @@ function HostContent(){
   if(!snapshot)return <PageSkeleton/>;
   return <div data-bolt-flight-root className="relative mx-auto max-w-6xl space-y-5">
     {phase==='LOBBY'&&<RoamingBolt />}
-    <header className="card flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center sm:p-5"><div><span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">لوحة المضيف · {phase}</span><h1 className="mt-3 text-2xl font-black">ساحة المسابقة</h1><p className="mt-1 text-sm text-slate-500">{connection==='connected'?'متصل ومتزامن مع اللاعبين':'نعيد الاتصال بالغرفة…'}</p></div></header>
     {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
 
-    {phase!=='LOBBY'&&<GameControls connected={connection==='connected'} players={players} onEnd={endRoom} ending={ending} finished={phase==='FINISHED'}/>}
-    {phase==='LOBBY'&&<HostLobby code={code} connected={connection==='connected'} players={players} onStart={start} onEnd={endRoom} ending={ending}/>}
+    {phase!=='LOBBY'&&<GameControls quizTitle={snapshot.quizTitle} connected={connection==='connected'} players={players} onEnd={endRoom} ending={ending} finished={phase==='FINISHED'}/>}
+    {phase==='LOBBY'&&<HostLobby quizTitle={snapshot.quizTitle} code={code} connected={connection==='connected'} players={players} onStart={start} onEnd={endRoom} ending={ending}/>}
 
     {phase==='COUNTDOWN'&&<section className="card grid min-h-[480px] place-items-center text-center"><div><div className="mx-auto grid h-36 w-36 place-items-center rounded-full border-4 border-brand-100 bg-brand-50 text-7xl font-black text-brand-700 shadow-xl shadow-brand-100">{countdown.seconds}</div><h2 className="mt-7 text-4xl font-black">استعدوا للانطلاق!</h2></div></section>}
 

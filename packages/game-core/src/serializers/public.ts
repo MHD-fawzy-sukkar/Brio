@@ -151,6 +151,7 @@ export function toPublicHostSnapshot(
 
   return {
     role: 'host',
+    quizTitle: quiz.title,
     roomId: state.roomId,
     code: quiz.roomCode || state.roomId,
     phase: state.phase,

@@ -2,6 +2,7 @@ import { ButtonContent } from '../Loading';
 import { canStartLobby, playerCountLabel, type LobbyPlayer } from './lobby-model';
 
 type GameControlsProps = {
+  quizTitle?: string;
   connected: boolean;
   players: LobbyPlayer[];
   onStart?: () => void;
@@ -10,12 +11,13 @@ type GameControlsProps = {
   finished?: boolean;
 };
 
-export function GameControls({ connected, players, onStart, onEnd, ending, finished = false }: GameControlsProps) {
+export function GameControls({ quizTitle, connected, players, onStart, onEnd, ending, finished = false }: GameControlsProps) {
   return <section aria-label="التحكم باللعبة" className="game-controls">
     <div className="flex items-center gap-3">
       <span className={`h-3 w-3 shrink-0 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,.12)]' : 'bg-amber-400'}`} />
       <div>
-        <h2 className="font-black text-slate-900">التحكم باللعبة</h2>
+        <p className="text-xs font-black text-brand-600">ساحة المسابقة · لوحة المضيف</p>
+        <h1 className="mt-2 text-2xl font-black text-slate-900 sm:text-3xl">{quizTitle || 'ساحة المسابقة'}</h1>
         <p className="mt-1 text-xs font-bold text-slate-500">{finished ? 'اكتملت المسابقة' : connected ? playerCountLabel(players.length) : 'نعيد الاتصال بالغرفة…'}</p>
       </div>
     </div>

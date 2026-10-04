@@ -101,6 +101,7 @@ export const AnswerStatSchema = z.object({
  */
 export const HostSnapshotDtoSchema = z.object({
   role: z.literal('host'),
+  quizTitle: z.string().default(''),
   roomId: z.string(),
   code: z.string(),
   phase: GamePhaseSchema,
