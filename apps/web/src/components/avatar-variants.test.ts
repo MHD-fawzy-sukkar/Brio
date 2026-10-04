@@ -5,6 +5,7 @@ import { avatarVariant, AVATAR_VARIANT_COUNT } from './avatar-variants';
 test('15 avatars retain distinct hues with upright front-facing artwork', () => {
   const variants = Array.from({ length: AVATAR_VARIANT_COUNT }, (_, index) => avatarVariant(index));
   assert.equal(new Set(variants.map(variant => variant.hue)).size, 15);
+  assert.equal(new Set(variants.map(variant => variant.eyeStyle)).size, 5);
   assert.ok(variants.every(variant => variant.direction === 1 && variant.tilt === 0));
 });
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
+
 import { useEffect, useMemo, useState } from 'react';
 import type { QuizSummaryDto } from '@brio/contracts';
 import { AuthGuard } from '../../components/AuthGuard';
@@ -56,7 +58,7 @@ function DashboardContent() {
   };
 
   return (
-    <div className="space-y-8">
+    <div data-bolt-flight-root className="relative space-y-8"><RoamingBolt scope="page"/>
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-black text-brand-600">لوحة المنشئ</p><h1 className="mt-1 text-3xl font-black text-slate-900">مرحباً بك في Brio</h1><p className="mt-2 text-slate-500">تابع مسابقاتك الأخيرة أو ابدأ تجربة جديدة.</p></div><a href="/quizzes/new/" className="primary-btn text-center">＋ إنشاء مسابقة</a></header>
       {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}</div>}
       <section className="grid gap-4 sm:grid-cols-3">

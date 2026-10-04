@@ -41,6 +41,7 @@ export function Avatar({src,label='',className='h-12 w-12',expression='idle',isT
         animated={false}
         pose="flat"
         faceMode="original"
+        eyeStyle={personality.eyeStyle}
       />
     </span>
   </span>;

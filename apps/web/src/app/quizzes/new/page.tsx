@@ -1,5 +1,7 @@
 'use client';
 
+import { RoamingBolt } from '../../../components/host-lobby/RoamingBolt';
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '../../../components/AuthGuard';
@@ -57,7 +59,7 @@ function NewQuizForm() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div data-bolt-flight-root className="relative mx-auto max-w-5xl"><RoamingBolt scope="page"/>
       <a href="/dashboard/" className="text-sm font-black text-brand-600">→ العودة إلى لوحة التحكم</a>
       <div className="mt-5 grid gap-7 lg:grid-cols-[1fr_360px]">
         <form onSubmit={createQuiz} className="card space-y-6 p-7 sm:p-9">

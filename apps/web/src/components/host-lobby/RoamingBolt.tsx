@@ -5,8 +5,8 @@ import { BoltMascot } from '../BoltMascot';
 
 type FlightBounds = { height: number; x: number; y: number };
 
-/** The overlay ends exactly where the players panel starts; it reserves no space. */
-export function RoamingBolt() {
+/** A transparent overlay: lobby flight ends at the players; page flight follows the content. */
+export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 'lobby' | 'page'; celebration?: boolean }) {
   const areaRef = useRef<HTMLDivElement>(null);
   const boltRef = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState<FlightBounds | null>(null);
@@ -14,12 +14,14 @@ export function RoamingBolt() {
   useEffect(() => {
     const root = areaRef.current?.closest('[data-bolt-flight-root]');
     const boundary = root?.querySelector('[data-bolt-flight-boundary]');
-    if (!root || !boundary || !boltRef.current) return;
+    if (!root || (scope === 'lobby' && !boundary) || !boltRef.current) return;
     function measure() {
-      if (!boltRef.current || !root || !boundary) return;
+      if (!boltRef.current || !root) return;
       const rootRect = root.getBoundingClientRect();
       const boltRect = boltRef.current.getBoundingClientRect();
-      const height = Math.max(0, boundary.getBoundingClientRect().top - rootRect.top);
+      const height = scope === 'lobby'
+        ? Math.max(0, (boundary?.getBoundingClientRect().top ?? rootRect.top) - rootRect.top)
+        : Math.min(rootRect.height, Math.max(280, window.innerHeight * .85));
       const next = {
         height,
         x: Math.max(0, rootRect.width - boltRect.width - 24),
@@ -29,12 +31,12 @@ export function RoamingBolt() {
     }
     const observer = new ResizeObserver(measure);
     observer.observe(root);
-    observer.observe(boundary);
+    if (boundary) observer.observe(boundary);
     observer.observe(boltRef.current);
     window.addEventListener('resize', measure);
     measure();
     return () => { observer.disconnect(); window.removeEventListener('resize', measure); };
-  }, []);
+  }, [scope]);
 
   const style = {
     height: bounds?.height ?? 0,
@@ -46,7 +48,7 @@ export function RoamingBolt() {
 
   return <div ref={areaRef} className="bolt-flight-area" style={style} aria-hidden="true">
     <div ref={boltRef} className="roaming-bolt">
-      <div className="animate-wander">
+      <div className={`animate-wander${scope === 'page' ? ' animate-wander--page' : ''}${celebration ? ' animate-wander--celebration' : ''}`}>
         <BoltMascot faceMode="original" animated={false} pose="flat" className="w-full" />
       </div>
     </div>

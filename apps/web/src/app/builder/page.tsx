@@ -1,5 +1,7 @@
 'use client';
 
+import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
+
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { AuthoringQuestion } from '@brio/contracts';
@@ -109,7 +111,7 @@ function Builder() {
   if (!quiz && !error) return <PageSkeleton/>;
 
   return (
-    <div className="space-y-7">
+    <div data-bolt-flight-root className="relative space-y-7"><RoamingBolt scope="page"/>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div><a href="/dashboard/" className="text-sm font-bold text-brand-600">→ مسابقاتي</a><h1 className="mt-2 text-3xl font-black text-slate-900">استوديو المسابقة</h1><p className="mt-1 text-sm text-slate-500">التفاصيل هنا، وكل سؤال يُحرّر في صفحة هادئة مستقلة.</p></div>
         <div className="flex flex-wrap gap-2"><button onClick={startGame} disabled={starting || !quiz?.questions.length} className="primary-btn">{starting?'جاري تجهيز الغرفة…':'▶ ابدأ اللعبة'}</button><button onClick={publish} disabled={busy || !quiz?.questions.length} className="secondary-btn">نشر فقط</button></div>

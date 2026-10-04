@@ -1,6 +1,6 @@
 # Bolt mascot asset
 
-The final application asset is `apps/web/public/bolt-original.png` (1536 × 1024, RGBA). It was derived from the supplied front-facing JPG using the built-in imagegen tool to remove the green backdrop. The navbar displays the cutout without rotation. The lobby displays the original face without masking, tinting, or pose transforms, and flies throughout the host content above the start of the players panel, with responsive measured bounds, gentle whole-image 3D tilts, and no reserved layout space. Avatars also use the untouched original face, upright and unmirrored, enlarged within square cards. Stable avatar IDs preserve the chosen hue across the join screen and lobby.
+The final application asset is `apps/web/public/bolt-original.png` (1536 × 1024, RGBA). It was derived from the supplied front-facing JPG using the built-in imagegen tool to remove the green backdrop. The navbar displays the cutout without rotation. The lobby displays the original face without masking, tinting, or pose transforms, and flies throughout the host content above the start of the players panel, with responsive measured bounds, gentle whole-image 3D tilts, and no reserved layout space. Avatars preserve the original visor and smile, upright and unmirrored, enlarged within square cards. Five LED eye styles (original, wink, joyful, curious, sparkle) use localized SVG patches at the original bitmap eye centers (654,485) and (870,485), leaving the body and smile untouched. Stable avatar IDs preserve the chosen hue across the join screen and lobby.
 
 ## Generation prompt
 
@@ -9,3 +9,5 @@ Use case: background-extraction. Edit target: the supplied perfectly symmetrical
 ## UI preview
 
 `host-lobby-ui-preview.png` shows the actual host lobby components with 15 sample players. The temporary preview route is removed from the application.
+
+The shared RoamingBolt overlay also appears over the dashboard, quiz creation and builder, live leaderboards, and final podium/results. Page mode uses the same gentle 3D drift, measured responsive bounds, no layout space, no pointer interception, and reduced-motion support.

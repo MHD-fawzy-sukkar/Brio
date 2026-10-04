@@ -1,3 +1,5 @@
+import { AvatarEyes, type AvatarEyeStyle } from './AvatarEyes';
+
 export type MascotExpression = 'idle' | 'waiting' | 'happy' | 'sad' | 'talking';
 
 type MascotFaceProps = {
@@ -11,6 +13,7 @@ type BoltMascotProps = MascotFaceProps & {
   animated?: boolean;
   pose?: 'floating' | 'flat';
   faceMode?: 'original' | 'expressive';
+  eyeStyle?: AvatarEyeStyle;
 };
 
 const starPath = 'M34 24 38.5 34.5 50 35.5 41 43 44 54 34 48 24 54 27 43 18 35.5 29.5 34.5Z';
@@ -53,7 +56,8 @@ export function BoltMascot({
   label = '',
   animated = true,
   pose = 'floating',
-  faceMode = 'original'
+  faceMode = 'original',
+  eyeStyle = 'original'
 }: BoltMascotProps) {
   return <span
     className={`bolt-mascot ${className}`}
@@ -69,6 +73,7 @@ export function BoltMascot({
           draggable={false}
           className="bolt-mascot__body"
         />
+        {faceMode === 'original' && eyeStyle !== 'original' && <AvatarEyes style={eyeStyle} />}
         {faceMode === 'expressive' && <span className="bolt-mascot__visor" aria-hidden="true">
           <span className="bolt-mascot__visor-cover" />
           <span className="bolt-mascot__face-layer">

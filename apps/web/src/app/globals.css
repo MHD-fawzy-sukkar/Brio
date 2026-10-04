@@ -184,6 +184,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background: linear-gradient(145deg, #fff, #f5f6fa);
   transition: border-color .2s, box-shadow .2s, transform .2s;
 }
+.animate-wander--page { animation-duration: 26s; animation-delay: -6s; }
+.animate-wander--celebration { animation-duration: 20s; filter: drop-shadow(0 10px 16px rgba(245,158,11,.3)); }
+.avatar-eyes { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
+.avatar-eyes__led { fill: #fff2b0; stroke: #fff2b0; stroke-width: 10; stroke-linecap: round; filter: drop-shadow(0 0 5px #ffbf47); }
+.avatar-eyes__led path { fill: none; }
+.avatar-eyes__led .avatar-eyes__filled { fill: #fff2b0; stroke-width: 3; }
 .avatar-choice:hover { border-color: #d18a98; transform: translateY(-2px); }
 .avatar-choice[aria-pressed="true"] { border-color: var(--primary); background: #fff1f3; box-shadow: 0 0 0 3px rgba(159,48,67,.10); }
 .avatar-choice[aria-pressed="true"]::after {

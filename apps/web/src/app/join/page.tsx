@@ -67,7 +67,7 @@ function JoinSetup() {
   return (
     <div className="mx-auto flex min-h-[72vh] max-w-4xl items-center justify-center py-8">
       <section className="card grid w-full overflow-hidden lg:grid-cols-[.85fr_1.15fr]">
-        <div className="game-surface flex flex-col justify-between overflow-hidden border-b border-brand-100 p-8 text-slate-900 sm:p-10 lg:border-b-0 lg:border-l">
+        <div className="game-surface flex flex-col justify-center overflow-hidden border-b border-brand-100 p-8 text-slate-900 sm:p-10 lg:border-b-0 lg:border-l">
           <AmbientBackground />
           <div className="relative z-10"><span className="text-xs font-black text-brand-600">رمز اللعبة</span><div className="mt-2 text-4xl font-black tracking-[.22em] text-brand-800" dir="ltr">{code}</div></div>
           <div className="relative z-10 mt-8"><div className="mascot-hero mx-auto"><BoltMascot expression="happy" label="Bolt" className="w-full" /></div><h1 className="mt-4 text-3xl font-black">اختر شخصيتك</h1><p className="mt-3 leading-7 text-slate-600">اكتب اسماً لطيفاً واختر الصورة التي سترافقك في التحدي.</p></div>
