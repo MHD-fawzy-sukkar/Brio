@@ -1,5 +1,11 @@
 export type HomeExperience = 'loading' | 'dashboard' | 'join';
 
+export const JOIN_GAME_HREF = '/join-game/';
+
+export function resolveLogoHref(authenticated: boolean): string {
+  return authenticated ? '/dashboard/' : '/';
+}
+
 export function resolveHomeExperience(loading: boolean, authenticated: boolean): HomeExperience {
   if (loading) return 'loading';
   return authenticated ? 'dashboard' : 'join';

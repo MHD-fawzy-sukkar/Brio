@@ -4,12 +4,14 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BrioRoomSocket } from '../../services/socket';
 import { AuthGuard } from '../../components/AuthGuard';
-import { ButtonContent, PageSkeleton } from '../../components/Loading';
+import { PageSkeleton } from '../../components/Loading';
 import { Podium } from '../../components/Podium';
 import { useSynchronizedCountdown } from '../../hooks/use-synchronized-countdown';
 import { useRoomMediaPrefetch } from '../../hooks/use-room-media-prefetch';
 import { Avatar } from '../../components/Avatar';
+import { GameControls } from '../../components/host-lobby/GameControls';
 import { HostLobby } from '../../components/host-lobby/HostLobby';
+import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
 
 const optionColors=['bg-brand-500','bg-cyan-500','bg-amber-500','bg-emerald-500','bg-blue-500','bg-orange-500'];
 
@@ -53,11 +55,13 @@ function HostContent(){
   const code=/^\d{6}$/.test(snapshot?.code||'')?snapshot.code:requestedCode;
 
   if(!snapshot)return <PageSkeleton/>;
-  return <div className="mx-auto max-w-6xl space-y-5">
-    <header className="card flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center sm:p-5"><div><span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">لوحة المضيف · {phase}</span><h1 className="mt-3 text-2xl font-black">ساحة المسابقة</h1><p className="mt-1 text-sm text-slate-500">{connection==='connected'?'متصل ومتزامن مع اللاعبين':'نعيد الاتصال بالغرفة…'}</p></div><button onClick={endRoom} disabled={ending||phase==='FINISHED'} className="self-start rounded-xl px-3 py-2 text-sm font-black text-rose-600 hover:bg-rose-50 sm:self-auto"><ButtonContent busy={ending} busyText="جاري الإنهاء…">إنهاء اللعبة</ButtonContent></button></header>
+  return <div data-bolt-flight-root className="relative mx-auto max-w-6xl space-y-5">
+    {phase==='LOBBY'&&<RoamingBolt />}
+    <header className="card flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center sm:p-5"><div><span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">لوحة المضيف · {phase}</span><h1 className="mt-3 text-2xl font-black">ساحة المسابقة</h1><p className="mt-1 text-sm text-slate-500">{connection==='connected'?'متصل ومتزامن مع اللاعبين':'نعيد الاتصال بالغرفة…'}</p></div></header>
     {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
 
-    {phase==='LOBBY'&&<HostLobby code={code} connected={connection==='connected'} players={players} onStart={start}/>}
+    {phase!=='LOBBY'&&<GameControls connected={connection==='connected'} players={players} onEnd={endRoom} ending={ending} finished={phase==='FINISHED'}/>}
+    {phase==='LOBBY'&&<HostLobby code={code} connected={connection==='connected'} players={players} onStart={start} onEnd={endRoom} ending={ending}/>}
 
     {phase==='COUNTDOWN'&&<section className="card grid min-h-[480px] place-items-center text-center"><div><div className="mx-auto grid h-36 w-36 place-items-center rounded-full border-4 border-brand-100 bg-brand-50 text-7xl font-black text-brand-700 shadow-xl shadow-brand-100">{countdown.seconds}</div><h2 className="mt-7 text-4xl font-black">استعدوا للانطلاق!</h2></div></section>}
 

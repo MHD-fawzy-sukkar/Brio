@@ -1,8 +1,10 @@
-import { BoltMascot } from '../BoltMascot';
 import { JoinQrCode } from '../JoinQrCode';
+import { AmbientBackground } from '../AmbientBackground';
 
 export function JoinInfoCard({ code }: { code: string }) {
-  return <section aria-labelledby="join-info-title" className="overflow-hidden rounded-[1.75rem] border border-brand-100 bg-gradient-to-br from-white via-brand-50 to-amber-50 p-5 shadow-xl shadow-brand-100/50 sm:p-6">
+  return <section aria-labelledby="join-info-title" className="game-surface overflow-hidden rounded-[1.75rem] border border-brand-100 p-5 shadow-xl shadow-brand-100/50 sm:p-6">
+    <AmbientBackground />
+    <div className="relative z-10">
     <div className="flex items-start justify-between gap-3">
       <div>
         <span className="inline-flex rounded-full bg-brand-100 px-3 py-1 text-[11px] font-black text-brand-700">الدخول السريع</span>
@@ -11,8 +13,7 @@ export function JoinInfoCard({ code }: { code: string }) {
       <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-xl shadow-sm">📱</span>
     </div>
 
-    <div className="mx-auto mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
-      <BoltMascot expression="waiting" label="Bolt ينتظر اللاعبين" className="w-32 shrink-0" />
+    <div className="mx-auto mt-5 flex flex-col items-center justify-center gap-4">
       <JoinQrCode pin={code} className="w-40 shrink-0" />
     </div>
 
@@ -22,6 +23,7 @@ export function JoinInfoCard({ code }: { code: string }) {
         {code || '------'}
       </div>
       <p className="mt-3 text-xs font-bold leading-6 text-slate-500">سيُفتح نموذج الانضمام والرمز مُعبّأ تلقائياً.</p>
+    </div>
     </div>
   </section>;
 }

@@ -1,13 +1,14 @@
 import { BoltMascot, type MascotExpression } from './BoltMascot';
+import type { CSSProperties } from 'react';
+import { avatarVariant, AVATAR_VARIANT_COUNT } from './avatar-variants';
 
-const avatarHues=[205,120,42,0,315,175];
+// These stable IDs are saved with the player; every variant renders one bitmap.
+export const STATIC_AVATARS=Array.from({length:AVATAR_VARIANT_COUNT},(_,index)=>`/avatars/avatar-${index+1}.svg`);
 
-export const STATIC_AVATARS=avatarHues.map((_,index)=>`/avatars/avatar-${index+1}.svg`);
-
-function staticAvatarHue(source:string):number|null {
+function staticAvatarIndex(source:string):number|null {
   const match=/\/avatars\/avatar-(\d+)\.svg$/.exec(source);
   if(!match)return null;
-  return avatarHues[(Number(match[1])-1)%avatarHues.length]??avatarHues[0];
+  return Number(match[1])-1;
 }
 
 type AvatarProps = {
@@ -17,17 +18,30 @@ type AvatarProps = {
   expression?:MascotExpression;
   isTalking?:boolean;
   hueRotate?:number;
+  playerIndex?:number;
 };
 
-export function Avatar({src,label='',className='h-12 w-12',expression='idle',isTalking=false,hueRotate}:AvatarProps){
-  const generatedHue=hueRotate??staticAvatarHue(src);
-  if(generatedHue===null)return <img src={src} alt={label} loading="eager" decoding="async" className={className}/>;
-  return <BoltMascot
-    className={className}
-    label={label}
-    expression={expression}
-    isTalking={isTalking}
-    hueRotate={generatedHue}
-    animated={false}
-  />;
+export function Avatar({src,label='',className='h-12 w-12',expression='idle',isTalking=false,hueRotate,playerIndex}:AvatarProps){
+  const sourceIndex=staticAvatarIndex(src);
+  if(src && sourceIndex===null && hueRotate===undefined)return <img src={src} alt={label} loading="eager" decoding="async" className={className}/>;
+  const personality = avatarVariant(playerIndex ?? sourceIndex ?? 0);
+  const style = {
+    '--avatar-direction': personality.direction,
+    '--avatar-tilt': `${personality.tilt}deg`,
+    '--avatar-glow': personality.glow,
+    '--avatar-hue': `${hueRotate ?? personality.hue}deg`
+  } as CSSProperties;
+  return <span className={`avatar ${className}`} style={style}>
+    <span className="avatar__art">
+      <BoltMascot
+        className="h-full w-full"
+        label={label}
+        expression={expression}
+        isTalking={isTalking}
+        animated={false}
+        pose="flat"
+        faceMode="expressive"
+      />
+    </span>
+  </span>;
 }

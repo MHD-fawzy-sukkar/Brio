@@ -2,6 +2,8 @@
 
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
+import { AmbientBackground } from '../../components/AmbientBackground';
+import { Logo } from '../../components/Logo';
 import { MarketingHero } from '../../components/MarketingHero';
 
 interface GoogleIdentityApi {
@@ -105,15 +107,14 @@ export default function LoginPage() {
   }, [scriptLoaded, clientId]);
 
   return (
-    <div className="relative mx-auto min-h-[72vh] max-w-7xl overflow-hidden rounded-[2.5rem] border border-brand-100 bg-gradient-to-br from-white via-brand-50 to-amber-50 p-4 shadow-2xl shadow-brand-100/60 sm:p-6 lg:p-8">
+    <div className="game-surface mx-auto min-h-[72vh] max-w-7xl overflow-hidden rounded-[2.5rem] border border-brand-100 p-4 shadow-2xl shadow-brand-100/60 sm:p-6 lg:p-8">
       <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => setScriptLoaded(true)} onError={() => { setError('تعذر تحميل خدمة Google. تحقق من اتصالك ثم أعد المحاولة.'); setLoading(false); }} />
-      <div className="absolute right-1/4 top-12 h-56 w-56 rounded-full bg-brand-200/40 blur-3xl" />
-      <div className="absolute bottom-10 left-1/4 h-48 w-48 rounded-full bg-amber-100/70 blur-3xl" />
+      <AmbientBackground />
       <div className="relative z-10 grid items-stretch gap-5 lg:grid-cols-[1.08fr_.92fr]">
       <MarketingHero context="login" />
       <section className="card flex w-full flex-col justify-center p-7 sm:p-10">
         <div className="mb-8 text-center">
-          <a href="/" className="mx-auto flex w-fit items-center gap-2 text-xl font-black text-slate-900"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-200">⚡</span><span>Brio</span></a>
+          <Logo className="mx-auto" />
           <h1 className="mt-7 text-2xl font-black text-slate-900">تسجيل الدخول</h1>
           <p className="mt-2 text-sm leading-6 text-slate-500">تابع إلى مساحة مسابقاتك باستخدام حساب Google.</p>
         </div>
