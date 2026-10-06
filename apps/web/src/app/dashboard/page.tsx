@@ -61,7 +61,7 @@ function DashboardContent() {
     <div data-bolt-flight-root className="relative space-y-8"><RoamingBolt scope="page"/>
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-sm font-black text-brand-600">لوحة المنشئ</p><h1 className="mt-1 text-3xl font-black text-slate-900">مرحباً بك في Brio</h1><p className="mt-2 text-slate-500">تابع مسابقاتك الأخيرة أو ابدأ تجربة جديدة.</p></div><a href="/quizzes/new/" className="primary-btn text-center">＋ إنشاء مسابقة</a></header>
       {error&&<div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}</div>}
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section data-bolt-flight-boundary className="grid gap-4 sm:grid-cols-3">
         <div className="card p-5"><p className="text-xs font-bold text-slate-400">المسابقات</p><b className="mt-2 block text-3xl text-slate-900">{stats.quizCount}</b></div>
         <div className="card p-5"><p className="text-xs font-bold text-slate-400">إجمالي الأسئلة</p><b className="mt-2 block text-3xl text-brand-700">{stats.questionCount}</b></div>
         <div className="card p-5"><p className="text-xs font-bold text-slate-400">آخر نشاط</p><b className="mt-3 block text-sm text-slate-700">{stats.lastUpdated?new Date(stats.lastUpdated).toLocaleDateString('ar'):'ابدأ أول مسابقة'}</b></div>

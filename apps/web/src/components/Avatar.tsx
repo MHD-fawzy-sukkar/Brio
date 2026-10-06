@@ -1,48 +1,26 @@
-import { BoltMascot, type MascotExpression } from './BoltMascot';
 import type { CSSProperties } from 'react';
-import { avatarVariant, AVATAR_VARIANT_COUNT } from './avatar-variants';
+import { BoltAvatarArtwork } from './BoltAvatarArtwork';
+import { avatarVariant, BOLT_AVATARS, resolveAvatarIndex } from './avatar-variants';
 
-// These stable IDs are saved with the player; every variant renders one bitmap.
-export const STATIC_AVATARS=Array.from({length:AVATAR_VARIANT_COUNT},(_,index)=>`/avatars/avatar-${index+1}.svg`);
-
-function staticAvatarIndex(source:string):number|null {
-  const match=/\/avatars\/avatar-(\d+)\.svg$/.exec(source);
-  if(!match)return null;
-  return Number(match[1])-1;
-}
+export { BOLT_AVATARS };
 
 type AvatarProps = {
-  src:string;
-  label?:string;
-  className?:string;
-  expression?:MascotExpression;
-  isTalking?:boolean;
-  hueRotate?:number;
-  playerIndex?:number;
+  src: string;
+  label?: string;
+  className?: string;
+  playerIndex?: number;
+  presentation?: 'tile' | 'hero';
 };
 
-export function Avatar({src,label='',className='h-12 w-12',expression='idle',isTalking=false,hueRotate,playerIndex}:AvatarProps){
-  const sourceIndex=staticAvatarIndex(src);
-  if(src && sourceIndex===null && hueRotate===undefined)return <img src={src} alt={label} loading="eager" decoding="async" className={className}/>;
-  const personality = avatarVariant(sourceIndex ?? playerIndex ?? 0);
-  const style = {
-    '--avatar-direction': personality.direction,
-    '--avatar-tilt': `${personality.tilt}deg`,
-    '--avatar-glow': personality.glow,
-    '--avatar-hue': `${hueRotate ?? personality.hue}deg`
-  } as CSSProperties;
-  return <span className={`avatar ${className}`} style={style}>
+export function Avatar({ src, label = '', className = 'h-12 w-12', playerIndex, presentation = 'tile' }: AvatarProps) {
+  const index = resolveAvatarIndex(src);
+  if (src && index === null) return <img src={src} alt={label} decoding="async" className={className} />;
+  const variant = avatarVariant(index ?? playerIndex ?? 0);
+  return <span className={`avatar${presentation === 'hero' ? ' avatar--hero' : ''} ${className}`} style={{ '--avatar-glow': variant.glow } as CSSProperties} role={label ? 'img' : undefined} aria-label={label || undefined} aria-hidden={label ? undefined : true}>
     <span className="avatar__art">
-      <BoltMascot
-        className="h-full w-full"
-        label={label}
-        expression={expression}
-        isTalking={isTalking}
-        animated={false}
-        pose="flat"
-        faceMode="original"
-        eyeStyle={personality.eyeStyle}
-      />
+      <span className={`avatar__canvas${presentation === 'hero' ? ' animate-float' : ''}`}>
+        <BoltAvatarArtwork variant={variant} />
+      </span>
     </span>
   </span>;
 }

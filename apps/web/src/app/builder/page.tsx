@@ -122,7 +122,7 @@ function Builder() {
       {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">{message}</div>}
       {quiz && (
         <>
-          <section className="card grid gap-6 p-6 lg:grid-cols-[220px_1fr]">
+          <section data-bolt-flight-boundary className="card grid gap-6 p-6 lg:grid-cols-[220px_1fr]">
             <div className="aspect-[16/10] overflow-hidden rounded-2xl bg-gradient-to-br from-brand-100 to-amber-50">
               {cover ? <img src={cover} alt="غلاف المسابقة" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-center text-sm font-bold text-slate-400"><span><b className="block text-4xl">🖼️</b>غلاف اختياري</span></div>}
             </div>

@@ -22,7 +22,7 @@ export function MarketingHero({ context }: MarketingHeroProps) {
   return <aside className="relative flex h-full flex-col justify-center overflow-hidden px-2 py-7 sm:px-6 sm:py-10 lg:min-h-[34rem] lg:px-10">
     <div className="relative">
       <div className="mascot-hero mx-auto mb-5">
-        <BoltMascot expression={context === 'login' ? 'happy' : 'idle'} label="Bolt" className="w-full" />
+        <BoltMascot label="Bolt" className="w-full" />
       </div>
       <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-black text-amber-800 shadow-sm">تجربة حماسية 🤩</span>
       <p className="mt-6 text-xs font-black text-brand-600">{content.eyebrow}</p>

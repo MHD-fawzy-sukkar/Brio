@@ -3,11 +3,10 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AmbientBackground } from '../../components/AmbientBackground';
-import { BoltMascot } from '../../components/BoltMascot';
-import { Avatar, STATIC_AVATARS } from '../../components/Avatar';
+import { Avatar, BOLT_AVATARS } from '../../components/Avatar';
 import { PageSkeleton } from '../../components/Loading';
 
-const AVATARS = STATIC_AVATARS;
+const AVATARS = BOLT_AVATARS;
 
 function JoinSetup() {
   const params = useSearchParams();
@@ -70,7 +69,7 @@ function JoinSetup() {
         <div className="game-surface flex flex-col justify-center overflow-hidden border-b border-brand-100 p-8 text-slate-900 sm:p-10 lg:border-b-0 lg:border-l">
           <AmbientBackground />
           <div className="relative z-10"><span className="text-xs font-black text-brand-600">رمز اللعبة</span><div className="mt-2 text-4xl font-black tracking-[.22em] text-brand-800" dir="ltr">{code}</div></div>
-          <div className="relative z-10 mt-8"><div className="mascot-hero mx-auto"><BoltMascot expression="happy" label="Bolt" className="w-full" /></div><h1 className="mt-4 text-3xl font-black">اختر شخصيتك</h1><p className="mt-3 leading-7 text-slate-600">اكتب اسماً لطيفاً واختر الصورة التي سترافقك في التحدي.</p></div>
+          <div className="relative z-10 mt-8"><div className="mascot-hero mx-auto"><Avatar src={avatar} presentation="hero" label="شخصيتك المختارة" className="w-full" /></div><h1 className="mt-4 text-3xl font-black">اختر شخصيتك</h1><p className="mt-3 leading-7 text-slate-600">اكتب اسماً لطيفاً واختر الصورة التي سترافقك في التحدي.</p></div>
         </div>
         <form onSubmit={join} className="space-y-6 p-7 sm:p-10">
           <div><h2 className="text-xl font-black text-slate-900">جاهز للدخول؟</h2><p className="mt-1 text-sm text-slate-500">يمكنك تعديل الاسم والصورة قبل الانضمام.</p></div>
