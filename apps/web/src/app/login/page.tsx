@@ -14,6 +14,7 @@ interface GoogleIdentityApi {
     callback: (response: { credential?: string }) => void;
   }): void;
   renderButton(element: HTMLElement, options: Record<string, string | number>): void;
+  cancel?(): void;
 }
 
 declare global {
@@ -44,71 +45,117 @@ export default function LoginPage() {
 
     let active = true;
     let resizeObserver: ResizeObserver | undefined;
+    const element = buttonRef.current;
+    let renderedWidth = 0;
+    let hasInteractedWithGoogle = false;
+
+    const handleCredentialResponse = async (response: { credential?: string }) => {
+      if (!active) return;
+      if (!response.credential) {
+        setError('لم يصل رمز المصادقة من Google.');
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetch('/api/auth/google', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: response.credential, remember: rememberRef.current })
+        });
+        if (!result.ok) {
+          const problem = await result.json().catch(() => null);
+          throw new Error(problem?.detail || 'تعذر تسجيل الدخول.');
+        }
+        const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+        window.location.replace(returnTo?.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard/');
+      } catch (cause) {
+        if (active) {
+          setError(cause instanceof Error ? cause.message : 'تعذر تسجيل الدخول.');
+          setLoading(false);
+        }
+      }
+    };
+
+    const renderButton = (force = false) => {
+      if (!active || !element) return;
+      const width = Math.min(360, Math.floor(element.getBoundingClientRect().width));
+      if (width <= 0) return;
+      if (!force && width === renderedWidth) return;
+      renderedWidth = width;
+
+      // Clear Google cooldown / dismissal cookie state
+      document.cookie = 'g_state=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
+      try {
+        identity.cancel?.();
+      } catch {}
+
+      try {
+        identity.initialize({
+          client_id: clientId,
+          ux_mode: 'popup',
+          auto_select: false,
+          callback: handleCredentialResponse
+        });
+      } catch {}
+
+      element.replaceChildren();
+      identity.renderButton(element, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'signin_with',
+        logo_alignment: 'left',
+        width,
+        locale: 'ar'
+      });
+    };
+
     try {
       initializedRef.current = true;
-      identity.initialize({
-        client_id: clientId,
-        ux_mode: 'popup',
-        auto_select: false,
-        callback: async (response) => {
-          if (!active) return;
-          if (!response.credential) {
-            setError('لم يصل رمز المصادقة من Google.');
-            return;
-          }
-          setLoading(true);
-          setError(null);
-          try {
-            const result = await fetch('/api/auth/google', {
-              method: 'POST',
-              credentials: 'same-origin',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ idToken: response.credential, remember: rememberRef.current })
-            });
-            if (!result.ok) {
-              const problem = await result.json().catch(() => null);
-              throw new Error(problem?.detail || 'تعذر تسجيل الدخول.');
-            }
-            const returnTo = new URLSearchParams(window.location.search).get('returnTo');
-            window.location.replace(returnTo?.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard/');
-          } catch (cause) {
-            if (active) {
-              setError(cause instanceof Error ? cause.message : 'تعذر تسجيل الدخول.');
-              setLoading(false);
-            }
-          }
-        }
-      });
-
-      // React never renders children into this node. Google owns its contents.
-      const element = buttonRef.current;
-      let renderedWidth = 0;
-      const renderButton = () => {
-        const width = Math.min(360, Math.floor(element.getBoundingClientRect().width));
-        if (!active || width <= 0 || width === renderedWidth) return;
-        renderedWidth = width;
-        element.replaceChildren();
-        identity.renderButton(element, {
-          type: 'standard', theme: 'outline', size: 'large', shape: 'pill',
-          text: 'signin_with', logo_alignment: 'left', width, locale: 'ar'
-        });
-      };
       renderButton();
-      resizeObserver = new ResizeObserver(renderButton);
+      resizeObserver = new ResizeObserver(() => renderButton(false));
       resizeObserver.observe(element);
       setLoading(false);
+
+      const onBlur = () => {
+        hasInteractedWithGoogle = true;
+      };
+
+      const onWindowFocusOrReturn = () => {
+        if (hasInteractedWithGoogle || document.cookie.includes('g_state')) {
+          hasInteractedWithGoogle = false;
+          renderButton(true);
+        }
+      };
+
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && (hasInteractedWithGoogle || document.cookie.includes('g_state'))) {
+          hasInteractedWithGoogle = false;
+          renderButton(true);
+        }
+      };
+
+      window.addEventListener('blur', onBlur);
+      window.addEventListener('focus', onWindowFocusOrReturn);
+      document.addEventListener('visibilitychange', onVisibilityChange);
+
+      return () => {
+        active = false;
+        resizeObserver?.disconnect();
+        window.removeEventListener('blur', onBlur);
+        window.removeEventListener('focus', onWindowFocusOrReturn);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        initializedRef.current = false;
+      };
     } catch (cause) {
       initializedRef.current = false;
       setLoading(false);
       setError(cause instanceof Error ? cause.message : 'تعذر تهيئة تسجيل الدخول بواسطة Google.');
     }
-
-    return () => {
-      active = false;
-      resizeObserver?.disconnect();
-      // Do not remove children here: Google owns the iframe and React does not.
-      initializedRef.current = false;
-    };
   }, [scriptLoaded, clientId]);
 
   return (
