@@ -7,6 +7,7 @@ export interface SocketMessage {
   serverNow?: number;
   requestId?: string;
   payload?: any;
+  t0?: number;
 }
 
 export class BrioRoomSocket {
@@ -18,6 +19,10 @@ export class BrioRoomSocket {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
   private manuallyClosed = false;
+  private syncTimer: ReturnType<typeof setInterval> | null = null;
+  private lastMessageAt = 0;
+  private clockOffset: number | null = null;
+  private latestVersion = 0;
 
   constructor(
     private roomId: string,
@@ -35,12 +40,34 @@ export class BrioRoomSocket {
     const host = process.env.NEXT_PUBLIC_API_HOST || window.location.host;
     const url = `${protocol}//${host}/ws/rooms/${encodeURIComponent(this.roomId)}?role=${this.role}&playerId=${encodeURIComponent(this.playerId)}`;
 
-    this.ws = new WebSocket(url);
+    const ws = new WebSocket(url);
+    this.ws = ws;
 
-    this.ws.onopen = () => { this.reconnectAttempt = 0; this.emitConnection('connected'); };
-    this.ws.onerror = () => this.emitConnection('disconnected');
-    this.ws.onclose = () => {
+    ws.onopen = () => {
+      if (this.ws !== ws) return;
+      this.reconnectAttempt = 0;
+      this.lastMessageAt = Date.now();
+      this.emitConnection('connected');
+      this.sync();
+      this.syncTimer = setInterval(() => {
+        if (Date.now() - this.lastMessageAt > 15000) {
+          // Reconnect even when a suspended/mobile connection still reports OPEN.
+          ws.close();
+          return;
+        }
+        this.sync();
+      }, 5000);
+      window.addEventListener('online', this.sync);
+      document.addEventListener('visibilitychange', this.sync);
+    };
+    ws.onerror = () => { if (this.ws === ws) this.emitConnection('disconnected'); };
+    ws.onclose = () => {
+      if (this.ws !== ws) return;
+      this.stopSync();
       this.ws = null;
+      for (const reject of this.rejectedListeners.values()) reject('WebSocket connection is not open');
+      this.receiptListeners.clear();
+      this.rejectedListeners.clear();
       this.emitConnection('disconnected');
       if (!this.manuallyClosed) {
         const delay = Math.min(15000, 500 * 2 ** this.reconnectAttempt++) + Math.floor(Math.random() * 250);
@@ -48,12 +75,25 @@ export class BrioRoomSocket {
       }
     };
 
-    this.ws.onmessage = (event) => {
+    ws.onmessage = (event) => {
+      if (this.ws !== ws) return;
       try {
+        const receivedAt = Date.now();
+        this.lastMessageAt = receivedAt;
         const msg: SocketMessage = JSON.parse(event.data);
         if (msg.type === 'room.snapshot') {
+          const version = msg.stateVersion ?? msg.payload?.stateVersion ?? 0;
+          if (version < this.latestVersion) return;
+          this.latestVersion = version;
+          if (typeof msg.serverNow === 'number') {
+            if (typeof msg.t0 === 'number' && receivedAt - msg.t0 <= 5000) {
+              this.clockOffset = msg.serverNow - (msg.t0 + receivedAt) / 2;
+            } else if (this.clockOffset === null) {
+              this.clockOffset = msg.serverNow - receivedAt;
+            }
+          }
           for (const listener of this.snapshotListeners) {
-            listener({ ...msg.payload, serverNow: msg.serverNow || Date.now() });
+            listener({ ...msg.payload, serverNow: receivedAt + (this.clockOffset ?? 0) });
           }
         } else if (msg.type === 'answer.receipt' && msg.requestId) {
           const cb = this.receiptListeners.get(msg.requestId);
@@ -74,6 +114,19 @@ export class BrioRoomSocket {
         console.error('Failed to parse socket message:', err);
       }
     };
+  }
+
+  private sync = (): void => {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'room.sync', payload: { t0: Date.now() } }));
+    }
+  };
+
+  private stopSync(): void {
+    if (this.syncTimer) clearInterval(this.syncTimer);
+    this.syncTimer = null;
+    window.removeEventListener('online', this.sync);
+    document.removeEventListener('visibilitychange', this.sync);
   }
 
   onSnapshot(callback: (snapshot: any) => void): () => void {
@@ -110,8 +163,13 @@ export class BrioRoomSocket {
 
       const requestId = 'req_' + Math.random().toString(36).substring(2, 9);
 
-      this.receiptListeners.set(requestId, (receipt) => resolve(receipt));
-      this.rejectedListeners.set(requestId, (reason) => reject(new Error(reason)));
+      const timeout = setTimeout(() => {
+        this.receiptListeners.delete(requestId);
+        this.rejectedListeners.delete(requestId);
+        reject(new Error('لم يصل تأكيد الإجابة. حاول إرسالها مجدداً.'));
+      }, 10000);
+      this.receiptListeners.set(requestId, (receipt) => { clearTimeout(timeout); resolve(receipt); });
+      this.rejectedListeners.set(requestId, (reason) => { clearTimeout(timeout); reject(new Error(reason)); });
 
       this.ws.send(JSON.stringify({
         type: 'answer.submit',
@@ -128,6 +186,7 @@ export class BrioRoomSocket {
 
   close(): void {
     this.manuallyClosed = true;
+    this.stopSync();
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
     if (this.ws) {

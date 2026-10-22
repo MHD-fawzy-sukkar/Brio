@@ -134,7 +134,7 @@ export class GameRoomDO {
     const hostSockets = this.ctx.getWebSockets('role:host');
     for (const ws of hostSockets) {
       const snapshot = toPublicHostSnapshot(this.state, this.quizSnapshot);
-      ws.send(
+      this.sendSnapshot(ws,
         JSON.stringify({
           v: 1,
           type: 'room.snapshot',
@@ -150,7 +150,7 @@ export class GameRoomDO {
       const playerSockets = this.ctx.getWebSockets(`player:${player.id}`);
       for (const ws of playerSockets) {
         const snapshot = toPublicPlayerSnapshot(this.state, player.id, this.quizSnapshot);
-        ws.send(
+        this.sendSnapshot(ws,
           JSON.stringify({
             v: 1,
             type: 'room.snapshot',
@@ -160,6 +160,15 @@ export class GameRoomDO {
           })
         );
       }
+    }
+  }
+
+  // A disconnected client must never interrupt other deliveries or alarm setup.
+  private sendSnapshot(ws: WebSocket, message: string): void {
+    try {
+      ws.send(message);
+    } catch {
+      this.socketMessageTimestamps.delete(ws);
     }
   }
 
@@ -206,6 +215,7 @@ export class GameRoomDO {
       } else {
         player.connectionGeneration++;
       }
+      this.state.stateVersion++;
 
       const sql = this.ctx.storage.sql;
       savePlayerToDb(sql, player, sessionHash);
@@ -341,6 +351,13 @@ export class GameRoomDO {
     const now = Date.now();
     const effects = reconcileDeadlines(this.state, this.quizSnapshot, now);
     await this.applyEffects(effects);
+    if (effects.length === 0 && this.state.activeRound) {
+      const round = this.state.activeRound;
+      const dueAt = this.state.phase === 'STATS' ? round.statsEndsAt
+        : this.state.phase === 'LEADERBOARD' ? round.rankingEndsAt
+        : this.state.phase === 'COUNTDOWN' || this.state.phase === 'QUESTION' ? round.endsAt : 0;
+      if (dueAt > now) await this.ctx.storage.setAlarm(dueAt);
+    }
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
@@ -384,6 +401,23 @@ export class GameRoomDO {
       const msgStr = typeof message === 'string' ? message : new TextDecoder().decode(message);
       const data = JSON.parse(msgStr);
       const now = Date.now();
+
+      if (data.type === 'room.sync') {
+        const effects = reconcileDeadlines(this.state, this.quizSnapshot, now);
+        if (effects.length > 0) await this.applyEffects(effects);
+        const tags: string[] = this.ctx.getTags(ws);
+        const playerId = tags.find((tag) => tag.startsWith('player:'))?.slice(7);
+        const snapshot = tags.includes('role:host')
+          ? toPublicHostSnapshot(this.state, this.quizSnapshot)
+          : playerId && this.state.players.has(playerId)
+            ? toPublicPlayerSnapshot(this.state, playerId, this.quizSnapshot)
+            : null;
+        if (snapshot) this.sendSnapshot(ws, JSON.stringify({
+          v: 1, type: 'room.snapshot', stateVersion: this.state.stateVersion,
+          serverNow: Date.now(), payload: snapshot, t0: data.payload?.t0
+        }));
+        return;
+      }
 
       // 1. Clock Sample
       if (data.type === 'clock.sample') {

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Brio.Data")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9f422bb6307dfffc3ff28ac78824c303fa102d76")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ed682945fa34217e114f68247f2c8c4ff9adb290")]
 [assembly: System.Reflection.AssemblyProductAttribute("Brio.Data")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Brio.Data")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
