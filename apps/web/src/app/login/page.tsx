@@ -1,8 +1,11 @@
 'use client';
 
 import Script from 'next/script';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { AmbientBackground } from '../../components/AmbientBackground';
+import { useAuth } from '../../components/AuthProvider';
+import { Spinner } from '../../components/Loading';
 import { Logo } from '../../components/Logo';
 import { MarketingHero } from '../../components/MarketingHero';
 
@@ -14,6 +17,7 @@ interface GoogleIdentityApi {
     callback: (response: { credential?: string }) => void;
   }): void;
   renderButton(element: HTMLElement, options: Record<string, string | number>): void;
+  prompt?(): void;
   cancel?(): void;
 }
 
@@ -24,14 +28,33 @@ declare global {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { acceptSession } = useAuth();
   const buttonRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
   const rememberRef = useRef(false);
+  const pendingClickRef = useRef(false);
   const [remember, setRemember] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [buttonReady, setButtonReady] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  useEffect(() => {
+    router.prefetch('/dashboard/');
+    if (window.google?.accounts?.id) {
+      setScriptLoaded(true);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      if (window.google?.accounts?.id) {
+        setScriptLoaded(true);
+        window.clearInterval(timer);
+      }
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [router]);
 
   useEffect(() => {
     if (!scriptLoaded || initializedRef.current) return;
@@ -39,7 +62,7 @@ export default function LoginPage() {
     if (!identity || !buttonRef.current) return;
     if (!clientId) {
       setError('معرّف Google غير مهيأ. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID ثم أعد بناء التطبيق.');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
@@ -55,7 +78,7 @@ export default function LoginPage() {
         setError('لم يصل رمز المصادقة من Google.');
         return;
       }
-      setLoading(true);
+      setSubmitting(true);
       setError(null);
       try {
         const result = await fetch('/api/auth/google', {
@@ -64,24 +87,28 @@ export default function LoginPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken: response.credential, remember: rememberRef.current })
         });
+        const payload = await result.json().catch(() => null);
         if (!result.ok) {
-          const problem = await result.json().catch(() => null);
-          throw new Error(problem?.detail || 'تعذر تسجيل الدخول.');
+          throw new Error(payload?.detail || 'تعذر تسجيل الدخول.');
+        }
+        if (payload?.creator) {
+          acceptSession(payload.creator);
         }
         const returnTo = new URLSearchParams(window.location.search).get('returnTo');
-        window.location.replace(returnTo?.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard/');
+        const destination = returnTo?.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard/';
+        router.replace(destination);
       } catch (cause) {
         if (active) {
           setError(cause instanceof Error ? cause.message : 'تعذر تسجيل الدخول.');
-          setLoading(false);
+          setSubmitting(false);
         }
       }
     };
 
     const renderButton = (force = false) => {
       if (!active || !element) return;
-      const width = Math.min(360, Math.floor(element.getBoundingClientRect().width));
-      if (width <= 0) return;
+      const measuredWidth = Math.floor(element.getBoundingClientRect().width);
+      const width = Math.min(360, measuredWidth > 0 ? measuredWidth : 320);
       if (!force && width === renderedWidth) return;
       renderedWidth = width;
 
@@ -117,9 +144,16 @@ export default function LoginPage() {
     try {
       initializedRef.current = true;
       renderButton();
+      setButtonReady(true);
+      if (pendingClickRef.current) {
+        pendingClickRef.current = false;
+        setSubmitting(false);
+        try {
+          identity.prompt?.();
+        } catch {}
+      }
       resizeObserver = new ResizeObserver(() => renderButton(false));
       resizeObserver.observe(element);
-      setLoading(false);
 
       const onBlur = () => {
         hasInteractedWithGoogle = true;
@@ -153,14 +187,24 @@ export default function LoginPage() {
       };
     } catch (cause) {
       initializedRef.current = false;
-      setLoading(false);
+      setSubmitting(false);
       setError(cause instanceof Error ? cause.message : 'تعذر تهيئة تسجيل الدخول بواسطة Google.');
     }
-  }, [scriptLoaded, clientId]);
+  }, [scriptLoaded, clientId, acceptSession, router]);
+
+  const handleFallbackClick = () => {
+    if (buttonReady || submitting) return;
+    if (!clientId) {
+      setError('معرّف Google غير مهيأ. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID ثم أعد بناء التطبيق.');
+      return;
+    }
+    pendingClickRef.current = true;
+    setSubmitting(true);
+  };
 
   return (
     <div className="game-surface mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-brand-100 p-3 shadow-xl shadow-brand-100/40 sm:p-5 lg:p-6">
-      <Script src="https://accounts.google.com/gsi/client?hl=ar" strategy="afterInteractive" onReady={() => setScriptLoaded(true)} onError={() => { setError('تعذر تحميل خدمة Google. تحقق من اتصالك ثم أعد المحاولة.'); setLoading(false); }} />
+      <Script src="https://accounts.google.com/gsi/client?hl=ar" strategy="afterInteractive" onReady={() => setScriptLoaded(true)} onError={() => { setError('تعذر تحميل خدمة Google. تحقق من اتصالك ثم أعد المحاولة.'); setSubmitting(false); }} />
       <AmbientBackground />
       <div className="relative z-10 grid items-stretch gap-5 lg:grid-cols-[1.08fr_.92fr]">
       <MarketingHero context="login" />
@@ -172,8 +216,12 @@ export default function LoginPage() {
           <p className="mt-2 text-sm leading-6 text-slate-500">تابع إلى مساحة مسابقاتك باستخدام حساب Google.</p>
         </div>
         {error && <div role="alert" className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
-        <div className={`relative flex h-11 w-full items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white transition hover:border-brand-300 hover:bg-brand-50/40 focus-within:ring-2 focus-within:ring-brand-400 focus-within:ring-offset-2 ${loading ? 'opacity-60' : ''}`}>
+        <div
+          onClick={handleFallbackClick}
+          className={`relative flex h-11 w-full cursor-pointer items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white transition hover:border-brand-300 hover:bg-brand-50/40 focus-within:ring-2 focus-within:ring-brand-400 focus-within:ring-offset-2 ${submitting ? 'opacity-75' : ''}`}
+        >
           <div aria-hidden="true" className="pointer-events-none flex items-center gap-3 text-sm font-bold text-slate-700">
+            {submitting && <Spinner className="h-4 w-4 text-brand-600" />}
             <span>تسجيل الدخول باستخدام <bdi>Google</bdi></span>
             <svg className="h-5 w-5 shrink-0" viewBox="0 0 48 48" focusable="false">
               <path fill="#4285F4" d="M43.61 24.46c0-1.36-.12-2.66-.35-3.92H24.4v7.42h10.77a9.21 9.21 0 0 1-4 6.05v5.03h6.47c3.78-3.48 5.97-8.6 5.97-14.58Z" />
@@ -183,9 +231,8 @@ export default function LoginPage() {
             </svg>
           </div>
           {/* The real Google button receives pointer and keyboard input; only its visual label is replaced. */}
-          <div dir="ltr" className="absolute inset-0 flex items-center justify-center opacity-0" ref={buttonRef} inert={loading} aria-label="تسجيل الدخول باستخدام Google" />
+          <div dir="ltr" className="absolute inset-0 flex items-center justify-center opacity-0" ref={buttonRef} inert={submitting} aria-label="تسجيل الدخول باستخدام Google" />
         </div>
-        {loading && <p className="mt-2 text-center text-sm text-slate-400">جاري تحميل تسجيل الدخول…</p>}
         <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl p-2 transition hover:bg-slate-50">
           <input type="checkbox" checked={remember} onChange={(event) => { setRemember(event.target.checked); rememberRef.current = event.target.checked; }} className="peer sr-only" />
           <span aria-hidden="true" className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border text-xs font-black transition peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400 peer-focus-visible:ring-offset-2 ${remember ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 bg-white text-transparent'}`}>✓</span>

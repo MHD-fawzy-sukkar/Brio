@@ -6,7 +6,7 @@ import { BoltMascot } from '../BoltMascot';
 type FlightBounds = { height: number; x: number; y: number };
 
 /** Keep decorative flight in the header band, above the page's main content. */
-export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 'lobby' | 'page'; celebration?: boolean }) {
+export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 'lobby' | 'page' | 'studio'; celebration?: boolean }) {
   const areaRef = useRef<HTMLDivElement>(null);
   const boltRef = useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = useState<FlightBounds | null>(null);
@@ -20,7 +20,10 @@ export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 
       const rootRect = root.getBoundingClientRect();
       const boltRect = boltRef.current.getBoundingClientRect();
       const contentBoundary = boundary ? Math.max(0, boundary.getBoundingClientRect().top - rootRect.top) : rootRect.height;
-      const height = Math.min(180, rootRect.height, contentBoundary);
+      const height =
+        scope === 'studio'
+          ? Math.min(360, Math.max(250, rootRect.height))
+          : Math.min(180, rootRect.height, contentBoundary);
       const next = {
         height,
         x: Math.max(0, rootRect.width - boltRect.width - 24),
@@ -45,11 +48,17 @@ export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 
     '--wander-y': `${bounds?.y ?? 0}px`
   } as CSSProperties;
 
-  return <div ref={areaRef} className="bolt-flight-area" style={style} aria-hidden="true">
-    <div ref={boltRef} className="roaming-bolt">
-      <div className={`animate-wander${scope === 'page' ? ' animate-wander--page' : ''}${celebration ? ' animate-wander--celebration' : ''}`}>
-        <BoltMascot animated={false} pose="flat" className="w-full" />
+  return (
+    <div ref={areaRef} className="bolt-flight-area" style={style} aria-hidden="true">
+      <div ref={boltRef} className={`roaming-bolt${scope === 'studio' ? ' roaming-bolt--studio' : ''}`}>
+        <div
+          className={`animate-wander${scope === 'page' ? ' animate-wander--page' : ''}${
+            scope === 'studio' ? ' animate-wander--studio' : ''
+          }${celebration ? ' animate-wander--celebration' : ''}`}
+        >
+          <BoltMascot animated={false} pose="flat" className="w-full" />
+        </div>
       </div>
     </div>
-  </div>;
+  );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ButtonContent } from './Loading';
 import { AmbientBackground } from './AmbientBackground';
@@ -67,10 +68,9 @@ export function JoinGame() {
         <button type="submit" disabled={checking || code.length !== 6} className="primary-btn w-full py-4 text-base">
           <ButtonContent busy={checking} busyText="جاري التحقق…">متابعة إلى شخصيتك</ButtonContent>
         </button>
-        <p className="text-center text-xs text-slate-400">هل تريد إنشاء مسابقة؟ <a href="/login/" className="font-black text-brand-600 hover:underline">دخول المنشئين</a></p>
+        <p className="text-center text-xs text-slate-400">هل تريد إنشاء مسابقة؟ <Link href="/login/" className="font-black text-brand-600 hover:underline">دخول المنشئين</Link></p>
       </form>
       </div>
     </div>
   </section>;
 }
-

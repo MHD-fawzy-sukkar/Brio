@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { AuthoringQuestion, PointsMultiplier, QuestionType } from '@brio/contracts';
@@ -91,7 +92,15 @@ function QuestionEditor() {
 
   return (
     <form onSubmit={save} className="mx-auto max-w-5xl space-y-6">
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><a href={`/builder/?quizId=${quizId || ''}`} className="text-sm font-bold text-brand-600">→ العودة إلى المسابقة</a><h1 className="mt-2 text-3xl font-black">{questionId?'تعديل السؤال':'سؤال جديد'}</h1><p className="mt-1 text-sm text-slate-500">ركّز على سؤال واحد؛ سيُحفظ فوراً وتُرفع الصورة في الخلفية.</p></div><button disabled={busy} className="primary-btn"><ButtonContent busy={busy} busyText="جاري الحفظ…">حفظ السؤال</ButtonContent></button></header>
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <h1 className="text-3xl font-black">{questionId ? 'تعديل السؤال' : 'سؤال جديد'}</h1>
+          <p className="mt-1 text-sm text-slate-500">ركّز على سؤال واحد؛ سيُحفظ فوراً وتُرفع الصورة في الخلفية.</p>
+        </div>
+        <Link href={`/builder/?quizId=${quizId || ''}`} className="secondary-btn">
+          → العودة إلى المسابقة
+        </Link>
+      </header>
       {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}</div>}
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <section className="card space-y-6 p-6">
@@ -103,6 +112,14 @@ function QuestionEditor() {
             <div className="space-y-3">{question.options.map((option,index)=><div key={index} className="flex items-center gap-3"><button tabIndex={-1} type="button" aria-label="تعيين كإجابة صحيحة" disabled={question.type==='Poll'} onClick={()=>markCorrect(index)} className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 font-black ${option.isCorrect?'border-emerald-500 bg-emerald-500 text-white':'border-slate-300 text-transparent'} disabled:border-slate-200`}>✓</button><input className="field" value={option.text} onChange={(e)=>updateOption(index,e.target.value)} placeholder={`الإجابة ${index+1}`} maxLength={200} required />{question.type!=='TrueFalse'&&<button tabIndex={-1} type="button" onClick={()=>removeOption(index)} disabled={question.options.length<=2} aria-label="حذف الخيار" className="rounded-xl px-2 py-2 font-black text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30">×</button>}</div>)}</div>
           </div>}
           {question.type==='ShortAnswer'&&<div><div className="mb-3 flex justify-between"><label className="label !mb-0">الإجابات المقبولة</label><button type="button" onClick={()=>setQuestion({...question,acceptedAlternatives:[...question.acceptedAlternatives,'']})} className="text-sm font-black text-brand-600">＋ إضافة صيغة</button></div><div className="space-y-3">{question.acceptedAlternatives.map((answer,index)=><input key={index} className="field" value={answer} onChange={(e)=>setQuestion({...question,acceptedAlternatives:question.acceptedAlternatives.map((item,i)=>i===index?e.target.value:item)})} placeholder="مثال: الرياض" required={index===0} />)}</div></div>}
+          
+          {/* Action button right below the options so the user doesn't have to scroll up */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+            <Link href={`/builder/?quizId=${quizId || ''}`} className="text-sm font-bold text-slate-500 hover:text-slate-800">إلغاء والعودة</Link>
+            <button type="submit" disabled={busy} className="primary-btn py-3 px-8 text-base shadow-md shadow-brand-100">
+              <ButtonContent busy={busy} busyText="جاري الحفظ…">حفظ السؤال</ButtonContent>
+            </button>
+          </div>
         </section>
         <aside className="card h-fit space-y-5 p-6">
           <h2 className="font-black">إعدادات اللعب</h2>
