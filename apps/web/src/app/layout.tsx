@@ -20,6 +20,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ar" dir="rtl">
       <head>
+        <link rel="preload" as="image" href="/bolt-original.png" fetchPriority="high" />
+        <link rel="preload" as="image" href="/avatars/bolt-base-v2.png" fetchPriority="high" />
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://api.cloudinary.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://accounts.google.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

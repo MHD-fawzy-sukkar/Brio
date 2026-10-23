@@ -9,6 +9,7 @@ import type { AuthoringQuestion, QuestionType } from '@brio/contracts';
 import { AuthGuard } from '../../components/AuthGuard';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { backgroundUploads, type UploadTask } from '../../services/background-upload';
+import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { validateImage } from '../../services/media-upload';
 import { PageSkeleton, Spinner } from '../../components/Loading';
 
@@ -69,6 +70,17 @@ function Builder() {
     setQuiz(data);
     setTitle((current) => (current ? current : data.title));
     setCover((current) => resolvedCover || current);
+    const prefetchList = (data.questions || [])
+      .map((q, idx) => ({
+        url: q.media_url || q.essentialImage || '',
+        questionId: q.id,
+        isEssential: true,
+        priority: idx <= 2 ? 1 : 2
+      }))
+      .filter((item) => Boolean(item.url));
+    if (prefetchList.length > 0) {
+      globalMediaPrefetchEngine.queueImages(prefetchList);
+    }
   };
 
   useEffect(() => {
@@ -355,7 +367,6 @@ function Builder() {
                 {coverUploading && (
                   <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-600/95 px-3 py-1 text-[11px] font-black text-white shadow-sm">
                     <Spinner className="h-3 w-3" />
-                    جاري الرفع…
                   </span>
                 )}
                 <input

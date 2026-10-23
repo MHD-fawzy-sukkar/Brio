@@ -1,13 +1,9 @@
-const CACHE_NAME = 'brio-static-v4';
+const CACHE_NAME = 'brio-static-v5';
+const MEDIA_CACHE_NAME = 'brio-media-v1';
 
 const APP_SHELL_ASSETS = [
   '/bolt-original.png',
-  '/avatars/avatar-1.svg',
-  '/avatars/avatar-2.svg',
-  '/avatars/avatar-3.svg',
-  '/avatars/avatar-4.svg',
-  '/avatars/avatar-5.svg',
-  '/avatars/avatar-6.svg'
+  '/avatars/bolt-base-v2.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -23,7 +19,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((name) => {
-          if (name !== CACHE_NAME) {
+          if (name !== CACHE_NAME && name !== MEDIA_CACHE_NAME) {
             return caches.delete(name);
           }
         })
@@ -35,7 +31,29 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws/')) {
+  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws/')) {
+    return;
+  }
+
+  // Intercept Cloudinary and media requests with Cache-First from MEDIA_CACHE_NAME
+  if (url.hostname.endsWith('cloudinary.com') || url.pathname.startsWith('/fixtures/images/')) {
+    event.respondWith(
+      caches.open(MEDIA_CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cached) => {
+          if (cached) return cached;
+          return fetch(event.request).then((response) => {
+            if (response && response.ok) {
+              cache.put(event.request, response.clone()).catch(() => {});
+            }
+            return response;
+          });
+        })
+      )
+    );
+    return;
+  }
+
+  if (url.origin !== self.location.origin) {
     return;
   }
 

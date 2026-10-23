@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BrioRoomSocket } from '../../services/socket';
+import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
+import { registerServiceWorker } from '../../services/sw-register';
 import { AuthGuard } from '../../components/AuthGuard';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { PageSkeleton } from '../../components/Loading';
@@ -27,6 +29,7 @@ function HostContent() {
   const [error, setError] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
   const [confirmEndOpen, setConfirmEndOpen] = useState(false);
+  const [, setMediaTick] = useState(0);
   const phase = snapshot?.phase || 'LOBBY';
   const players = snapshot?.lobbyPlayers || [];
   const question = snapshot?.question;
@@ -34,18 +37,32 @@ function HostContent() {
   useRoomMediaPrefetch(roomId, snapshot?.questionIndex);
 
   useEffect(() => {
+    return globalMediaPrefetchEngine.subscribe(() => {
+      setMediaTick((tick) => tick + 1);
+    });
+  }, []);
+
+  useEffect(() => {
     if (!roomId) {
       window.location.replace('/dashboard/');
       return;
     }
     const roomSocket = new BrioRoomSocket(roomId, 'host');
-    const offSnapshot = roomSocket.onSnapshot(setSnapshot);
+    const offSnapshot = roomSocket.onSnapshot((data) => {
+      setSnapshot(data);
+      const imageUrl = data?.question?.essentialImage;
+      if (imageUrl && !globalMediaPrefetchEngine.isLoaded(imageUrl)) {
+        globalMediaPrefetchEngine.queueImages([{ url: imageUrl, questionId: data.question.id, isEssential: true, priority: 1 }]);
+      }
+    });
     const offConnection = roomSocket.onConnectionState(setConnection);
+    const unregister = registerServiceWorker(() => roomSocket.connect());
     roomSocket.connect();
     setSocket(roomSocket);
     return () => {
       offSnapshot();
       offConnection();
+      unregister();
       roomSocket.close();
       setSocket(null);
       setSnapshot(null);
@@ -174,7 +191,13 @@ function HostContent() {
             </div>
             {question.essentialImage && (
               <div className="mx-auto mt-6 grid max-h-72 min-h-40 place-items-center rounded-2xl bg-slate-50">
-                <img src={question.essentialImage} alt="صورة السؤال" className="max-h-72 w-full object-contain p-3" />
+                <img
+                  src={globalMediaPrefetchEngine.resolveUrl(question.essentialImage)}
+                  alt="صورة السؤال"
+                  fetchPriority="high"
+                  decoding="sync"
+                  className="max-h-72 w-full object-contain p-3"
+                />
               </div>
             )}
             <h2 className="mx-auto mt-7 max-w-4xl text-center text-2xl font-black leading-relaxed sm:text-4xl">

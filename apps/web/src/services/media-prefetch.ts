@@ -15,12 +15,13 @@ export interface PrefetchState {
 
 export class MediaPrefetchEngine {
   private memoryCache: Map<string, { blobUrl: string; bytes: number; timestamp: number }> = new Map();
-  private maxCacheEntries = 10;
-  private maxMemoryBytes = 20 * 1024 * 1024; // 20MB max
+  private decodedImageElements: Map<string, HTMLImageElement> = new Map();
+  private maxCacheEntries = 30;
+  private maxMemoryBytes = 50 * 1024 * 1024; // 50MB max
   private currentMemoryBytes = 0;
 
   private activeFetchCount = 0;
-  private maxConcurrency = 2;
+  private maxConcurrency = 6;
 
   private queue: PrefetchItem[] = [];
   private inFlightAbortControllers: Map<string, AbortController> = new Map();
@@ -189,6 +190,21 @@ export class MediaPrefetchEngine {
 
       const blobUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(blob) : item.url;
       this.addToCache(item.url, blobUrl, blob.size);
+
+      // Warm browser native HTMLImageElement bitmap cache for instant 0ms <img> paint
+      if (typeof window !== 'undefined' && typeof window.Image !== 'undefined') {
+        try {
+          const img = new window.Image();
+          img.decoding = 'async';
+          img.src = blobUrl;
+          if (typeof img.decode === 'function') {
+            void img.decode().catch(() => {});
+          }
+          this.decodedImageElements.set(item.url, img);
+        } catch {
+          // Ignore image element warm-up errors
+        }
+      }
 
       this.itemStates.set(item.url, {
         status: 'loaded',

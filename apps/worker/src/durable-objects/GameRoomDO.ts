@@ -253,13 +253,13 @@ export class GameRoomDO {
         return new Response(JSON.stringify([]), { headers: { 'Content-Type': 'application/json' } });
       }
       const items = this.quizSnapshot.questions
-        .filter((q) => q.essentialImage)
         .map((q, idx) => ({
           mediaId: q.id,
-          url: q.essentialImage!,
+          url: q.essentialImage || '',
           questionIndex: idx,
           isEssential: true
-        }));
+        }))
+        .filter((item) => Boolean(item.url));
       return new Response(JSON.stringify(items), { headers: { 'Content-Type': 'application/json' } });
     }
 
