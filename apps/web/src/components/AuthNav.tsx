@@ -2,9 +2,45 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 import { ConfirmDialog } from './ConfirmDialog';
+import { JOIN_GAME_HREF } from '../services/home-routing';
+
+export function NavbarLinks() {
+  const pathname = usePathname() || '';
+  const isJoinActive = pathname.startsWith('/join');
+  const isCreatorActive =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/builder') ||
+    pathname.startsWith('/questions') ||
+    pathname.startsWith('/quizzes');
+
+  return (
+    <nav className="flex items-center gap-1 sm:gap-2" aria-label="التنقل الرئيسي">
+      <Link
+        href={JOIN_GAME_HREF}
+        className={`relative rounded-xl px-3.5 py-2 text-sm font-bold transition-colors ${
+          isJoinActive
+            ? 'text-brand-700 after:absolute after:inset-x-3.5 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-brand-600'
+            : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+        }`}
+      >
+        انضم للعبة
+      </Link>
+      <Link
+        href="/dashboard/"
+        className={`relative rounded-xl px-3.5 py-2 text-sm font-bold transition-colors ${
+          isCreatorActive
+            ? 'text-brand-700 after:absolute after:inset-x-3.5 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-brand-600'
+            : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+        }`}
+      >
+        مسابقاتي
+      </Link>
+    </nav>
+  );
+}
 
 export function AuthNav() {
   const { user, logout } = useAuth();
@@ -21,15 +57,17 @@ export function AuthNav() {
   };
 
   return user ? (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-3">
       <span className="hidden text-sm font-bold text-slate-600 sm:inline">مرحباً، {user.displayName}</span>
+      <span className="hidden h-4 w-px bg-slate-200 sm:inline" aria-hidden="true" />
       <button
         type="button"
         onClick={() => setConfirmOpen(true)}
-        className="secondary-btn cursor-pointer !px-3.5 !py-2 text-sm font-black transition hover:border-rose-200 hover:bg-rose-50/70 hover:text-rose-700"
+        className="secondary-btn cursor-pointer !px-3.5 !py-2 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-700"
       >
         تسجيل الخروج
       </button>
+
       <ConfirmDialog
         open={confirmOpen}
         icon="👋"
