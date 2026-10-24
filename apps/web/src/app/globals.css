@@ -286,3 +286,5 @@ button:focus-visible, a:focus-visible { outline: 3px solid #bd4b5d; outline-offs
 /* Automatic flight stays beside the heading; pointer capture allows dragging across the page. */
 .local-mascot-stage { pointer-events: none; }
 .local-mascot-stage .roaming-bolt { width: 9rem; pointer-events: auto; }
+.local-history-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.local-history-scroll::-webkit-scrollbar { display: none; }

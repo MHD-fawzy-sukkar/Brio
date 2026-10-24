@@ -2,6 +2,11 @@
 
 Updated: 2026-10-24. Read this on every engineering iteration; update only with observed work/evidence.
 
+## 2026-10-24 — Inline deletion feedback and image audit
+
+- Quiz deletion failures now appear within the affected quiz card below its actions, including server failures, rather than in the page-wide alert. Other operations retain their existing feedback.
+- Hidden the session-history scrollbar while retaining scrolling. Removed six historical docs/*ui-preview.png captures after confirming no runtime references; retained all three referenced public image assets and updated bolt-asset.md.
+
 ## 2026-10-24 — Owner-approved legacy retirement and presenter fixes
 
 - The owner explicitly requested removing unused backend/, frontend/ and old documentation archives. Dependency audit confirmed pnpm only builds apps/* and packages/*; no active runtime imports these folders. Removed the old .NET backend (including tracked/generated obj/bin content), empty frontend folder and docs/archive. Preserved all their files in an external recovery ZIP before deletion; stable/v2/Git history also retain tracked sources. Earlier instructions to retain legacy folders are superseded by this owner request.

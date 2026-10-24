@@ -8,6 +8,6 @@ Use case: background-extraction. Edit target: the supplied perfectly symmetrical
 
 ## UI preview
 
-`host-lobby-ui-preview.png` shows the actual host lobby components with 15 sample players. The temporary preview route is removed from the application.
+The six historical UI preview PNGs were removed on 2026-10-24 at the owner’s request. They were documentation captures, not runtime assets; Git history retains them. The temporary preview route is also removed from the application.
 
 The shared RoamingBolt overlay also appears over the dashboard, quiz creation and builder, live leaderboards, and final podium/results. All flight is now restricted to the upper 180px, shortened further by the main-content boundary. Player leaderboards and final results do not display the roaming mascot; admin standings and podium retain it. Page mode uses gentle 3D drift, measured responsive bounds, no layout space, no pointer interception, and reduced-motion support. The large join-page preview renders the selected avatar with the same hue and eye style.

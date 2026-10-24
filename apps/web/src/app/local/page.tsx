@@ -46,11 +46,11 @@ export default function LocalPage() {
         <section className="space-y-3">
           <div><h2 className="text-xl font-black">المسابقات الجاهزة</h2><p className="mt-1 text-sm leading-7 text-slate-500">اختر مسابقة لفتح غرفة جديدة.</p></div>
           {info.quizzes.length === 0 && <div className="card p-6"><p className="font-bold">لا توجد مسابقات على هذا الجهاز</p><p className="mt-2 text-sm leading-7 text-slate-500">أضف ملف مسابقة لتظهر هنا وتصبح جاهزة للّعب.</p></div>}
-          {info.quizzes.map(quiz => <article className="card flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center" key={quiz.id}>
+          {info.quizzes.map(quiz => <article className="card p-5" key={quiz.id}><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div className="min-w-0"><h3 className="break-words font-black">{quiz.title}</h3><p className="mt-1 text-xs text-slate-500">عدد الأسئلة: {quiz.questionCount}</p>{activeRoom?.quizId === quiz.id && <p className="mt-2 text-xs font-semibold leading-6 text-amber-800">قيد اللعب — أنهِ الغرفة الحالية قبل حذف المسابقة.</p>}</div>
             <div className="flex shrink-0 items-center gap-3"><button className="primary-btn flex-1 whitespace-nowrap sm:flex-none" disabled={busy} onClick={() => dashboard.start(quiz.id)}>فتح غرفة</button>
               <button className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50" disabled={busy} aria-label={`حذف المسابقة ${quiz.title}`} onClick={() => dashboard.deleteQuiz(quiz)}>حذف</button></div>
-          </article>)}
+          </div>{dashboard.quizDeleteError?.quizId === quiz.id && <p role="alert" className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm leading-7 text-rose-700">{dashboard.quizDeleteError.message}</p>}</article>)}
         </section>
         <section className="card space-y-4 p-5 sm:p-6">
           <div><p className="text-xs font-bold text-brand-600">الأسئلة والصور في ملف واحد</p><h2 className="mt-1 text-xl font-black">إضافة مسابقة</h2></div>
