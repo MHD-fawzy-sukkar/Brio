@@ -17,11 +17,11 @@ export class MediaPrefetchEngine {
   private memoryCache: Map<string, { blobUrl: string; bytes: number; timestamp: number }> = new Map();
   private decodedImageElements: Map<string, HTMLImageElement> = new Map();
   private maxCacheEntries = 30;
-  private maxMemoryBytes = 50 * 1024 * 1024; // 50MB max
+  private maxMemoryBytes = 8 * 1024 * 1024;
   private currentMemoryBytes = 0;
 
   private activeFetchCount = 0;
-  private maxConcurrency = 6;
+  private maxConcurrency = 2;
 
   private queue: PrefetchItem[] = [];
   private inFlightAbortControllers: Map<string, AbortController> = new Map();
@@ -78,7 +78,7 @@ export class MediaPrefetchEngine {
 
   isLoaded(url: string): boolean {
     if (!url) return true;
-    return this.memoryCache.has(url);
+    return this.memoryCache.has(url) && this.itemStates.get(url)?.decoded === true;
   }
 
   resolveUrl(url: string): string {
@@ -87,7 +87,7 @@ export class MediaPrefetchEngine {
 
   getState(url: string): PrefetchState | undefined {
     if (this.memoryCache.has(url)) {
-      return { status: 'loaded', url, isEssential: true, decoded: true };
+      return this.itemStates.get(url);
     }
     return this.itemStates.get(url);
   }
@@ -126,8 +126,11 @@ export class MediaPrefetchEngine {
   }
 
   private async fetchWithRetry(item: PrefetchItem, attempt: number): Promise<void> {
+    let retrying = false;
     const maxRetries = 3;
     const controller = new AbortController();
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 10000);
     this.inFlightAbortControllers.set(item.url, controller);
 
     try {
@@ -153,13 +156,13 @@ export class MediaPrefetchEngine {
           if (response && response.ok && typeof caches !== 'undefined') {
             try {
               const cache = await caches.open('brio-media-v1');
-              cache.put(item.url, response.clone());
+              await cache.put(item.url, response.clone());
             } catch {
               // Cache storage write failure -> preserve progress with memory cache fallback!
             }
           }
         } catch (e: any) {
-          if (e.name === 'AbortError') return;
+          if (e.name === 'AbortError' && !timedOut) return;
           throw e;
         }
       }
@@ -184,12 +187,7 @@ export class MediaPrefetchEngine {
         decoded = true; // Environment fallback
       }
 
-      if (decoded) {
-        this.readyDecodedCount++;
-      }
-
       const blobUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(blob) : item.url;
-      this.addToCache(item.url, blobUrl, blob.size);
 
       // Warm browser native HTMLImageElement bitmap cache for instant 0ms <img> paint
       if (typeof window !== 'undefined' && typeof window.Image !== 'undefined') {
@@ -198,13 +196,26 @@ export class MediaPrefetchEngine {
           img.decoding = 'async';
           img.src = blobUrl;
           if (typeof img.decode === 'function') {
-            void img.decode().catch(() => {});
+            await img.decode();
+            decoded = true;
+          } else {
+            await new Promise<void>((ok, fail) => { if (img.complete && img.naturalWidth > 0) ok(); else { img.onload = () => ok(); img.onerror = () => fail(new Error('Image decode failed')); } });
+            decoded = true;
           }
           this.decodedImageElements.set(item.url, img);
+          while (this.decodedImageElements.size > 2) {
+            const oldest = this.decodedImageElements.keys().next().value;
+            if (oldest) this.decodedImageElements.delete(oldest);
+          }
         } catch {
-          // Ignore image element warm-up errors
+          if (blobUrl.startsWith('blob:')) URL.revokeObjectURL(blobUrl);
+          throw new Error('Image decode failed');
         }
       }
+
+      if (!decoded) throw new Error('Image decode failed');
+      this.readyDecodedCount++;
+      this.addToCache(item.url, blobUrl, blob.size);
 
       this.itemStates.set(item.url, {
         status: 'loaded',
@@ -213,12 +224,18 @@ export class MediaPrefetchEngine {
         decoded
       });
     } catch (err: any) {
-      if (err.name === 'AbortError') return;
+      if (err.name === 'AbortError' && !timedOut) return;
+
+      if (typeof caches !== 'undefined') {
+        try { await (await caches.open('brio-media-v1')).delete(item.url); } catch { /* Memory fallback remains available. */ }
+      }
 
       if (attempt < maxRetries) {
         // Exponential backoff + jitter (200ms, 400ms, 800ms + random 0-100ms jitter)
         const delay = Math.pow(2, attempt) * 200 + Math.random() * 100;
         await new Promise((r) => setTimeout(r, delay));
+        if (controller.signal.aborted && !timedOut) return;
+        retrying = true;
         return this.fetchWithRetry(item, attempt + 1);
       } else {
         this.itemStates.set(item.url, {
@@ -230,10 +247,13 @@ export class MediaPrefetchEngine {
         });
       }
     } finally {
-      this.inFlightAbortControllers.delete(item.url);
-      this.activeFetchCount--;
-      this.notifyListeners();
-      this.processQueue();
+      clearTimeout(timeout);
+      if (!retrying) {
+        this.inFlightAbortControllers.delete(item.url);
+        this.activeFetchCount--;
+        this.notifyListeners();
+        this.processQueue();
+      }
     }
   }
 
@@ -251,6 +271,7 @@ export class MediaPrefetchEngine {
           URL.revokeObjectURL(entry.blobUrl);
         }
         this.currentMemoryBytes -= entry.bytes;
+        this.decodedImageElements.delete(oldestKey);
         this.memoryCache.delete(oldestKey);
       }
     }

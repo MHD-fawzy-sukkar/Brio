@@ -17,7 +17,7 @@ Execute sequentially. Each phase ends with changed files, commands actually run,
 ## P0 specifics
 - Current record reports completed .NET CRUD/auth scaffolding, but code was not attached. Verify every claim in the actual repository.
 - Record branch/commit without exposing secrets. Prefer a dedicated migration branch and a normal baseline commit if appropriate; no forced history edits.
-- Keep `backend/` intact and build it only for inventory/regression evidence. New cloud code lives in apps/packages.
+- Historical P0 retention is superseded by the owner-approved cleanup on 2026-10-24: backend/, empty frontend/ and docs/archive/ were removed from the working tree. Historical source remains in stable/v2/Git history. Active code lives in apps/packages.
 - Find real existing data. If any, draft/test a non-destructive exporter and mapper before migration; no dropping SQL Server tables.
 - Install new docs as canonical, archive previous conflicting docs after inspection. Record conflicts with old AGENTS/reference files; don't silently ignore active user rules.
 - Do not spend this phase rewriting the backend.

@@ -78,7 +78,7 @@ The following documents in `docs/` are installed as canonical for Brio v2:
 8. [9-Testing-and-Deployment.md](file:///D:/Work/Brio/docs/9-Testing-and-Deployment.md)
 
 ### 5.2 Archived Documentation & Reconciled Conflicts
-The original `.NET` reference document has been archived at [docs/archive/Reference-Architecture.md](file:///D:/Work/Brio/docs/archive/Reference-Architecture.md).
+At the time of this historical audit, the original .NET reference document was archived at docs/archive/Reference-Architecture.md. The owner retired that archive and backend/ on 2026-10-24; retrieve them from stable/v2/Git history if needed.
 
 | Architectural Concern | Legacy Document (`docs/archive/Reference-Architecture.md`) | Canonical v2 Specification (`Reference-Architecture-v2.md` & `SRS-Architecture.md`) | Resolution |
 | :--- | :--- | :--- | :--- |

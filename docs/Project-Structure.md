@@ -1,9 +1,9 @@
 # Brio — Project Structure
 
-Revision: 2026-09-30 / architecture v2. Status: implementation specification, NOT implemented code.
+Revision: 2026-10-24 / architecture v2. Runtime: apps/web, apps/worker, apps/local and shared packages. Sections listing planned feature directories remain architectural targets.
 
 ## Authority
-Read SRS-Architecture.md, this file, Reference-Architecture-v2.md, 6-Implementation-Plan.md, 8-Protocol-and-Data.md, and 5-Project-Memory.md before changes. These v2 documents replace conflicting v1 .NET/Redis requirements. Preserve actual legacy source and history. The old Reference-Architecture.md was NOT supplied to the planner; inspect it in P0 and mark its conflicting instructions historical. Do not silently delete unrelated requirements.
+Read SRS-Architecture.md, this file, Reference-Architecture-v2.md, 6-Implementation-Plan.md, 8-Protocol-and-Data.md, and 5-Project-Memory.md before changes. These v2 documents replace conflicting v1 .NET/Redis requirements. Legacy backend/, empty frontend/ and docs/archive/ were explicitly retired by the owner on 2026-10-24; recover historical sources from stable/v2 or Git history if needed. The old Reference-Architecture.md was NOT supplied to the planner; inspect it in P0 and mark its conflicting instructions historical. Do not silently delete unrelated requirements.
 
 ## Selected target
 TypeScript throughout the new application. Next.js static-export frontend; Cloudflare Worker API; SQLite-backed Durable Object per live room; D1 for authoring/accounts/results; Cloudinary for prepared images. No Redis, SQL Server, SignalR, SSR, or Next Server Actions in the new cloud runtime.
@@ -11,7 +11,6 @@ TypeScript throughout the new application. Next.js static-export frontend; Cloud
 ## Repository map
 | Path | Responsibility |
 | --- | --- |
-| `backend/` | Existing .NET implementation: retained, excluded from new builds; reference until migration is verified |
 | `apps/web/` | Next.js App Router, static export, mobile player and host UI |
 | `apps/worker/` | HTTP API, authentication, Cloudflare bindings, room runtime |
 | `apps/worker/src/http/` | Thin routing/HTTP validation and response mapping |
@@ -20,7 +19,7 @@ TypeScript throughout the new application. Next.js static-export frontend; Cloud
 | `apps/worker/src/repositories/` | D1 authoring repositories; no per-answer D1 access |
 | `apps/worker/migrations/` | Versioned D1 SQL migrations |
 | `apps/worker/wrangler.jsonc` | Worker, static-assets, D1, DO SQLite migration bindings |
-| `apps/local/` | Reserved for P8 LAN runtime; do not implement in P1–P7 |
+| `apps/local/` | P8 first LAN slice: Node HTTP/WebSocket, SQLite, validated quiz/media import; see 14-LAN.md for evidence and pending gates |
 | `packages/contracts/` | Public DTOs, Zod schemas, protocol version; no answer keys |
 | `packages/game-core/` | Pure rules, state transitions, scoring, normalization; server-only |
 | `packages/game-core/src/ports/` | Small interfaces for clock, storage, scheduler, transport |

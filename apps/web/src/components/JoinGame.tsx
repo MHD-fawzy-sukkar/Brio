@@ -6,6 +6,7 @@ import { ButtonContent } from './Loading';
 import { AmbientBackground } from './AmbientBackground';
 import { MarketingHero } from './MarketingHero';
 import { normalizePin } from '../services/home-routing';
+import { isLanMode } from '../services/runtime-mode';
 
 export function JoinGame() {
   const [code, setCode] = useState('');
@@ -61,14 +62,14 @@ export function JoinGame() {
         {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
 
         <div>
-          <label htmlFor="game-pin" className="label">رمز اللعبة (PIN)</label>
+          <label htmlFor="game-pin" className="label">رمز اللعبة</label>
           <input id="game-pin" value={code} onChange={(event) => setCode(normalizePin(event.target.value))} inputMode="numeric" autoComplete="one-time-code" autoFocus placeholder="123456" className="field py-4 text-center text-3xl font-black tracking-[.32em] placeholder:tracking-[.18em] placeholder:text-slate-300" />
         </div>
 
         <button type="submit" disabled={checking || code.length !== 6} className="primary-btn w-full py-4 text-base">
           <ButtonContent busy={checking} busyText="جاري التحقق…">متابعة إلى شخصيتك</ButtonContent>
         </button>
-        <p className="text-center text-xs text-slate-400">هل تريد إنشاء مسابقة؟ <Link href="/login/" className="font-black text-brand-600 hover:underline">دخول المنشئين</Link></p>
+        {isLanMode ? <p className="text-center text-xs leading-6 text-slate-500">وصّل هاتفك بشبكة المقدّم نفسها. تُحمّل الصور تلقائياً، دون الحاجة إلى تثبيت تطبيق.</p> : <p className="text-center text-xs text-slate-400"><Link href="/login/" className="font-black text-brand-600 hover:underline">دخول المنشئين</Link></p>}
       </form>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { friendlyGameError } from './game-copy';
+import { isLanMode } from './runtime-mode';
 
 export interface SocketMessage {
   v: number;
@@ -37,7 +38,7 @@ export class BrioRoomSocket {
     this.emitConnection('connecting');
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = process.env.NEXT_PUBLIC_API_HOST || window.location.host;
+    const host = (!isLanMode && process.env.NEXT_PUBLIC_API_HOST) || window.location.host;
     const url = `${protocol}//${host}/ws/rooms/${encodeURIComponent(this.roomId)}?role=${this.role}&playerId=${encodeURIComponent(this.playerId)}`;
 
     const ws = new WebSocket(url);
@@ -149,6 +150,10 @@ export class BrioRoomSocket {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: 'host.start' }));
     }
+  }
+
+  recoverQuiz(action: 'void_and_replay' | 'void_and_skip'): void {
+    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ type: 'host.recover', payload: { action } }));
   }
 
   submitAnswer(

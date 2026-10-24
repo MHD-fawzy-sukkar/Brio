@@ -20,7 +20,7 @@ const MAX_YAW = 0.38; // rad (~22°)
 const MAX_PITCH = 0.14; // rad (~8°)
 
 /** Free-flying spherical mascot with integrated 3D visor & inner LED parallax. */
-export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 'lobby' | 'page' | 'studio'; celebration?: boolean }) {
+export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPage = false }: { scope?: 'lobby' | 'page' | 'studio'; celebration?: boolean; dragWithinPage?: boolean }) {
   const rawId = useId();
   const uid = rawId.replace(/[^a-zA-Z0-9_-]/g, '');
   const areaRef = useRef<HTMLDivElement>(null);
@@ -207,9 +207,19 @@ export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 
       rafId = window.requestAnimationFrame(tick);
     };
 
-    rafId = window.requestAnimationFrame(tick);
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateMotion = () => {
+      window.cancelAnimationFrame(rafId);
+      lastTime = performance.now();
+      if (!reducedMotion.matches && !document.hidden) rafId = window.requestAnimationFrame(tick);
+    };
+    reducedMotion.addEventListener('change', updateMotion);
+    document.addEventListener('visibilitychange', updateMotion);
+    updateMotion();
     return () => {
       window.cancelAnimationFrame(rafId);
+      reducedMotion.removeEventListener('change', updateMotion);
+      document.removeEventListener('visibilitychange', updateMotion);
       observer.disconnect();
       window.removeEventListener('resize', measure);
     };
@@ -241,8 +251,13 @@ export function RoamingBolt({ scope = 'lobby', celebration = false }: { scope?: 
     const boltW = boltRef.current?.offsetWidth || 160;
     const boltH = boltRef.current?.offsetHeight || 105;
 
-    s.x = Math.max(-16, Math.min(rootRect.width - boltW + 16, e.clientX - areaRect.left - s.dragOffsetX));
-    s.y = Math.max(-12, Math.min(Math.max(rootRect.height - boltH, s.maxY + 240), e.clientY - areaRect.top - s.dragOffsetY));
+    const page = dragWithinPage ? areaRef.current.closest('[data-bolt-drag-root]')?.getBoundingClientRect() : null;
+    const minX = page ? page.left - areaRect.left : -16;
+    const maxX = page ? page.right - areaRect.left - boltW : rootRect.width - boltW + 16;
+    const minY = page ? page.top - areaRect.top : -12;
+    const maxY = page ? page.bottom - areaRect.top - boltH : Math.max(rootRect.height - boltH, s.maxY + 240);
+    s.x = Math.max(minX, Math.min(maxX, e.clientX - areaRect.left - s.dragOffsetX));
+    s.y = Math.max(minY, Math.min(maxY, e.clientY - areaRect.top - s.dragOffsetY));
 
     s.dragVx = s.dragVx * 0.5 + (e.clientX - s.lastPointerX) * 0.5;
     s.dragVy = s.dragVy * 0.5 + (e.clientY - s.lastPointerY) * 0.5;

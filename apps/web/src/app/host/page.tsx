@@ -15,6 +15,7 @@ import { Avatar } from '../../components/Avatar';
 import { GameControls } from '../../components/host-lobby/GameControls';
 import { HostLobby } from '../../components/host-lobby/HostLobby';
 import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
+import { isLanMode } from '../../services/runtime-mode';
 
 const optionColors = ['bg-brand-500', 'bg-cyan-500', 'bg-amber-500', 'bg-emerald-500', 'bg-blue-500', 'bg-orange-500'];
 
@@ -44,7 +45,7 @@ function HostContent() {
 
   useEffect(() => {
     if (!roomId) {
-      window.location.replace('/dashboard/');
+      window.location.replace(isLanMode ? '/local/' : '/dashboard/');
       return;
     }
     const roomSocket = new BrioRoomSocket(roomId, 'host');
@@ -171,6 +172,8 @@ function HostContent() {
           </div>
         </section>
       )}
+
+      {isLanMode && phase === 'RECOVERY_PAUSED' && <section className="card space-y-4 p-6 text-center"><h2 className="text-2xl font-black">توقفت الجولة بعد انقطاع تشغيل المقدّم</h2><p className="text-slate-600">اختر إعادة السؤال المتأثر أو تجاوزه. نقاطه السابقة تُلغى وفق قواعد الاستعادة.</p><div className="flex justify-center gap-3"><button className="primary-btn" onClick={() => socket?.recoverQuiz('void_and_replay')}>إعادة السؤال</button><button className="secondary-btn" onClick={() => socket?.recoverQuiz('void_and_skip')}>تجاوز السؤال</button></div></section>}
 
       {phase === 'QUESTION' && question && (
         <section className="card overflow-hidden">

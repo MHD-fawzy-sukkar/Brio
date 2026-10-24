@@ -1,9 +1,16 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import '@fontsource/cairo/arabic-400.css';
+import '@fontsource/cairo/arabic-600.css';
+import '@fontsource/cairo/arabic-700.css';
+import '@fontsource/cairo/arabic-900.css';
+import '@fontsource/cairo/latin-400.css';
+import '@fontsource/cairo/latin-700.css';
 import { AuthNav, NavbarLinks } from '../components/AuthNav';
 import { AuthProvider } from '../components/AuthProvider';
 import { AmbientBackground } from '../components/AmbientBackground';
 import { Logo } from '../components/Logo';
+import { isLanMode } from '../services/runtime-mode';
 
 export const metadata: Metadata = {
   title: 'Brio — مسابقات تفاعلية حية',
@@ -19,22 +26,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ar" dir="rtl">
       <head>
+        {isLanMode && <meta name="brio-runtime-lan" content="1" />}
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preload" as="image" href="/bolt-original.png" fetchPriority="high" />
         <link rel="preload" as="image" href="/avatars/bolt-base-v2.png" fetchPriority="high" />
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        {!isLanMode && <><link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://api.cloudinary.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://accounts.google.com" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-        <script src="https://accounts.google.com/gsi/client?hl=ar" async defer />
+        <script src="https://accounts.google.com/gsi/client?hl=ar" async defer /></>}
       </head>
       <body className="app-shell min-h-screen flex flex-col antialiased">
         <AmbientBackground fixed />
         <AuthProvider>
           <header className="app-navbar sticky top-0 z-50 border-b border-slate-200/75 bg-white/92 backdrop-blur-md">
-            <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6">
+            <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-2 sm:min-h-18 sm:px-6">
               <Logo />
               <NavbarLinks />
               <AuthNav />

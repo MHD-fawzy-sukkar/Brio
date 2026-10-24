@@ -12,6 +12,8 @@ interface ManifestItem {
 
 export function useRoomMediaPrefetch(roomId: string, questionIndex: number | null | undefined) {
   const [manifest, setManifest] = useState<ManifestItem[]>([]);
+  const [, setMediaTick] = useState(0);
+  useEffect(() => globalMediaPrefetchEngine.subscribe(() => setMediaTick(tick => tick + 1)), []);
 
   useEffect(() => {
     if (!roomId) return;
@@ -26,7 +28,7 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
         if (cancelled) return;
         setManifest(items);
         globalMediaPrefetchEngine.queueImages(
-          items.map((item) => ({
+          items.filter(item => item.questionIndex <= 2).map((item) => ({
             url: item.url,
             questionId: item.mediaId,
             isEssential: item.isEssential,
@@ -51,10 +53,15 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
     if (!manifest.length) return;
     const currentIdx = questionIndex ?? -1;
     const upcoming = manifest.filter(
-      (item) => item.questionIndex >= currentIdx && item.questionIndex <= currentIdx + 2
+      (item) => item.questionIndex >= Math.max(0,currentIdx) && item.questionIndex <= Math.max(0,currentIdx) + 2
     );
     for (const item of upcoming) {
       globalMediaPrefetchEngine.prioritizeUpcoming(item.url, item.isEssential);
     }
   }, [manifest, questionIndex]);
+
+  const start = Math.max(0, questionIndex ?? 0);
+  const window = manifest.filter(item => item.questionIndex >= start && item.questionIndex <= start + 2);
+  return { total: window.length, ready: window.filter(item => globalMediaPrefetchEngine.isLoaded(item.url)).length,
+    failed: window.filter(item => globalMediaPrefetchEngine.getState(item.url)?.status === 'error').length };
 }

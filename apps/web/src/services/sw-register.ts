@@ -1,5 +1,7 @@
+import { isLanMode } from './runtime-mode';
+
 export function registerServiceWorker(onForegroundResync?: () => void): () => void {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+  if (isLanMode || typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return () => {};
   }
 

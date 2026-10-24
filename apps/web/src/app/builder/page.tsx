@@ -12,6 +12,7 @@ import { backgroundUploads, type UploadTask } from '../../services/background-up
 import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { validateImage } from '../../services/media-upload';
 import { PageSkeleton, Spinner } from '../../components/Loading';
+import { downloadLanBundle } from '../../services/lan-export';
 
 const questionTypeLabels: Record<QuestionType, string> = {
   MultipleChoice: 'اختيار من متعدد',
@@ -53,6 +54,8 @@ function Builder() {
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>([]);
   const handledUploads = useRef(new Set<string>());
   const [starting, setStarting] = useState(false);
+  const [downloadingLan, setDownloadingLan] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState('');
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
   const [deleteQuestionBusy, setDeleteQuestionBusy] = useState(false);
 
@@ -291,6 +294,19 @@ function Builder() {
     }
   };
 
+  const downloadForLan = async () => {
+    if (!quizId) return;
+    setDownloadingLan(true); setError(null); setMessage(null);
+    try {
+      if (backgroundUploads.list(quizId).some(task => task.state === 'uploading')) throw new Error('انتظر انتهاء رفع الصور قبل تنزيل نسخة للّعب المحلي.');
+      if (isEditingTitle && title.trim() && title.trim() !== quiz?.title) await commitTitle();
+      else if (pendingTitleSaveRef.current) await pendingTitleSaveRef.current;
+      await downloadLanBundle(quizId, setDownloadProgress);
+      setMessage('المسابقة وصورها جاهزة. افتح لوحة المقدّم على اللابتوب واختر «اختيار ملف المسابقة» لإضافتها.');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'تعذّر تجهيز نسخة للّعب المحلي.'); }
+    finally { setDownloadingLan(false); setDownloadProgress(''); }
+  };
+
   if (!quiz && !error) return <PageSkeleton />;
 
   const deletingQuestion = quiz?.questions.find((q) => q.id === deletingQuestionId);
@@ -311,7 +327,8 @@ function Builder() {
             <span>→</span>
             <span>مسابقاتي</span>
           </Link>
-          <button onClick={startGame} disabled={starting || !quiz?.questions.length} className="primary-btn px-7 py-3">
+          <button onClick={downloadForLan} disabled={starting || downloadingLan || !quiz?.questions.length} className="secondary-btn px-5 py-3">{downloadingLan ? downloadProgress : '↓ تنزيل للّعب المحلي'}</button>
+          <button onClick={startGame} disabled={starting || downloadingLan || !quiz?.questions.length} className="primary-btn px-7 py-3">
             {starting ? 'جاري تجهيز الغرفة…' : '▶ ابدأ اللعبة'}
           </button>
         </div>

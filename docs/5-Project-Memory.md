@@ -1,6 +1,38 @@
 # Brio — Project Memory and Current Decisions
 
-Updated: 2026-10-03. Read this on every engineering iteration; update only with observed work/evidence.
+Updated: 2026-10-24. Read this on every engineering iteration; update only with observed work/evidence.
+
+## 2026-10-24 — Owner-approved legacy retirement and presenter fixes
+
+- The owner explicitly requested removing unused backend/, frontend/ and old documentation archives. Dependency audit confirmed pnpm only builds apps/* and packages/*; no active runtime imports these folders. Removed the old .NET backend (including tracked/generated obj/bin content), empty frontend folder and docs/archive. Preserved all their files in an external recovery ZIP before deletion; stable/v2/Git history also retain tracked sources. Earlier instructions to retain legacy folders are superseded by this owner request.
+- Added safe canonical redirects for exported directory pages without a trailing slash, including /join-game and query preservation; regression covered in local HTTP tests.
+- Enabled dashboard Bolt pointer interaction and grab/grabbing cursors. Optional page drag bounds allow dragging across the dashboard, while automatic flight returns toward the header area. Replaced bulky result tiles with compact divided rows and enabled pointer cursors for action buttons.
+- Local room summaries now include quizId. The active quiz shows an inline explanation that the room must end before deletion; clicking delete explains the block without opening a misleading confirmation. Server-side protection remains in place.
+
+## 2026-10-24 — Presenter dashboard polish and cleanup
+
+- Standard Arabic copy, adjacent guide/history cards, explicit import/quiz actions and dedicated decorative Bolt flight area in the desktop header.
+- Added confirmed quiz deletion and separate permanent finished-session deletion. Active room safety and host authorization remain enforced. Results retain frozen quizzes/images; transactional media cleanup removes only unreferenced bytes. Demo import is now first-database-run only.
+- Separated local page view, state/actions, request/types and guide/history components. Removed unused legacy animation styles; all current public images have references and remain in place. Legacy source and documentation previews were preserved.
+- Validation: six local integration tests including deletion lifecycle, 23 web tests, TypeScript and production LAN build passed. Existing user data was preserved during implementation.
+
+## 2026-10-24 — LAN usability and disconnect follow-up
+
+- Removed password prompt. Local presenter session bootstrap requires loopback socket, loopback URL and matching Origin; LAN clients cannot grant themselves presenter access.
+- Dashboard shows active room explicitly, offers resume/end and confirms ending before opening a replacement. Import and networking guidance use audience-facing Arabic. Join/play mobile nav hides account/creator actions and uses a compact logo.
+- Added disconnect test: server timer continues with presenter/player sockets disconnected, broadcasts to remaining player, and restores original identity, score and durable receipt on reconnect. Local integration suite: 5 passing tests.
+- Existing local quiz/room data is preserved. No cloud deployment or feature branch push.
+
+## 2026-10-24 — First LAN vertical slice (physical-device gate pending)
+
+- User approved the Windows-presenter LAN slice after architecture discussion. `stable/v2` was pushed at `dc95da1`; work is on local `feature/lan`. No production deployment or branch push is included in this implementation turn.
+- Added `apps/local` using the existing pure core/public serializers, Node HTTP/WebSocket and SQLite; local host auth, cookie-bound players, transactional quiz/media import, durable receipts and results, reconnect and recovery, local static/media serving, adapter selection for QR.
+- Added owner-only cloud export source and builder bundle download; LAN dashboard import/start/results; standalone LAN web build and `Start-LAN.cmd`. Google is absent from the LAN layout; Cairo fonts ship locally. Exporting from the public website still requires deployment.
+- Fixed prefetch retry concurrency, capped downloads at two and memory at 8 MiB, limited decoded elements to two, switched to rolling prefetch, added lobby readiness and essential-image retry. Submission IDs work on LAN HTTP; retries keep the same ID and reconnect snapshots restore the player's receipt.
+- Existing core includes speed-based points despite older SRS prose. LAN deliberately reuses that actual behavior. Local room persistence is initially an atomic JSON SQLite row rather than the target normalized per-answer schema; see `14-LAN.md` for rationale and write-amplification limit.
+- Evidence: TypeScript passed; LAN static export passed. LAN integration tests passed for host + three socket clients, persistence failure, duplicate/conflicting answers, identity/Origin/role checks, process restart and replay. A 150-socket loopback burst measured 241 ms total / 235 ms p95 in one isolated run; not a Wi-Fi capacity claim. Browser on 192.168 HTTP confirmed image, accepted answer, automatic next question and podium with no player warnings/errors.
+- Status: first slice works locally; P8 is NOT fully accepted. Physical three-phone WAN-disconnected test, Android/iOS, image-heavy sustained 150-player rehearsal and later cloud results import/deduplication remain pending. Full instructions and limitations: `docs/14-LAN.md`.
+- Final validation: 73 tests passed across the executed suites; TypeScript/lint, cloud production build, LAN production build and whitespace checks passed. LAN server was restarted with the final source and its local dashboard left open for review. No production resources were changed.
 
 ## 2026-10-03 — Lightweight entry hero and Google button cleanup
 

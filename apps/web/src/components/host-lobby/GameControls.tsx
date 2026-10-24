@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ButtonContent } from '../Loading';
 import { canStartLobby, playerCountLabel, type LobbyPlayer } from './lobby-model';
+import { isLanMode } from '../../services/runtime-mode';
 
 type GameControlsProps = {
   quizTitle?: string;
@@ -14,7 +15,7 @@ type GameControlsProps = {
 };
 
 export function GameControls({ quizTitle, quizId, connected, players, onStart, onEnd, ending, finished = false }: GameControlsProps) {
-  const backHref = quizId ? `/builder/?quizId=${encodeURIComponent(quizId)}` : '/dashboard/';
+  const backHref = isLanMode ? '/local/' : quizId ? `/builder/?quizId=${encodeURIComponent(quizId)}` : '/dashboard/';
 
   return (
     <section aria-label="التحكم باللعبة" className="game-controls">
@@ -76,7 +77,7 @@ export function GameControls({ quizTitle, quizId, connected, players, onStart, o
           </>
         ) : (
           <Link
-            href="/dashboard/"
+            href={isLanMode ? '/local/' : '/dashboard/'}
             className="primary-btn inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-black"
           >
             <span>مسابقاتي</span>

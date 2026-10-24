@@ -69,6 +69,20 @@ function rfc7807Error(c: any, status: number, code: string, detail: string, erro
 }
 
 // 1. Health check route
+// Private, immutable export source. Media bytes are prepared by the creator's browser,
+// never by a Worker URL proxy. No answers are exposed to anonymous/player callers.
+app.get('/api/quizzes/:id/lan-export', async (c) => {
+  const creator = await getAuthCreator(c);
+  if (!creator) return rfc7807Error(c, 401, 'unauthorized', 'Authentication required');
+  const quizId = c.req.param('id');
+  const owned = await getQuizForCreator(c.env.DB, quizId, creator.id);
+  if (!owned) return rfc7807Error(c, 404, 'not_found', 'Quiz not found');
+  const published = await getLatestQuizVersion(c.env.DB, quizId);
+  if (!published) return rfc7807Error(c, 409, 'not_published', 'Publish the quiz first');
+  c.header('Cache-Control', 'no-store');
+  return c.json({ format: 'brio-lan', version: 1, quiz: JSON.parse(published.private_snapshot_json) });
+});
+
 app.get('/api/health', (c) => {
   return c.json({
     status: 'ok',

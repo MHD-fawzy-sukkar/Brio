@@ -1,5 +1,8 @@
 # Dependencies
 node_modules/
+.brio-lan/
+apps/web/out-lan/
+apps/web/.next-lan/
 .pnpm-store/
 
 # Next.js Build Output
@@ -40,7 +43,3 @@ pnpm-debug.log*
 .idea/
 .vscode/*
 !.vscode/settings.json
-
-# C# / .NET Obj & Bin
-backend/**/bin/
-backend/**/obj/

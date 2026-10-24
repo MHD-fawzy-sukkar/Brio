@@ -1,4 +1,5 @@
 'use client';
+import { createSubmissionId } from '../../services/submission-id';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -91,13 +92,14 @@ function PlayContent() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [textAnswer, setTextAnswer] = useState('');
   const [submission, setSubmission] = useState<SubmissionState>('idle');
+  const pendingSubmissionIdRef = useRef<string | null>(null);
   const [rejection, setRejection] = useState('');
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const lastImageUrlRef = useRef<string | null>(null);
   const countdown = useSynchronizedCountdown(snapshot?.phaseEndsAt, snapshot?.serverNow);
-  useRoomMediaPrefetch(roomId, snapshot?.questionIndex);
+  const mediaReadiness = useRoomMediaPrefetch(roomId, snapshot?.questionIndex);
 
   useEffect(() => {
     if (!validJoin) {
@@ -140,11 +142,20 @@ function PlayContent() {
   }, [validJoin, roomId, playerId]);
 
   useEffect(() => {
+    pendingSubmissionIdRef.current = null;
     setSelectedOption(null);
     setTextAnswer('');
     setSubmission('idle');
     setRejection('');
   }, [snapshot?.roundId]);
+
+  useEffect(() => {
+    if (snapshot?.ownReceipt) {
+      setSubmission('accepted');
+      setSelectedOption(snapshot.ownReceipt.optionId || null);
+      setTextAnswer(snapshot.ownReceipt.textAnswer || '');
+    }
+  }, [snapshot?.roundId, snapshot?.ownReceipt]);
 
   useEffect(
     () =>
@@ -152,7 +163,7 @@ function PlayContent() {
         const url = snapshot?.question?.essentialImage;
         if (!url) return;
         const state = states.get(url);
-        if (state?.status === 'loaded' || globalMediaPrefetchEngine.isLoaded(url)) setImageLoaded(true);
+        if (state?.status === 'loaded' || globalMediaPrefetchEngine.isLoaded(url)) { setImageLoaded(true); setImageError(false); }
         if (state?.status === 'error') setImageError(true);
       }),
     [snapshot?.question?.essentialImage]
@@ -171,7 +182,7 @@ function PlayContent() {
   const roundId = snapshot?.roundId || '';
   const ownScore = snapshot?.ownScore ?? 0;
   const players = snapshot?.lobbyPlayers || [{ id: playerId, nickname, avatarId: avatar }];
-  const imageBlocking = Boolean(question?.essentialImage && !imageLoaded && !imageError);
+  const imageBlocking = Boolean(question?.essentialImage && !imageLoaded);
   const resolvedQuestionImage = question?.essentialImage
     ? globalMediaPrefetchEngine.resolveUrl(question.essentialImage)
     : '';
@@ -182,7 +193,8 @@ function PlayContent() {
     setSubmission('submitting');
     setRejection('');
     try {
-      await socket.submitAnswer(roundId, crypto.randomUUID(), {
+      pendingSubmissionIdRef.current ||= createSubmissionId();
+      await socket.submitAnswer(roundId, pendingSubmissionIdRef.current, {
         optionId,
         textAnswer: question?.type === 'ShortAnswer' ? textAnswer : undefined
       });
@@ -250,6 +262,7 @@ function PlayContent() {
             </div>
             <h2 className="mt-4 text-2xl font-black text-slate-900 sm:text-3xl">مكانك جاهز في غرفة الانتظار</h2>
             <p className="mt-2 text-sm leading-7 text-slate-500">ستبدأ اللعبة تلقائياً عندما يضغط المضيف زر البدء.</p>
+            {mediaReadiness.total > 0 && <p role="status" className={`mt-3 text-xs font-bold ${mediaReadiness.failed ? 'text-amber-700' : 'text-emerald-700'}`}>{mediaReadiness.failed ? 'تعذّر تجهيز بعض الصور. سنحاول مجدداً عند اقتراب السؤال.' : mediaReadiness.ready === mediaReadiness.total ? '✓ صور البداية جاهزة على جهازك' : `نجهّز صور البداية على جهازك… ${mediaReadiness.ready} / ${mediaReadiness.total}`}</p>}
             <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600">
               <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               {players.length} {players.length === 1 ? 'لاعب جاهز' : 'لاعبون جاهزون'}
@@ -323,12 +336,14 @@ function PlayContent() {
                 alt="صورة السؤال"
                 fetchPriority="high"
                 decoding="sync"
-                onLoad={() => setImageLoaded(true)}
+                onLoad={() => { setImageLoaded(true); setImageError(false); }}
                 onError={() => setImageError(true)}
                 className={`max-h-64 w-full object-contain transition-opacity duration-150 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               />
             </div>
           )}
+
+          {imageError && question.essentialImage && <div role="alert" className="rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-800">تعذّر تحميل الصورة، ووقت السؤال مستمر.<button className="mr-3 underline" onClick={() => { setImageError(false); globalMediaPrefetchEngine.prioritizeUpcoming(question.essentialImage, true); }}>إعادة المحاولة</button></div>}
 
           <h2 className="py-2 text-center text-xl font-black leading-9 text-slate-900 sm:py-3 sm:text-2xl">{question.text}</h2>
 
