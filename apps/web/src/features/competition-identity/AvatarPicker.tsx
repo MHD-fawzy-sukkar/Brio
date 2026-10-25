@@ -19,7 +19,7 @@ export function AvatarPicker({ value, onChange, compact = false }: { value: stri
         aria-label={avatar.label}
         aria-pressed={value === avatar.id}
         className="avatar-choice"
-        style={{ '--theme-accent': palette.color, '--theme-soft': palette.soft } as CSSProperties}
+        style={{ '--theme-accent': palette.color, '--theme-soft': palette.soft, '--theme-on-accent': palette.onAccent } as CSSProperties}
       ><Avatar src={avatar.id} playerIndex={index} className="w-full rounded-xl" /></button>)}
     </div>
   </fieldset>;

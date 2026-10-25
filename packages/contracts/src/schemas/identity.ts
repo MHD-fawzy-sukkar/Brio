@@ -5,7 +5,10 @@ const ImageSourceSchema = z.string().max(2048).refine(value =>
   /^\/media\/[a-f0-9]{64}$/.test(value) || /^https:\/\/res\.cloudinary\.com\/[a-zA-Z0-9_-]+\/image\/upload\//.test(value),
   'Invalid identity image source');
 const ImageSchema = z.object({ src: ImageSourceSchema, label: z.string().min(1).max(80) });
-export const ThemeAccentSchema = z.enum(['brio', 'ocean', 'forest', 'violet', 'amber']);
+export const ThemeAccentSchema = z.union([
+  z.enum(['brio', 'ocean', 'forest', 'violet', 'amber', 'rose', 'teal', 'cyan', 'indigo', 'orange', 'slate', 'red']),
+  z.string().regex(/^#[0-9a-fA-F]{6}$/).transform(color => color.toLowerCase())
+]);
 export const ThemeVisibilitySchema = z.enum(['private', 'public']);
 export const CompetitionIdentitySchema = z.object({
   name: z.string().trim().min(1).max(80),

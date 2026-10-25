@@ -50,6 +50,22 @@ test('theme library keeps drafts private and only the owner can publish or unpub
   } finally { sqlite.close(); }
 });
 
+test('custom colors survive saving, library reuse and isolated quiz copies', async () => {
+  const { db, sqlite, call, input } = await setup();
+  try {
+    const response = await call('/identities', 'POST', { ...input, accent: '#Ab12EF', visibility: 'public', publishConfirmed: true });
+    assert.equal(response.status, 201);
+    const original = await response.json() as IdentityRecordDto;
+    assert.equal(original.accent, '#ab12ef');
+    assert.equal((await getIdentity(db, original.id, 'owner'))?.identity.accent, '#ab12ef');
+    const quizResponse = await call('/quizzes', 'POST', { title: 'Custom color', identityId: original.id }, 'other');
+    assert.equal(quizResponse.status, 201);
+    const quiz = await quizResponse.json() as { identity_id: string };
+    assert.equal((await getIdentity(db, quiz.identity_id, 'other'))?.identity.accent, '#ab12ef');
+    assert.equal((await call('/identities', 'POST', { ...input, accent: 'url(https://example.test)' })).status, 400);
+  } finally { sqlite.close(); }
+});
+
 test('public theme copies survive source changes but their design, visibility and asset reuse are locked', async () => {
   const { db, sqlite, call, input } = await setup();
   try {

@@ -1,9 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CompetitionIdentitySchema, SaveIdentityRequestSchema, createCompetitionIdentity, identityImageSources, mapIdentityImages, isCompetitionAvatarAllowed } from './identity';
+import { CompetitionIdentitySchema, SaveIdentityRequestSchema, ThemeAccentSchema, createCompetitionIdentity, identityImageSources, mapIdentityImages, isCompetitionAvatarAllowed } from './identity';
 
 const mediaId = '00000000-0000-4000-8000-000000000001';
 const source = 'https://res.cloudinary.com/brio/image/upload/v1/example.webp';
+
+test('theme accents accept additional presets and normalized custom hex, rejecting arbitrary CSS', () => {
+  for (const accent of ['brio', 'ocean', 'forest', 'violet', 'amber', 'rose', 'teal', 'cyan', 'indigo', 'orange', 'slate', 'red', '#000000', '#ffffff']) assert.equal(ThemeAccentSchema.parse(accent), accent);
+  const input = SaveIdentityRequestSchema.parse({ name: 'Custom', accent: '#Ab12EF', images: [{ mediaId, label: 'Team', roles: ['avatar'] }] });
+  assert.equal(input.accent, '#ab12ef');
+  const identity = createCompetitionIdentity(input, new Map([[mediaId, source]]));
+  assert.equal(identity.accent, '#ab12ef');
+  assert.equal(mapIdentityImages(identity, () => '/media/' + 'a'.repeat(64)).accent, '#ab12ef');
+  for (const invalid of ['#abc', '#12345678', 'white', 'url(https://example.test)', 'red; background:black', 'var(--color)', '#gggggg']) assert.equal(ThemeAccentSchema.safeParse(invalid).success, false);
+});
 
 test('automatic avatar policy adds Bolt below five and rejects built-ins once five custom avatars exist', () => {
   for (const count of [0, 1, 4, 5, 20]) {

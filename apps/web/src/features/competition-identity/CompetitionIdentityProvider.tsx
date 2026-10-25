@@ -10,7 +10,7 @@ const CompetitionIdentityContext = createContext<CompetitionIdentity>(DEFAULT_CO
 export function CompetitionIdentityProvider({ identity, children }: { identity: CompetitionIdentity; children: ReactNode }) {
   const palette = themePalette(identity);
   return <CompetitionIdentityContext.Provider value={identity}><div className="competition-theme" data-theme-custom={identity !== DEFAULT_COMPETITION_IDENTITY}
-    style={{ '--competition-accent': palette.color, '--competition-soft': palette.soft } as CSSProperties}>{children}</div></CompetitionIdentityContext.Provider>;
+    style={{ '--competition-accent': palette.color, '--competition-soft': palette.soft, '--competition-ink': palette.text, '--competition-on-accent': palette.onAccent, '--competition-hover': palette.hover } as CSSProperties}>{children}</div></CompetitionIdentityContext.Provider>;
 }
 
 export function useCompetitionIdentity() {

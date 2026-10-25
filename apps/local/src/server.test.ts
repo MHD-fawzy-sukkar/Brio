@@ -41,13 +41,14 @@ test('identity assets are required, rewritten and retained by frozen LAN rooms u
   const assetId = '00000000-0000-4000-8000-000000000001';
   const bytes = Buffer.concat([png, Buffer.from([0])]);
   const hash = createHash('sha256').update(bytes).digest('hex');
-  const identity: CompetitionIdentity = { name: 'Team', logo: { src: imageUrl, label: 'Team' },
+  const identity: CompetitionIdentity = { name: 'Team', accent: '#abcdef', logo: { src: imageUrl, label: 'Team' },
     character: { kind: 'image', src: imageUrl, label: 'Team', motion: 'float' },
     avatars: [{ id: `identity:${assetId}`, src: imageUrl, label: 'Team' }], avatarMode: 'custom' };
   const input = { ...bundle, quiz: { ...bundle.quiz, identity }, media: [bundle.media[0], {
     sourceUrl: imageUrl, contentType: 'image/png', sha256: hash, base64: bytes.toString('base64')
   }] };
   const parsed = validateBundle(input);
+  assert.equal(parsed.quiz.identity?.accent, '#abcdef');
   assert.equal(parsed.quiz.identity?.logo?.src, `/media/${hash}`);
   assert.equal(parsed.quiz.identity?.avatars[0].src, `/media/${hash}`);
   assert.throws(() => validateBundle({ ...input, media: [bundle.media[0]] }), /Missing identity image/);

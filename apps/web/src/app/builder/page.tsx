@@ -354,7 +354,7 @@ function Builder() {
       {quiz && (
         <>
           <section data-mascot-flight-boundary className="card grid gap-6 p-6 sm:p-7 lg:grid-cols-[290px_1fr] lg:items-stretch">
-            <div className="group relative aspect-[16/10] overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-brand-50 via-white to-amber-50 transition hover:border-brand-400">
+            <div className="quiz-cover-frame group aspect-[16/10] rounded-2xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-brand-50 via-white to-amber-50 transition hover:border-brand-400">
               {hasCover && (
                 <button
                   type="button"

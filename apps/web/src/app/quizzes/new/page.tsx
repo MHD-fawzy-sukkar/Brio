@@ -78,7 +78,7 @@ function NewQuizForm() {
             <div><label className="label" htmlFor="quiz-title">اسم المسابقة</label><input id="quiz-title" className="field py-3.5 font-bold" value={title} onChange={event => setTitle(event.target.value)} maxLength={120} placeholder="مثال: تحدي المعرفة الأسبوعي" autoFocus required /></div>
             <div><span className="label">صورة الغلاف <span className="font-normal text-slate-400">اختيارية</span></span>
               <label className="block cursor-pointer overflow-hidden rounded-2xl border border-dashed border-brand-200 bg-brand-50/30">
-                <div className="grid aspect-[2/1] place-items-center overflow-hidden">{previewUrl ? <img src={previewUrl} alt="معاينة غلاف المسابقة" className="h-full w-full object-cover" /> : <BoltMascot className="w-40" />}</div>
+                <div className="quiz-cover-frame grid aspect-[2/1] place-items-center bg-white">{previewUrl ? <img src={previewUrl} alt="معاينة غلاف المسابقة" /> : <BoltMascot className="w-40" />}</div>
                 <span className="block border-t border-brand-100 bg-white/80 p-3 text-center text-sm font-bold text-brand-700">{coverFile ? 'تغيير صورة الغلاف' : '＋ اختيار غلاف من جهازك'}</span>
                 <input type="file" className="sr-only" accept="image/jpeg,image/png,image/webp,image/avif" onChange={event => chooseCover(event.target.files?.[0])} />
               </label>
