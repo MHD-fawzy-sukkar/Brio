@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { avatarVariant, AVATAR_VARIANT_COUNT, BOLT_AVATARS, resolveAvatarIndex } from './avatar-variants';
+import { avatarVariant, AVATAR_VARIANT_COUNT, BOLT_AVATARS, resolveAvatarIndex } from './catalog';
 
 test('15 avatars retain distinct hues with upright front-facing artwork', () => {
   const variants = Array.from({ length: AVATAR_VARIANT_COUNT }, (_, index) => avatarVariant(index));

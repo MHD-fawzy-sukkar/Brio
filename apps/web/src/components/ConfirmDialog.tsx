@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ButtonContent } from './Loading';
 
@@ -29,13 +29,24 @@ export function ConfirmDialog({
   onCancel,
   onConfirm
 }: ConfirmDialogProps) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const dialogRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!open) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !busy) onCancel();
+      if (event.key !== 'Tab') return;
+      const buttons = Array.from(dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => { window.removeEventListener('keydown', onKeyDown); if (previousFocus?.isConnected) previousFocus.focus(); };
   }, [open, busy, onCancel]);
 
   if (!open) return null;
@@ -48,18 +59,20 @@ export function ConfirmDialog({
       }}
     >
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="confirm-title"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
         className="card relative w-full max-w-md overflow-hidden border border-rose-100 bg-white p-7 text-center shadow-2xl sm:p-8"
       >
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 to-amber-50 text-3xl shadow-sm">
           {icon}
         </div>
-        <h2 id="confirm-title" className="mt-5 text-2xl font-black text-slate-900">
+        <h2 id={titleId} className="mt-5 text-2xl font-black text-slate-900">
           {title}
         </h2>
-        <p className="mt-2.5 text-sm font-semibold leading-7 text-slate-500">
+        <p id={descriptionId} className="mt-2.5 text-sm font-semibold leading-7 text-slate-500">
           {description}
         </p>
         <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row">

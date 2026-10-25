@@ -15,7 +15,6 @@ import {
 import {
   findOrCreateCreator,
   createSessionRecord,
-  findCreatorBySessionHash,
   revokeSessionRecord
 } from './repositories/creator.repository';
 import {
@@ -49,24 +48,14 @@ import {
   generateCloudinarySignature,
   saveMediaRecord
 } from './repositories/media.repository';
-import { localizeProblemDetail } from './problem-copy';
+import { getAuthCreator } from './http/creator';
+import { rfc7807Error } from './http/problem';
+import { identityRoutes } from './routes/identities';
 
 export { GameRoomDO };
 
 const app = new Hono<{ Bindings: Env }>();
-
-// Helper to format RFC 7807 Error Response
-function rfc7807Error(c: any, status: number, code: string, detail: string, errors?: Record<string, string[]>) {
-  return c.json({
-    type: `https://httpstatuses.io/${status}`,
-    title: code.replace(/_/g, ' '),
-    status,
-    code,
-    traceId: crypto.randomUUID(),
-    detail: localizeProblemDetail(detail),
-    errors
-  }, status);
-}
+app.route('/api', identityRoutes);
 
 // 1. Health check route
 // Private, immutable export source. Media bytes are prepared by the creator's browser,
@@ -96,19 +85,6 @@ app.get('/api/auth/nonce', (c) => {
   const nonce = crypto.randomUUID();
   return c.json({ nonce, timestamp: Date.now() });
 });
-
-// Helper for Session Authentication Middleware
-async function getAuthCreator(c: any) {
-  const cookieHeader = c.req.header('Cookie') || null;
-  const cookies = parseCookies(cookieHeader);
-  const sessionToken = cookies[SESSION_COOKIE_NAME];
-
-  if (!sessionToken) return null;
-
-  const sessionHash = await hashSessionToken(sessionToken);
-  const creator = await findCreatorBySessionHash(c.env.DB, sessionHash);
-  return creator;
-}
 
 // 3. Google OAuth Login Endpoint
 app.post('/api/auth/google', async (c) => {
@@ -235,7 +211,7 @@ app.post('/api/quizzes', async (c) => {
   }
 
   try {
-    const quiz = await createQuizForCreator(c.env.DB, creator.id, parsed.data.title, parsed.data.coverImageUrl, parsed.data.questions);
+    const quiz = await createQuizForCreator(c.env.DB, creator.id, parsed.data.title, parsed.data.coverImageUrl, parsed.data.questions, parsed.data.identity, parsed.data.identityId);
     return c.json(quiz, 201);
   } catch (err: any) {
     return rfc7807Error(c, 400, 'business_rule_violation', err.message);
@@ -584,6 +560,16 @@ app.get('/api/rooms/by-code/:code', async (c) => {
     code: room.code,
     status: room.status
   });
+});
+
+// Pre-join presentation data from the frozen room, without question or host data.
+app.get('/api/rooms/:roomId/identity', async c => {
+  const roomId = c.req.param('roomId');
+  const room = await findJoinableRoomById(c.env.DB, roomId);
+  if (!room) return rfc7807Error(c, 404, 'room_not_found', 'Game not found or expired');
+  const response = await c.env.GAME_ROOM.get(c.env.GAME_ROOM.idFromName(roomId)).fetch(new Request('http://internal/identity'));
+  c.header('Cache-Control', 'no-store');
+  return new Response(response.body, { status: response.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 });
 
 // 17. Player Join Endpoint

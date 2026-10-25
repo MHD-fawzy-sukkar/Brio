@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { QuizIdentitySettings } from '../../features/competition-identity/QuizIdentitySettings';
 import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -22,6 +23,7 @@ const questionTypeLabels: Record<QuestionType, string> = {
 };
 
 interface QuizDetail {
+  identity_id?: string | null;
   id: string;
   title: string;
   cover_image_url?: string | null;
@@ -53,6 +55,7 @@ function Builder() {
   const [error, setError] = useState<string | null>(null);
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>([]);
   const handledUploads = useRef(new Set<string>());
+  const [identitySaving, setIdentitySaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [downloadingLan, setDownloadingLan] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState('');
@@ -312,7 +315,7 @@ function Builder() {
   const deletingQuestion = quiz?.questions.find((q) => q.id === deletingQuestionId);
 
   return (
-    <div data-bolt-flight-root className="relative space-y-7">
+    <div data-mascot-flight-root className="relative space-y-7">
       <RoamingBolt scope="studio" />
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -327,8 +330,8 @@ function Builder() {
             <span>→</span>
             <span>مسابقاتي</span>
           </Link>
-          <button onClick={downloadForLan} disabled={starting || downloadingLan || !quiz?.questions.length} className="secondary-btn px-5 py-3">{downloadingLan ? downloadProgress : '↓ تنزيل للّعب المحلي'}</button>
-          <button onClick={startGame} disabled={starting || downloadingLan || !quiz?.questions.length} className="primary-btn px-7 py-3">
+          <button onClick={downloadForLan} disabled={starting || downloadingLan || identitySaving || !quiz?.questions.length} className="secondary-btn px-5 py-3">{downloadingLan ? downloadProgress : '↓ تنزيل للّعب المحلي'}</button>
+          <button onClick={startGame} disabled={starting || downloadingLan || identitySaving || !quiz?.questions.length} className="primary-btn px-7 py-3">
             {starting ? 'جاري تجهيز الغرفة…' : '▶ ابدأ اللعبة'}
           </button>
         </div>
@@ -340,6 +343,7 @@ function Builder() {
           <button onClick={() => setWarning(null)} className="float-left text-amber-600" aria-label="إغلاق التنبيه">×</button>
         </div>
       )}
+      {quiz && quizId && <QuizIdentitySettings key={quizId} quizId={quizId} quizTitle={quiz.title} disabled={starting || downloadingLan} value={quiz.identity_id ?? null} onBusyChange={setIdentitySaving} onSaved={id => setQuiz(current => current?.id === quizId ? { ...current, identity_id: id } : current)} />}
       {failedUploads.map((task) => (
         <div key={task.id} role="alert" className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">
           <span>{task.error || 'تعذر رفع الصورة في الخلفية.'}</span>
@@ -349,7 +353,7 @@ function Builder() {
       {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">{message}</div>}
       {quiz && (
         <>
-          <section data-bolt-flight-boundary className="card grid gap-6 p-6 sm:p-7 lg:grid-cols-[290px_1fr] lg:items-stretch">
+          <section data-mascot-flight-boundary className="card grid gap-6 p-6 sm:p-7 lg:grid-cols-[290px_1fr] lg:items-stretch">
             <div className="group relative aspect-[16/10] overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-brand-50 via-white to-amber-50 transition hover:border-brand-400">
               {hasCover && (
                 <button

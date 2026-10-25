@@ -1,6 +1,6 @@
 # Brio LAN — first working slice
 
-Updated: 2026-10-24. Local implementation on `feature/lan`; not deployed to Cloudflare. Physical multi-phone acceptance remains pending.
+Updated: 2026-10-25. LAN runtime is local; cloud download support is deployed. Physical multi-phone venue acceptance remains pending.
 
 ## Run on Windows
 
@@ -23,11 +23,11 @@ Then double-click `Start-LAN.cmd`, or run `pnpm lan:start`. Keep the terminal op
 
 Optional environment variables: `BRIO_LAN_PORT` (default 3210), `BRIO_LAN_DATA` (default repository `.brio-lan/`). No Google, Cloudflare, or Cloudinary secret is required to play LAN.
 
-The cloud web export stays in `apps/web/out`; the LAN export is `apps/web/out-lan`. Both builds share Next's intermediate `.next` folder and must run sequentially. LAN startup checks its export marker to avoid accidentally serving a cloud build. Rebuild after source changes; the running server does not hot-reload TypeScript.
+The cloud web export stays in `apps/web/out`; the LAN export is `apps/web/out-lan`. Builds use runtime-specific output directories; run the preparation commands sequentially. LAN startup checks its export marker to avoid accidentally serving a cloud build. Rebuild after source changes; the running server does not hot-reload TypeScript.
 
 ## Transfer a real quiz
 
-The online builder now has **تنزيل للّعب المحلي**. This requires deployment of the changed Worker and web frontend before it appears on the public site; this task did not deploy them.
+The online builder now has **تنزيل للّعب المحلي**. The button is available on the deployed site. Download the package while internet is available; import and play afterward without WAN access.
 
 The button waits for the pending title save, refuses to export while image uploads are active, publishes an immutable version, then reads the owner-only `/api/quizzes/:id/lan-export` response (`Cache-Control: no-store`). The browser downloads each unique Cloudinary image with at most two concurrent requests and builds a single versioned JSON package containing quiz data and base64 image bytes. Any failed download aborts the package; it is never labelled ready with missing images.
 
@@ -93,3 +93,13 @@ Browser follow-up: verified both delete confirmations and cancellation without c
 Follow-up: extensionless exported page requests redirect to their canonical trailing-slash URL with query strings intact. Active imported quizzes show an inline deletion explanation using the server-provided quizId. Legacy backend/, empty frontend/ and docs/archive/ were retired by explicit owner request after confirming no active build/runtime dependencies.
 
 Verified after legacy removal: workspace TypeScript checks, LAN production export, six local integration tests and 23 web tests pass. Browser navigation to /join-game (without trailing slash) reaches the join form; pointer drag moved Bolt from its header position into the page with grab cursor and pointer events enabled. No existing quiz/room/result was removed by the agent during browser verification.
+
+## Verified offline run and current UI (2026-10-25)
+
+The latest rehearsal downloaded a real browser-generated package through the builder's download action against a disposable cloud-API fixture. The package contained the frozen quiz, its theme name/accent, logo and mascot/avatar image bytes; duplicate image URLs were fetched once. It was imported through the actual LAN dashboard file picker into a separate SQLite database, then a mobile-size browser joined through the machine's LAN address. Every external request was blocked while all LAN requests remained allowed. The host started the question, its imported image decoded, the player received an answer receipt, the game reached FINISHED, and a reload restored the theme. Observed: zero external requests and zero failed local resources. No user quiz/session/database was modified. This was a same-machine browser rehearsal over the LAN interface, not a physical phone/router capacity test.
+
+Packaging now uses the shared JSON transport and a separately tested createLanBundle function. HTML API responses, failed images, HTML masquerading as images, and images over the established 500KiB limit fail packaging rather than returning an incomplete package. Two downloads run at once; logo, character, avatar and question references are embedded/deduplicated with SHA-256. Import validates raster signatures/dimensions/checksums and rejects missing images. The existing 48MiB total limit remains enforced.
+
+The mobile PIN screen prioritizes the entry form. The join screen keeps a compact avatar preview beside the code, a four-column mobile avatar grid, readable branding/name, and a visible bottom join action. Fonts, Bolt artwork and theme images are served by the local host. The production cloud site itself does not become an offline server: keep the LAN terminal running, connect presenter and players to the same router/hotspot, and select the real Wi-Fi/Ethernet address in the room. LAN gameplay does not require a Google login. Quiz authoring/export and fetching new public themes still require internet before the event.
+
+Quick start on this prepared checkout: double-click Start-LAN.cmd, open http://localhost:3210/local/ on the laptop, import the downloaded JSON file, select Open room, and share the LAN QR with phones on the same network. Keep the laptop awake and the terminal open. Dependencies and Node 24.11+ must be installed in advance; pnpm lan:build refreshes the local web files after source updates. If a phone cannot open the shown IP/port, check the selected adapter, local-network access/firewall prompt and router client isolation before starting. No network/firewall settings were changed automatically.

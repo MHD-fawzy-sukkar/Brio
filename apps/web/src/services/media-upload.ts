@@ -16,7 +16,7 @@ export function validateImage(file: File): void {
   if (file.size > MAX_BYTES) throw new Error('حجم الصورة يجب ألا يتجاوز 5MB.');
 }
 
-async function optimizeImageForUpload(file: File): Promise<File> {
+export async function optimizeImageForUpload(file: File): Promise<File> {
   if (typeof document === 'undefined' || typeof createImageBitmap === 'undefined') {
     return file;
   }

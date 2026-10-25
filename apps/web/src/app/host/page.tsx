@@ -14,7 +14,10 @@ import { useRoomMediaPrefetch } from '../../hooks/use-room-media-prefetch';
 import { Avatar } from '../../components/Avatar';
 import { GameControls } from '../../components/host-lobby/GameControls';
 import { HostLobby } from '../../components/host-lobby/HostLobby';
-import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
+import { CompetitionIdentityProvider } from '../../features/competition-identity/CompetitionIdentityProvider';
+import { DEFAULT_COMPETITION_IDENTITY } from '../../features/competition-identity/model';
+import { CompetitionIdentityBadge } from '../../features/competition-identity/CompetitionIdentityBadge';
+import { CompetitionMascot } from '../../features/competition-identity/CompetitionMascot';
 import { isLanMode } from '../../services/runtime-mode';
 
 const optionColors = ['bg-brand-500', 'bg-cyan-500', 'bg-amber-500', 'bg-emerald-500', 'bg-blue-500', 'bg-orange-500'];
@@ -134,8 +137,10 @@ function HostContent() {
   if (!snapshot) return <PageSkeleton />;
 
   return (
-    <div data-bolt-flight-root className="relative mx-auto max-w-6xl space-y-5">
-      {phase === 'LOBBY' && <RoamingBolt />}
+    <CompetitionIdentityProvider identity={snapshot?.identity ?? DEFAULT_COMPETITION_IDENTITY}>
+    <div data-mascot-flight-root className="relative mx-auto max-w-6xl space-y-5">
+      <CompetitionIdentityBadge />
+      {phase === 'LOBBY' && <CompetitionMascot presentation="roaming" />}
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
 
       {phase !== 'LOBBY' && (
@@ -269,14 +274,14 @@ function HostContent() {
       )}
 
       {phase === 'LEADERBOARD' && (
-        <section data-bolt-flight-root className="card relative p-6 sm:p-9">
-          <RoamingBolt scope="page" celebration />
+        <section data-mascot-flight-root className="card relative p-6 sm:p-9">
+          <CompetitionMascot presentation="roaming" scope="page" celebration />
           <div className="text-center">
             <div className="text-5xl">🏅</div>
             <h2 className="mt-3 text-3xl font-black">الترتيب الحالي</h2>
             <p className="mt-1 text-sm text-slate-500">هذه النقاط تراكمية، وكل سؤال جديد قد يغيّر الترتيب.</p>
           </div>
-          <div data-bolt-flight-boundary className="mx-auto mt-8 max-w-2xl space-y-3">
+          <div data-mascot-flight-boundary className="mx-auto mt-8 max-w-2xl space-y-3">
             {(snapshot.leaderboard || []).map((player: any) => (
               <div key={player.id} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-3">
                 <b className="grid h-10 w-10 place-items-center rounded-xl bg-white text-brand-700 shadow-sm">#{player.rank}</b>
@@ -323,6 +328,7 @@ function HostContent() {
         onConfirm={confirmEndRoom}
       />
     </div>
+    </CompetitionIdentityProvider>
   );
 }
 

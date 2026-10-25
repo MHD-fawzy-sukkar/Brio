@@ -3,10 +3,13 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AmbientBackground } from '../../components/AmbientBackground';
-import { Avatar, BOLT_AVATARS } from '../../components/Avatar';
+import { Avatar } from '../../components/Avatar';
+import { AvatarPicker } from '../../features/competition-identity/AvatarPicker';
+import { CompetitionIdentityProvider } from '../../features/competition-identity/CompetitionIdentityProvider';
+import { useRoomIdentity } from '../../features/competition-identity/use-room-identity';
+import { CompetitionIdentityBadge } from '../../features/competition-identity/CompetitionIdentityBadge';
+import { selectedAvatar } from '../../features/competition-identity/model';
 import { PageSkeleton } from '../../components/Loading';
-
-const AVATARS = BOLT_AVATARS;
 
 function JoinSetup() {
   const params = useSearchParams();
@@ -17,7 +20,10 @@ function JoinSetup() {
   const [code,setCode]=useState(directCode || pin);
   const [resolving,setResolving]=useState(!directRoomId);
   const [nickname, setNickname] = useState('');
-  const [avatar, setAvatar] = useState(AVATARS[0]);
+  const roomIdentity = useRoomIdentity(roomId);
+  const identity = roomIdentity.identity;
+  const [avatarId, setAvatar] = useState('');
+  const avatar = selectedAvatar(identity, avatarId);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestRef = useRef<AbortController | null>(null);
@@ -60,27 +66,32 @@ function JoinSetup() {
     }
   };
 
-  if(resolving)return <PageSkeleton/>;
-  if(!roomId||!code)return <div className="card mx-auto max-w-lg p-10 text-center"><div className="text-5xl">🔎</div><h1 className="mt-4 text-xl font-black">تعذر فتح رابط اللعبة</h1><p className="mt-2 text-sm font-bold leading-7 text-rose-600">{error}</p><a href="/join-game/" className="secondary-btn mt-6 inline-block">إدخال الرمز يدوياً</a></div>;
+  if(resolving || roomIdentity.loading)return <PageSkeleton/>;
+  if(!roomId||!code||roomIdentity.error)return <div className="card mx-auto max-w-lg p-10 text-center"><div className="text-5xl">🔎</div><h1 className="mt-4 text-xl font-black">تعذر فتح رابط اللعبة</h1><p className="mt-2 text-sm font-bold leading-7 text-rose-600">{roomIdentity.error || error}</p><a href="/join-game/" className="secondary-btn mt-6 inline-block">إدخال الرمز يدوياً</a></div>;
 
   return (
-    <div className="mx-auto flex min-h-[72vh] max-w-4xl items-center justify-center py-8">
-      <section className="card grid w-full overflow-hidden lg:grid-cols-[.85fr_1.15fr]">
-        <div className="game-surface flex flex-col justify-center overflow-hidden border-b border-brand-100 p-8 text-slate-900 sm:p-10 lg:border-b-0 lg:border-l">
+    <CompetitionIdentityProvider identity={identity}>
+    <div className="join-setup mx-auto max-w-5xl space-y-3 sm:space-y-5">
+      <CompetitionIdentityBadge />
+      <section className="card join-setup__card overflow-hidden">
+        <aside className="game-surface join-setup__preview text-slate-900">
           <AmbientBackground />
-          <div className="relative z-10"><span className="text-xs font-black text-brand-600">رمز اللعبة</span><div className="mt-2 text-4xl font-black tracking-[.22em] text-brand-800" dir="ltr">{code}</div></div>
-          <div className="relative z-10 mt-8"><div className="mascot-hero mx-auto"><Avatar src={avatar} presentation="hero" label="شخصيتك المختارة" className="w-full" /></div><h1 className="mt-4 text-3xl font-black">اختر شخصيتك</h1><p className="mt-3 leading-7 text-slate-600">اكتب اسماً لطيفاً واختر الصورة التي سترافقك في التحدي.</p></div>
-        </div>
-        <form onSubmit={join} className="space-y-6 p-7 sm:p-10">
-          <div><h2 className="text-xl font-black text-slate-900">جاهز للدخول؟</h2><p className="mt-1 text-sm text-slate-500">يمكنك تعديل الاسم والصورة قبل الانضمام.</p></div>
+          <div className="relative z-10 flex items-center gap-4 lg:flex-col lg:text-center">
+            <div className="join-setup__avatar"><Avatar src={avatar} presentation="hero" label="شخصيتك المختارة" className="w-full" /></div>
+            <div className="min-w-0"><div className="inline-flex items-center gap-2 rounded-xl border border-white bg-white/90 px-3 py-1.5"><span className="text-xs font-bold text-slate-500">رمز اللعبة</span><b className="text-lg tracking-[.12em] text-brand-800" dir="ltr">{code}</b></div><h1 className="mt-3 text-lg font-black leading-8 lg:text-3xl">شخصيتك في التحدي</h1><p className="mt-1 text-xs leading-6 text-slate-600 lg:mt-3 lg:text-sm">تتغيّر المعاينة عند اختيار صورتك.</p></div>
+          </div>
+        </aside>
+        <form onSubmit={join} className="join-setup__form space-y-4 sm:space-y-5">
+          <div><h2 className="text-xl font-black text-slate-900">جهّز اسمك وصورتك</h2><p className="mt-1 text-xs leading-6 text-slate-500">الرمز جاهز. بقي اسمك والصورة التي سترافقك.</p></div>
           {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
-          <div><label htmlFor="nickname" className="label">الاسم المستعار</label><input id="nickname" value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={2} maxLength={24} autoFocus className="field" placeholder="مثال: نور" /></div>
-          <fieldset><legend className="label">اختر صورتك</legend><div className="grid grid-cols-3 gap-3 sm:grid-cols-5">{AVATARS.map((item, index) => <button key={item} type="button" onClick={() => setAvatar(item)} aria-label={`الصورة ${index + 1}`} aria-pressed={avatar === item} className="avatar-choice"><Avatar src={item} playerIndex={index} className="w-full rounded-xl" /></button>)}</div></fieldset>
-          <button type="submit" disabled={joining || nickname.trim().length < 2} className="primary-btn w-full py-3.5">{joining ? 'لحظة، نجهّز مكانك…' : 'انضم إلى اللعبة'}</button>
-          <a href="/join-game/" className="block text-center text-sm font-bold text-slate-500 hover:text-brand-600">استخدام رمز مختلف</a>
+          <div><label htmlFor="nickname" className="label">الاسم المستعار</label><input id="nickname" value={nickname} onChange={(event) => setNickname(event.target.value)} minLength={2} maxLength={24} autoComplete="nickname" enterKeyHint="go" className="field" placeholder="مثال: نور" /></div>
+          <AvatarPicker compact value={avatar} onChange={setAvatar} />
+          <div className="join-setup__action"><button type="submit" disabled={joining || nickname.trim().length < 2} className="primary-btn w-full py-3.5">{joining ? 'لحظة، نجهّز مكانك…' : 'انضم إلى اللعبة'}</button></div>
+          <a href="/join-game/" className="block text-center text-xs font-bold text-slate-500 hover:text-brand-600">استخدام رمز مختلف</a>
         </form>
       </section>
     </div>
+    </CompetitionIdentityProvider>
   );
 }
 

@@ -1,3 +1,5 @@
+import { quizIdentity, resolveOwnedIdentity, requirePublicationConfirmation } from './identity.repository';
+import { prepareThemeCopy } from './theme-library.repository';
 import type {
   AuthoringQuestion,
   AuthoringQuestionOption,
@@ -5,6 +7,7 @@ import type {
   PointsMultiplier,
   QuizSummaryDto
 } from '@brio/contracts';
+import type { SaveIdentityRequest } from '@brio/contracts';
 import { normalizeShortAnswer } from '@brio/game-core';
 
 export interface QuizRecord {
@@ -16,6 +19,7 @@ export interface QuizRecord {
   updated_at: string;
   archived_at: string | null;
   cover_image_url: string | null;
+  identity_id: string | null;
 }
 
 export interface QuestionRecord {
@@ -77,7 +81,7 @@ export async function getQuizForCreator(
   creatorId: string
 ): Promise<QuizDetailRecord | null> {
   const quiz = await db
-    .prepare('SELECT id, creator_id, title, revision, created_at, updated_at, archived_at, cover_image_url FROM quizzes WHERE id = ? AND creator_id = ? AND archived_at IS NULL')
+    .prepare('SELECT id, creator_id, title, revision, created_at, updated_at, archived_at, cover_image_url, identity_id FROM quizzes WHERE id = ? AND creator_id = ? AND archived_at IS NULL')
     .bind(quizId, creatorId)
     .first<QuizRecord>();
 
@@ -129,15 +133,32 @@ export async function createQuizForCreator(
   creatorId: string,
   title: string,
   coverImageUrl?: string | null,
-  initialQuestions?: AuthoringQuestion[]
+  initialQuestions?: AuthoringQuestion[],
+  initialIdentity?: SaveIdentityRequest,
+  themeId?: string
 ): Promise<QuizDetailRecord> {
   const now = new Date().toISOString();
   const quizId = crypto.randomUUID();
 
-  await db
-    .prepare('INSERT INTO quizzes (id, creator_id, title, cover_image_url, revision, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)')
-    .bind(quizId, creatorId, title, coverImageUrl || null, now, now)
-    .run();
+  if (initialIdentity && themeId) throw new Error('اختر ثيماً محفوظاً أو أنشئ ثيماً جديداً.');
+  if (initialIdentity || themeId) {
+    const copy = themeId ? await prepareThemeCopy(db, themeId, creatorId) : null;
+    const input = copy?.input ?? { ...initialIdentity!, avatarMode: 'auto' as const, motion: 'float' as const };
+    requirePublicationConfirmation(input);
+    const identity = copy?.identity ?? await resolveOwnedIdentity(db, creatorId, input);
+    const identityId = crypto.randomUUID();
+    // D1 rolls back both inserts if either fails; no half-created quiz or identity.
+    await db.batch([
+      ...(copy?.statements ?? []),
+      db.prepare('INSERT INTO competition_identities(id,creator_id,name,input_json,identity_json,updated_at,visibility,design_locked) VALUES(?,?,?,?,?,?,?,?)')
+        .bind(identityId, creatorId, input.name, JSON.stringify(input), JSON.stringify(identity), now, input.visibility, copy?.designLocked ? 1 : 0),
+      db.prepare('INSERT INTO quizzes (id,creator_id,title,cover_image_url,revision,created_at,updated_at,identity_id) VALUES(?,?,?,?,1,?,?,?)')
+        .bind(quizId, creatorId, title, coverImageUrl || null, now, now, identityId)
+    ]);
+  } else {
+    await db.prepare('INSERT INTO quizzes (id, creator_id, title, cover_image_url, revision, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)')
+      .bind(quizId, creatorId, title, coverImageUrl || null, now, now).run();
+  }
 
   if (initialQuestions && initialQuestions.length > 0) {
     let pos = 1;
@@ -425,6 +446,7 @@ export async function publishQuizVersion(
     title: quiz.title,
     coverImageUrl: quiz.cover_image_url,
     revision: newRevision,
+    identity: await quizIdentity(db, quiz.identity_id, creatorId),
     publishedAt: new Date().toISOString(),
     questions: quiz.questions.map((q) => ({
       id: q.id,

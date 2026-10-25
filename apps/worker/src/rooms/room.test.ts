@@ -95,6 +95,30 @@ class MockWebSocket {
   }
 }
 
+test('frozen custom identity survives a Durable Object wake and only its catalog can be selected', async () => {
+  const storage = createMockDoStorage();
+  const ctx = { id: { toString: () => 'identity_room' }, storage, getWebSockets: () => [] };
+  const room = new GameRoomDO(ctx, {} as any);
+  const avatarId = 'identity:00000000-0000-4000-8000-000000000001';
+  const src = 'https://res.cloudinary.com/brio/image/upload/v1/team.webp';
+  const identity = { name: 'Team', avatarMode: 'custom' as const,
+    character: { kind: 'image' as const, src, label: 'Team', motion: 'float' as const },
+    avatars: [{ id: avatarId, src, label: 'Team' }] };
+  await room.initQuizSnapshot({ ...mockQuizSnapshot, identity });
+  const metadata = await room.fetch(new Request('http://internal/identity'));
+  assert.deepEqual(await metadata.json(), { identity });
+  const join = (avatar: string) => room.fetch(new Request('http://internal/join', { method: 'POST', body: JSON.stringify({ playerId: 'p_identity', nickname: 'Player', avatarId: avatar, sessionHash: 'session' }) }));
+  assert.equal((await join('avatar_1')).status, 400);
+  assert.equal((await join(avatarId)).status, 200);
+  const woke = new GameRoomDO(ctx, {} as any);
+  await woke.ensureInitialized();
+  assert.deepEqual(woke.quizSnapshot?.identity, identity);
+  const player = toPublicPlayerSnapshot(woke.state, 'p_identity', woke.quizSnapshot!);
+  assert.deepEqual(player.identity, identity);
+  assert.equal(JSON.stringify(player).includes('isCorrect'), false);
+  assert.deepEqual(toPublicHostSnapshot(woke.state, woke.quizSnapshot!).identity, identity);
+});
+
 test('broken sockets cannot block countdown, question alarms, or the finale for other players', async () => {
   const storage = createMockDoStorage();
   const host = new MockWebSocket();

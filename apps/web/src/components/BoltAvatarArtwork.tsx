@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import type { avatarVariant } from './avatar-variants';
+import type { avatarVariant } from '../features/avatars/catalog';
 
 const AVATAR_BASE_SRC = '/avatars/bolt-base-v2.png';
 let avatarBaseReady = false;

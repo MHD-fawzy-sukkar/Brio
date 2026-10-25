@@ -7,6 +7,8 @@ import { createHash } from 'node:crypto';
 import { WebSocket } from 'ws';
 import { createLanServer } from './server';
 import { validateBundle } from './bundle';
+import { LocalStore } from './store';
+import type { CompetitionIdentity } from '@brio/contracts';
 
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1cAAAAASUVORK5CYII=', 'base64');
 export function fixtureBundle() {
@@ -31,6 +33,36 @@ test('bundle import validates version, missing media, checksum, question rules a
   const disguised = structuredClone(valid), bytes = Buffer.from('<svg onload="alert(1)"></svg>');
   disguised.media[0].base64 = bytes.toString('base64'); disguised.media[0].sha256 = createHash('sha256').update(bytes).digest('hex');
   assert.throws(() => validateBundle(disguised));
+});
+
+test('identity assets are required, rewritten and retained by frozen LAN rooms until the last reference is deleted', () => {
+  const bundle = fixtureBundle();
+  const imageUrl = 'https://res.cloudinary.com/brio/image/upload/v1/identity.png';
+  const assetId = '00000000-0000-4000-8000-000000000001';
+  const bytes = Buffer.concat([png, Buffer.from([0])]);
+  const hash = createHash('sha256').update(bytes).digest('hex');
+  const identity: CompetitionIdentity = { name: 'Team', logo: { src: imageUrl, label: 'Team' },
+    character: { kind: 'image', src: imageUrl, label: 'Team', motion: 'float' },
+    avatars: [{ id: `identity:${assetId}`, src: imageUrl, label: 'Team' }], avatarMode: 'custom' };
+  const input = { ...bundle, quiz: { ...bundle.quiz, identity }, media: [bundle.media[0], {
+    sourceUrl: imageUrl, contentType: 'image/png', sha256: hash, base64: bytes.toString('base64')
+  }] };
+  const parsed = validateBundle(input);
+  assert.equal(parsed.quiz.identity?.logo?.src, `/media/${hash}`);
+  assert.equal(parsed.quiz.identity?.avatars[0].src, `/media/${hash}`);
+  assert.throws(() => validateBundle({ ...input, media: [bundle.media[0]] }), /Missing identity image/);
+  const store = new LocalStore(':memory:');
+  try {
+    store.importBundle(input);
+    const room = store.createRoom('quiz');
+    assert.equal(room.quiz.identity?.name, 'Team');
+    store.importBundle({ ...input, quiz: { ...input.quiz, identity: { ...identity, name: 'Changed' } } });
+    assert.equal(store.load(room.id)?.quiz.identity?.name, 'Team');
+    store.deleteQuiz('quiz');
+    assert.ok(store.db.prepare('SELECT hash FROM media WHERE hash=?').get(hash));
+    store.deleteRoom(room.id);
+    assert.equal(store.db.prepare('SELECT COUNT(*) AS n FROM media').get()?.n, 0);
+  } finally { store.close(); }
 });
 
 test('LAN host and three players finish locally; auth, durable receipts, reconnect and restart remain correct', async t => {
@@ -162,6 +194,34 @@ test('LAN host and three players finish locally; auth, durable receipts, reconne
   assert.equal(joinRedirect.headers.get('location'), '/join-game/?pin=123456');
   assert.equal((await request('/join-game')).status, 200);
   assert.equal((await request('/join-game/')).status, 200);
+
+  await t.test('custom identity joins use the frozen catalog and expose only presentation data before joining', async () => {
+    const bundle = fixtureBundle();
+    const src = 'https://res.cloudinary.com/brio/image/upload/v1/team.png';
+    const avatarId = 'identity:00000000-0000-4000-8000-000000000001';
+    const identity: CompetitionIdentity = { name: 'فريق الاختبار', logo: { src, label: 'Team' },
+      character: { kind: 'image', src, label: 'Team', motion: 'still' },
+      avatars: [{ id: avatarId, src, label: 'Team' }], avatarMode: 'custom' };
+    const themed = { ...bundle, quiz: { ...bundle.quiz, id: 'themed', identity }, media: [bundle.media[0], { ...bundle.media[0], sourceUrl: src }] };
+    assert.equal((await request('/api/local/import', hostCookie, themed)).status, 201);
+    const room = await (await request('/api/rooms', hostCookie, { quizId: 'themed' })).json() as { roomId: string };
+    const metadata = await request(`/api/rooms/${room.roomId}/identity`);
+    const presentation = await metadata.json() as { identity: CompetitionIdentity };
+    assert.deepEqual(Object.keys(presentation), ['identity']);
+    assert.equal(presentation.identity.name, 'فريق الاختبار');
+    assert.match(presentation.identity.logo!.src, /^\/media\//);
+    assert.equal((await request(`/api/rooms/${room.roomId}/join`, '', { nickname: 'wrong', avatarId: 'avatar_1' })).status, 400);
+    const joined = await request(`/api/rooms/${room.roomId}/join`, '', { nickname: 'right', avatarId });
+    assert.equal(joined.status, 201);
+    const player = await joined.json() as { playerId: string; avatarId: string };
+    const cookie = joined.headers.get('set-cookie')!.split(';')[0];
+    const snapshot = await (await request(`/api/rooms/${room.roomId}/snapshot`, cookie)).json() as { identity: CompetitionIdentity };
+    assert.equal(snapshot.identity.name, identity.name);
+    assert.equal((await request(`/api/rooms/${room.roomId}/join`, cookie, { nickname: 'resumed' })).status, 201);
+    assert.equal(player.avatarId, avatarId);
+    await request(`/api/rooms/${room.roomId}`, hostCookie, undefined, 'DELETE');
+    assert.equal((await request(`/api/rooms/${room.roomId}/identity`)).status, 404);
+  });
 
   await t.test('deleting an imported quiz preserves session results and media until the last reference is removed', async () => {
     const bundle = fixtureBundle();

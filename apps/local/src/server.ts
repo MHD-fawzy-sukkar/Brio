@@ -1,3 +1,4 @@
+import { isCompetitionAvatarAllowed } from '@brio/contracts';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createReadStream, existsSync, statSync, readFileSync } from 'node:fs';
 import { resolve, sep, extname } from 'node:path';
@@ -13,7 +14,7 @@ import { MAX_BUNDLE_BYTES } from './bundle';
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 const cookie = (req: IncomingMessage, name: string) => (req.headers.cookie || '').split(';').map(p => p.trim()).find(p => p.startsWith(`${name}=`))?.slice(name.length + 1) || '';
 const playerCookie = (id: string) => `brio_lan_${id}`;
-const joinSchema = z.object({ nickname: z.string().trim().min(2).max(20), avatarId: z.string().regex(/^(?:bolt-avatar-(?:0[1-9]|1[0-5])|avatar_(?:[1-9]|1[0-5]))$/).default('avatar_1') });
+const joinSchema = z.object({ nickname: z.string().trim().min(2).max(20), avatarId: z.string().min(1).max(100).default('avatar_1') });
 const answerSchema = z.object({ roundId: z.string().max(160), submissionId: z.string().min(1).max(100), optionId: z.string().max(100).optional(), textAnswer: z.string().max(200).optional() });
 const mime: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
 class HttpError extends Error { constructor(readonly status: number, message: string) { super(message); } }
@@ -176,10 +177,14 @@ export function createLanServer(options: { database: string; webRoot: string; po
         if (!room) throw new HttpError(404, 'الغرفة غير موجودة أو انتهت.');
         return json(res, 200, { roomId: room.id, code: room.code, status: 'active' });
       }
-      const route = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|leave|snapshot|media|results))?$/);
+      const route = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|leave|snapshot|media|results|identity))?$/);
       if (route) {
         let room = reconcile(route[1]);
         const action = route[2];
+        if (action === 'identity' && req.method === 'GET') {
+          if (room.state.phase === 'FINISHED') throw new HttpError(404, 'انتهت اللعبة.');
+          return json(res, 200, { identity: room.quiz.identity ?? null });
+        }
         if (action === 'join' && req.method === 'POST') {
           if (room.state.phase === 'FINISHED') throw new HttpError(409, 'انتهت اللعبة.');
           const data = joinSchema.parse(await body(req));
@@ -188,6 +193,7 @@ export function createLanServer(options: { database: string; webRoot: string; po
           if (room.state.phase === 'FINISHED') throw new HttpError(409, 'انتهت اللعبة.');
           let playerId = identity(req, room), token = cookie(req, playerCookie(room.id));
           if (!playerId) {
+            if (!isCompetitionAvatarAllowed(room.quiz.identity, data.avatarId)) throw new HttpError(400, 'اختر صورة متاحة ضمن هذه المسابقة.');
             if (room.state.players.size >= 200) throw new HttpError(409, 'الغرفة ممتلئة.');
             playerId = `p_${randomUUID()}`; token = randomBytes(32).toString('hex');
             room.sessions.set(digest(token), playerId);

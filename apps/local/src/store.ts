@@ -1,3 +1,4 @@
+import { identityImageSources } from '@brio/contracts';
 import { DatabaseSync } from 'node:sqlite';
 import { createInitialGameState, type GameState, type PublishedQuizSnapshot } from '@brio/game-core';
 import { randomInt, randomUUID } from 'node:crypto';
@@ -65,8 +66,8 @@ export class LocalStore {
     // Completed rooms keep their frozen quiz and images even after removing the imported quiz.
     const used = new Set<string>();
     const retain = (quiz: PublishedQuizSnapshot) => {
-      for (const question of quiz.questions) {
-        const match = question.essentialImage?.match(/^\/media\/([a-f0-9]{64})$/);
+      for (const src of [...quiz.questions.map(question => question.essentialImage), ...identityImageSources(quiz.identity)]) {
+        const match = src?.match(/^\/media\/([a-f0-9]{64})$/);
         if (match) used.add(match[1]);
       }
     };

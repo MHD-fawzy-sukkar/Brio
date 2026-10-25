@@ -1,6 +1,70 @@
 # Brio — Project Memory and Current Decisions
 
-Updated: 2026-10-24. Read this on every engineering iteration; update only with observed work/evidence.
+Updated: 2026-10-25. Read this on every engineering iteration; update only with observed work/evidence.
+
+## 2026-10-25 — Responsive creation/join layout and offline rehearsal
+
+- Creation now uses the desktop width with basic info/cover beside a wider theme panel, the existing theme choice cards retained, bounded desktop image/library galleries, collapsible previews, and a persistent create action. Extra-wide creation pages can use up to 1600px.
+- Branding uses a bounded positioned image stage and a separate wrapping text column; Arabic line-box padding fixes long-name descender overflow. The Brio credit sits below the name instead of compressing it in a third column.
+- Mobile PIN entry no longer begins with a large marketing hero. Join uses a compact selected-avatar/code preview, four-column choices, no automatic keyboard jump and a visible mobile join action. Theme colors and full selected images remain local-compatible.
+- Refactored createLanBundle for direct testing. Tests cover URL deduplication including all theme roles, two-download concurrency, checksums, and failed/oversized/HTML-image rejection; shared JSON transport rejects HTML API responses.
+- Published cloud release `64a0388b-d4f8-4a8c-83e7-dbb0f3e677c9`. Four pages/health 200, nine live asset hashes match the cloud build. LAN output ready with runtime marker/no Google script. Final creation panel measured 933px at 1440px.
+- Evidence: 113 tests pass (5 contracts, 9 core, 46 web, 45 Worker, 8 LAN), typecheck and cloud/LAN builds. Actual browser export -> file-picker LAN import -> LAN-interface mobile join -> decoded question image -> accepted answer -> FINISHED -> theme restored on reload passed with every external request blocked. Zero external requests/failed local resources; isolated fixture DB only. Physical multi-phone router rehearsal remains pending. Run instructions updated in docs/14-LAN.md.
+
+## 2026-10-25 — Theme publication consent, use-only public designs and visible branding
+
+- Replaced mode radio dots with three selection cards. Added shared public-theme confirmation: cancel/Escape keeps private and sends no mutation; API public saves/visibility changes require an explicit confirmation flag. Owner controls appear only in the own-library tab.
+- Latest user clarification: foreign public themes are use-only, including their main character and visibility. Added identity/asset design locks; settings show read-only preview, and direct API edits, publication and asset-ID repurposing are rejected. Own theme quiz edits always save private revisions; library updates preserve assigned quiz drafts before changing a template.
+- Migration 0006 applied after confirming columns were absent. Recognizable older foreign copies are locked by source namespace; unknown legacy URLs are not guessed. Frozen artwork stays intact.
+- Logo now appears as a larger branded header on join/host/player/results. Scoped palette applies to primary buttons, panel borders/tints, brand text and avatars; global Brio shell/backgrounds and answer semantic colors remain fixed.
+- Published live release `0a264e4d-a56f-4aa0-87ee-98eac1b570b5`; four script/CSS hashes match the cloud build, creation/health 200 and protected library 401.
+- Evidence: 111 passing tests (5 contracts, 9 core, 44 web, 45 Worker, 8 LAN), cloud/LAN builds and TypeScript. Headless browser verified publication cancel/confirm request counts, foreign control absence, read-only builder, visible logo/accent and 390px width. Fixture data remained local-only.
+
+## 2026-10-25 — Full Bolt flight, stable image gallery and reusable themes
+
+- Restored full roaming for Bolt. Only custom image characters use compact ±6px/±3px hovering. Large preview follows the selected avatar; the main character becomes the initial avatar when available.
+- Replaced per-image role checkboxes with a stable gallery and two selectors. Logos are excluded from player avatars; non-logo images are avatars automatically, and one can also be the mascot. Upload slot ordering and card size remain stable through completion.
+- Creation now supports default/new/saved themes, with own/public library tabs. Themes have names and default-private visibility; owners can explicitly publish/unpublish. Reusing a readable theme creates independent private owned asset references and identity with an atomic quiz insert. Public-source edits/archive cannot rewrite existing copies.
+- Added five detail-color presets for the competition badge and avatar selection only, preserving Brio backgrounds and answer colors. User's latest request allows this limited competition customization.
+- Applied additive migration 0005 after verifying visibility was missing; all existing themes default private. No user records were deleted or automatically published.
+- Published version `ced081d9-c9ca-4dd0-a6b8-d1fdfd2dba52` to the existing workers.dev site. Creation/shared bundles match three local hashes; page/health 200, protected theme library 401.
+- Evidence: 107 tests passed (5 contracts, 9 core, 42 web, 43 Worker, 8 LAN); typecheck and cloud/LAN builds passed. Headless browser verified gallery dimensions, roles, preview selection, restored Bolt travel, palette/private payload, own/public reuse and 390px width. Browser fixtures were local-only.
+
+## 2026-10-25 — Identity during creation, image normalization and compact Bolt motion
+
+- Identity selection moved into `/quizzes/new/`; custom uploads and roles are ready before creation. The API validates ownership and saves quiz + identity in one D1 batch; rollback is tested. Builder retains subsequent editing.
+- New uploads are centered in a transparent 640×640 frame, trimming transparent margins and preserving aspect ratio/backgrounds. Shared auto policy adds Bolt avatars only below five custom player images; new authoring no longer exposes a catalog-mode selector.
+- Verified mascot name Bolt (بولت). Autonomous movement now stays within ±6px horizontally / ±3px vertically; hero bob is 3px. Dragging updates the anchor; reduced-motion remains supported.
+- Investigated TripoSR/TRELLIS.2 using primary documentation. Local GPU is RTX 3050 Laptop 4GB; no 3D inference performed. Implemented the user's compact-motion fallback, not a claimed reconstructed 3D model.
+- Published live version `8b4d26e8-16ed-4872-9847-a4ece5a4efc3`; creation/shared-identity bundle hashes match the cloud build, health 200, unauthenticated upload signing 401. Cloud and LAN builds passed.
+- Evidence: 102 tests pass (5 contracts, 9 core, 39 web, 41 Worker, 8 LAN), TypeScript and production build pass. Isolated headless browser verified actual normalization, multiple uploads and independent failure, threshold behavior, mobile width and create-request identity payload. No production fixture records or external asset uploads were used.
+
+## 2026-10-25 — Fix live identity setup and simplify quiz-local uploads
+
+- User reported premature save/empty-state errors on the live `/identities/` page and requested customization inside each quiz, multi-file selection and automatic flying without a motion selector.
+- Confirmed via read-only live D1 metadata that both identity tables and `quizzes.identity_id` were missing. Applied only additive migration `0004_competition_identities.sql`; preserved existing quiz/player data. Production schema now includes all three names.
+- Removed the dashboard identity-library entry and standalone library UI. Legacy page redirects to dashboard. Quiz builder lazily opens an upload-first editor; save/assignment is atomic and creates a new revision so other quizzes cannot be changed accidentally.
+- Added bounded two-at-a-time multi-image uploads, thumbnails, per-file errors/retry, cancel and URL cleanup. New quiz identities always use float motion; old frozen snapshots remain compatible. Rejected malformed/non-JSON API responses and distinguished schema/load/save errors.
+- Real browser upload QA selected two PNG project fixtures and one invalid text file together: both images uploaded to Cloudinary and the invalid file failed independently. Cleaned up the exact two QA assets afterward. Additional save/readback/rollback tests use real SQLite with the D1 adapter.
+- Validation: all 96 tests passed (4 contracts, 9 core, 35 web, 40 Worker, 8 LAN); TypeScript and production build passed. Deployed Worker/static version `f8de4123-a038-49d8-9330-45ce957e1ee5` to the existing workers.dev URL. Health/auth probes and exact frontend bundle hashes passed; live schema recheck passed.
+
+## 2026-10-24 — Competition identity authoring, frozen rooms and LAN
+
+- Added reusable owner-scoped identities, verified image assets, shared role/catalog contracts, creator library/editor/preview and per-quiz selection. At least one image, single logo/character and custom avatar admission are enforced. Brio colors/backgrounds remain fixed.
+- Isolated the new Worker routes/repository/media service and extracted shared auth/problem helpers from index.ts. Additive D1 migration `0004_competition_identities.sql` has been tested against SQLite but not applied to production.
+- Identity uploads use unique non-overwriting Cloudinary IDs and response-signature verification; published versions freeze the resolved image URLs. Updating or archiving an identity cannot rewrite an existing room's artwork.
+- Join resolves public presentation before choosing avatars; host, player and result content use scoped identity providers. Durable Object cold wake retains identity. LAN bundles include/remap all identity images and cleanup preserves references from frozen rooms.
+- Integration evidence covers asset/creator isolation, auth/origin checks, immutable versions, custom joins/reconnect, public presentation-only metadata and LAN image retention. Browser review used disposable in-memory fixture data; no production changes or live Cloudinary upload.
+- Verification: 4 contracts, 9 core, 38 Worker, 30 web and 8 LAN tests passed across the executed suites (89 total); workspace TypeScript and production/LAN builds passed. See `15-Competition-Identity.md` for deployment prerequisites and limitations.
+
+## 2026-10-24 — Competition identity presentation refactor
+
+- Pushed `feature/lan`, fast-forwarded and pushed `main` at `3bae42e`, then created local `thems` at the owner's request.
+- Owner approved competition-scoped custom images/characters/avatars while keeping Brio's global identity, colors and backgrounds fixed. Custom palettes/color extraction are excluded by this clarification.
+- Introduced a scoped presentation identity, Brio defaults, reusable avatar picker and selection/source resolution. Existing built-in IDs and saved image URLs remain compatible.
+- Extracted flight lifecycle/dragging into `useMascotFlight` and the shared `MascotFlight` stage. Bolt retains its artwork-specific pose callback; custom whole images can reuse flight or remain still. Updated motion boundaries and CSS together.
+- Host, player lobby and podium now request the competition mascot; marketing and creator pages retain explicit Bolt. No server identity persistence, upload UI, room snapshot integration or LAN identity packaging exists yet. See `15-Competition-Identity.md` for the boundary and next steps.
+- Validation: all workspace TypeScript checks, 28 web tests and production Next static export passed. Added automatic JSX runtime configuration for component rendering tests. No production deployment.
 
 ## 2026-10-24 — Inline deletion feedback and image audit
 

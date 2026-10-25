@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SaveIdentityRequestSchema } from './identity';
 
 export const QuestionTypeSchema = z.enum([
   'MultipleChoice',
@@ -75,6 +76,8 @@ export type AuthoringQuestion = z.infer<typeof AuthoringQuestionSchema>;
 export const SaveQuizRequestSchema = z.object({
   title: z.string().min(1).max(120),
   coverImageUrl: z.string().url().max(2048).nullable().optional(),
+  identity: SaveIdentityRequestSchema.optional(),
+  identityId: z.string().uuid().optional(),
   questions: z.array(AuthoringQuestionSchema).default([])
 });
 

@@ -1,4 +1,5 @@
 import type {
+  CompetitionIdentity,
   GamePhase,
   QuestionType,
   PointsMultiplier,
@@ -25,6 +26,7 @@ export interface PublishedQuestion {
 }
 
 export interface PublishedQuizSnapshot {
+  identity?: CompetitionIdentity;
   id: string;
   title: string;
   revision: number;

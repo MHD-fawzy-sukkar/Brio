@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GamePhaseSchema } from '../protocol';
 import { PublicQuestionSchema } from './quiz';
+import { CompetitionIdentitySchema } from './identity';
 
 export const JoinRoomRequestSchema = z.object({
   code: z.string().length(6, 'Room code must be exactly 6 characters'),
@@ -56,6 +57,7 @@ export type AnswerReceipt = z.infer<typeof AnswerReceiptSchema>;
  * Contains only own score, own rank, top 5, and current public question (without answer keys)
  */
 export const PlayerSnapshotDtoSchema = z.object({
+  identity: CompetitionIdentitySchema.optional(),
   role: z.literal('player'),
   roomId: z.string(),
   phase: GamePhaseSchema,
@@ -100,6 +102,7 @@ export const AnswerStatSchema = z.object({
  * Host Snapshot DTO - Contains host administrative state & live response counts
  */
 export const HostSnapshotDtoSchema = z.object({
+  identity: CompetitionIdentitySchema.optional(),
   role: z.literal('host'),
   quizTitle: z.string().default(''),
   roomId: z.string(),

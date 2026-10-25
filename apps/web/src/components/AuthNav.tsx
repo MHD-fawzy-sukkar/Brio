@@ -16,7 +16,7 @@ export function NavbarLinks() {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/builder') ||
     pathname.startsWith('/questions') ||
-    pathname.startsWith('/quizzes') || pathname.startsWith('/local');
+    pathname.startsWith('/quizzes') || pathname.startsWith('/local') || pathname.startsWith('/identities');
 
   return (
     <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label="التنقل الرئيسي">

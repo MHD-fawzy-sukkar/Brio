@@ -10,7 +10,10 @@ import { useSynchronizedCountdown } from '../../hooks/use-synchronized-countdown
 import { useRoomMediaPrefetch } from '../../hooks/use-room-media-prefetch';
 import { PageSkeleton, Spinner } from '../../components/Loading';
 import { AmbientBackground } from '../../components/AmbientBackground';
-import { BoltMascot } from '../../components/BoltMascot';
+import { CompetitionIdentityProvider } from '../../features/competition-identity/CompetitionIdentityProvider';
+import { DEFAULT_COMPETITION_IDENTITY } from '../../features/competition-identity/model';
+import { CompetitionIdentityBadge } from '../../features/competition-identity/CompetitionIdentityBadge';
+import { CompetitionMascot } from '../../features/competition-identity/CompetitionMascot';
 import { Avatar } from '../../components/Avatar';
 
 type SubmissionState = 'idle' | 'submitting' | 'accepted' | 'rejected';
@@ -177,7 +180,9 @@ function PlayContent() {
     );
   }
 
-  const phase = snapshot?.phase || 'LOBBY';
+  if (!snapshot) return <div className="card mx-auto max-w-md space-y-4 p-8 text-center"><Spinner /><p role="status">{connection === 'disconnected' ? 'انقطع الاتصال. نحاول إعادة الاتصال بالغرفة…' : 'جاري تحميل الغرفة…'}</p><a href="/join-game/" className="secondary-btn inline-block">العودة لإدخال الرمز</a></div>;
+
+  const phase = snapshot.phase || 'LOBBY';
   const question = snapshot?.question;
   const roundId = snapshot?.roundId || '';
   const ownScore = snapshot?.ownScore ?? 0;
@@ -224,7 +229,9 @@ function PlayContent() {
   };
 
   return (
+    <CompetitionIdentityProvider identity={snapshot?.identity ?? DEFAULT_COMPETITION_IDENTITY}>
     <div className="mx-auto max-w-4xl space-y-4 pb-4 sm:space-y-5">
+      <CompetitionIdentityBadge />
       <header className="card flex items-center justify-between gap-3 p-3.5 sm:p-5">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar src={avatar} label={nickname} className="h-11 w-11 shrink-0 rounded-xl" />
@@ -258,7 +265,7 @@ function PlayContent() {
           <div className="relative z-10 mx-auto max-w-xl pt-4">
             <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">✓ تم انضمامك</span>
             <div className="mascot-hero mascot-hero--lobby mx-auto mt-5">
-              <BoltMascot label="Bolt ينتظر بداية اللعبة" className="w-full" />
+              <CompetitionMascot label="شخصية المسابقة تنتظر بداية اللعبة" className="w-full" />
             </div>
             <h2 className="mt-4 text-2xl font-black text-slate-900 sm:text-3xl">مكانك جاهز في غرفة الانتظار</h2>
             <p className="mt-2 text-sm leading-7 text-slate-500">ستبدأ اللعبة تلقائياً عندما يضغط المضيف زر البدء.</p>
@@ -457,6 +464,7 @@ function PlayContent() {
 
       {phase === 'FINISHED' && <PlayerFinale rank={snapshot?.ownRank ?? null} score={ownScore} />}
     </div>
+    </CompetitionIdentityProvider>
   );
 }
 

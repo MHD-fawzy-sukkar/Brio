@@ -1,3 +1,4 @@
+import { isCompetitionAvatarAllowed } from '@brio/contracts';
 import {
   createInitialGameState,
   startQuiz,
@@ -194,15 +195,23 @@ export class GameRoomDO {
       return new Response(JSON.stringify({ status: 'finished' }), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    if (url.pathname.endsWith('/identity') && request.method === 'GET') {
+      return new Response(JSON.stringify({ identity: this.quizSnapshot?.identity ?? null }), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+      });
+    }
+
     // 2. Player Join HTTP endpoint
     if (url.pathname.endsWith('/join') && request.method === 'POST') {
       if (!this.quizSnapshot) return new Response(JSON.stringify({ detail: 'Game not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
       if (this.state.phase === 'FINISHED') return new Response(JSON.stringify({ detail: 'Game has finished' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
       const body = (await request.json()) as any;
       const { playerId, nickname, avatarId, sessionHash } = body;
-
       let player = this.state.players.get(playerId);
       if (!player) {
+        if (this.quizSnapshot.identity && !isCompetitionAvatarAllowed(this.quizSnapshot.identity, avatarId)) {
+          return new Response(JSON.stringify({ detail: 'اختر صورة متاحة ضمن هذه المسابقة.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        }
         player = {
           id: playerId,
           nickname,

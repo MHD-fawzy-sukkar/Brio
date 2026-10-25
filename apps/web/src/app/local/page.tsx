@@ -17,13 +17,13 @@ export default function LocalPage() {
     <a className="primary-btn inline-flex" href="/dashboard/">مسابقاتي</a>
   </section>;
 
-  return <div data-bolt-drag-root className="mx-auto w-full max-w-5xl space-y-6">
+  return <div data-mascot-drag-root className="mx-auto w-full max-w-5xl space-y-6">
     <header className="local-welcome relative grid items-center gap-4 rounded-3xl border border-white/80 bg-white/60 p-5 sm:grid-cols-[minmax(0,1fr)_240px] sm:p-7">
       <div><p className="text-xs font-bold text-brand-600">لوحة المقدّم · اللعب المحلي</p>
         <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl">جهّز مسابقتك وابدأ اللعب</h1>
         <p className="mt-3 max-w-xl text-sm leading-8 text-slate-600">أضف مسابقة، وافتح غرفتها، وادعُ اللاعبين للانضمام من هواتفهم عبر الشبكة نفسها.</p>
       </div>
-      <div data-bolt-flight-root className="local-mascot-stage relative hidden h-36 sm:block"><RoamingBolt scope="page" dragWithinPage /></div>
+      <div data-mascot-flight-root className="local-mascot-stage relative hidden h-36 sm:block"><RoamingBolt scope="page" dragWithinPage /></div>
     </header>
     {error && <p role="alert" className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm leading-7 text-rose-700">{error}</p>}
     {message && <p role="status" className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm leading-7 text-emerald-800">{message}</p>}

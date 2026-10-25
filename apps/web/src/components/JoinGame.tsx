@@ -46,11 +46,11 @@ export function JoinGame() {
     }
   };
 
-  return <section className="game-surface mx-auto min-h-[72vh] max-w-7xl overflow-hidden rounded-[2.5rem] border border-brand-100 p-4 shadow-2xl shadow-brand-100/60 sm:p-6 lg:p-8">
+  return <section className="join-code game-surface mx-auto min-h-[72vh] max-w-7xl overflow-hidden rounded-[2.5rem] border border-brand-100 p-4 shadow-2xl shadow-brand-100/60 sm:p-6 lg:p-8">
     <AmbientBackground />
     <div className="relative z-10 grid items-stretch gap-5 lg:grid-cols-[1.08fr_.92fr]">
-      <MarketingHero context="join" />
-      <div className="flex items-center rounded-[2rem] border border-white/80 bg-white/95 p-6 shadow-2xl sm:p-9">
+      <div className="hidden lg:block"><MarketingHero context="join" /></div>
+      <div className="flex items-center rounded-[2rem] border border-white/80 bg-white/95 p-5 shadow-2xl sm:p-9">
       <form onSubmit={continueToLobby} className="w-full space-y-6">
         <div className="text-center">
           <div className="mx-auto grid h-16 w-16 -rotate-3 place-items-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-400 text-3xl text-white shadow-lg shadow-brand-200">🎮</div>

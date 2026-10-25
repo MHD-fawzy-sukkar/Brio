@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { imageSize } from 'image-size';
-import { AuthoringQuestionSchema } from '@brio/contracts';
+import { AuthoringQuestionSchema, CompetitionIdentitySchema, mapIdentityImages } from '@brio/contracts';
 import type { PublishedQuizSnapshot } from '@brio/game-core';
 
 export const MAX_BUNDLE_BYTES = 48 * 1024 * 1024;
@@ -24,6 +24,7 @@ export const BundleSchema = z.object({
   version: z.literal(1),
   quiz: z.object({
     id: z.string().min(1).max(100), title: z.string().min(1).max(120), revision: z.number().int().positive(),
+    identity: CompetitionIdentitySchema.optional(),
     questions: z.array(question).min(1).max(500)
   }),
   media: z.array(z.object({
@@ -31,7 +32,7 @@ export const BundleSchema = z.object({
     sha256: z.string().regex(/^[a-f0-9]{64}$/),
     contentType: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/avif']),
     base64: z.string().max(700000).regex(/^[A-Za-z0-9+/]*={0,2}$/)
-  })).max(500)
+  })).max(520)
 });
 
 export function validateBundle(input: unknown) {
@@ -58,6 +59,11 @@ export function validateBundle(input: unknown) {
   const urls = new Map(media.map(m => [m.sourceUrl, `/media/${m.sha256}`]));
   const quiz: PublishedQuizSnapshot = {
     ...bundle.quiz,
+    identity: bundle.quiz.identity ? mapIdentityImages(bundle.quiz.identity, src => {
+      const local = urls.get(src);
+      if (!local) throw new Error('Missing identity image');
+      return local;
+    }) : undefined,
     questions: bundle.quiz.questions.map(q => {
       if (q.essentialImage && !urls.has(q.essentialImage)) throw new Error('Missing quiz image');
       return { ...q, essentialImage: q.essentialImage ? urls.get(q.essentialImage)! : null };

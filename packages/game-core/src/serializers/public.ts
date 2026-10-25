@@ -83,6 +83,7 @@ export function toPublicPlayerSnapshot(
 
   return {
     role: 'player',
+    identity: quiz.identity,
     roomId: state.roomId,
     phase: state.phase,
     stateVersion: state.stateVersion,
@@ -151,6 +152,7 @@ export function toPublicHostSnapshot(
 
   return {
     role: 'host',
+    identity: quiz.identity,
     quizTitle: quiz.title,
     roomId: state.roomId,
     code: quiz.roomCode || state.roomId,
