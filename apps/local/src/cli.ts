@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { createLanServer } from './server';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -25,6 +26,16 @@ try {
   }
   const port = await app.listen();
   console.log(`\nBrio LAN\nHost: http://localhost:${port}/local/\nPlayer addresses:\n${app.addresses.map(ip => `  http://${ip}:${port}/`).join('\n')}\nKeep this terminal open during the game.\n`);
+  if (process.argv.includes('--open') && process.platform === 'win32') {
+    const browser = spawn('explorer.exe', [`http://localhost:${port}/local/`], { windowsHide: true, stdio: 'ignore' });
+    browser.on('error', () => console.log(`Open http://localhost:${port}/local/ in your browser.`));
+    browser.unref();
+  }
   const stop = async () => { await app.close(); process.exit(0); };
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
-} catch (error) { console.error(error); app.store.close(); process.exitCode = 1; }
+} catch (error) {
+  if (error instanceof Error && 'code' in error && error.code === 'EADDRINUSE') {
+    console.error(`Port ${process.env.BRIO_LAN_PORT || 3210} is already in use. If Brio is already running, open http://localhost:${process.env.BRIO_LAN_PORT || 3210}/local/ instead of starting it twice.`);
+  } else console.error(error);
+  app.store.close(); process.exitCode = 1;
+}

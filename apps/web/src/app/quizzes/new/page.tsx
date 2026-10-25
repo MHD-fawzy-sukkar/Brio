@@ -85,6 +85,10 @@ function NewQuizForm() {
               {coverFile && <button type="button" onClick={() => { if (previewUrl) URL.revokeObjectURL(previewUrl); setCoverFile(null); setPreviewUrl(null); }} className="mt-2 text-xs font-bold text-rose-700">إزالة الغلاف</button>}
             </div>
             <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-500">مسابقتك</p><p className="mt-1 break-words font-black text-slate-900">{title.trim() || 'اسم مسابقتك'}</p><p className="mt-2 text-xs leading-6 text-slate-500">بعد الإنشاء تنتقل إلى استوديو الأسئلة. يمكنك تعديل الاسم والغلاف لاحقاً.</p></div>
+            <div className="quiz-create__footer space-y-3 border-t border-slate-100 pt-5">
+              <p id="quiz-create-hint" className="text-sm leading-7 text-slate-500" aria-live="polite">{themeMode === 'new' && !identityDraft ? 'أكمل اسم الثيم وأضف صوره للمتابعة.' : themeMode === 'saved' && !selectedTheme ? 'اختر ثيماً من المكتبة للمتابعة.' : 'الخطوة التالية: إعداد أسئلة المسابقة.'}</p>
+              <button type="submit" aria-describedby="quiz-create-hint" disabled={busy || !title.trim() || (themeMode === 'new' && !identityDraft) || (themeMode === 'saved' && !selectedTheme)} className="primary-btn w-full whitespace-normal py-3.5 leading-7"><ButtonContent busy={busy} busyText={progress || 'جاري الإنشاء…'}>إنشاء المسابقة والمتابعة</ButtonContent></button>
+            </div>
           </section>
           <section className="quiz-create__theme card min-w-0 space-y-5 p-5 sm:p-6" aria-label="ثيم المسابقة">
             <div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-50 text-sm font-black text-brand-700">2</span><div><h2 className="font-black">هوية المسابقة</h2><p className="mt-1 text-xs text-slate-500">احتفظ ببولت أو اختر طابعاً مناسباً لجهتك.</p></div></div>
@@ -93,10 +97,6 @@ function NewQuizForm() {
             {themeMode === 'new' && <IdentityEditor defaultName="" onDraftChange={draftChanged} />}
             {themeMode === 'saved' && <ThemeLibraryPicker selected={selectedTheme} onSelect={setSelectedTheme} />}
           </section>
-          <div className="quiz-create__footer flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white bg-white/95 p-4 shadow-lg backdrop-blur-md">
-            <p className="min-w-0 flex-1 text-xs leading-6 text-slate-500">{themeMode === 'new' && !identityDraft ? 'أكمل اسم الثيم ورفع صوره للمتابعة.' : themeMode === 'saved' && !selectedTheme ? 'اختر ثيماً من المكتبة للمتابعة.' : 'جاهز؟ الخطوة التالية إعداد أسئلة المسابقة.'}</p>
-            <button type="submit" disabled={busy || !title.trim() || (themeMode === 'new' && !identityDraft) || (themeMode === 'saved' && !selectedTheme)} className="primary-btn w-full py-3.5 sm:w-auto"><ButtonContent busy={busy} busyText={progress || 'جاري الإنشاء…'}>إنشاء المسابقة والمتابعة</ButtonContent></button>
-          </div>
         </fieldset>
       </form>
     </div>

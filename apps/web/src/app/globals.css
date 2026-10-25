@@ -308,7 +308,6 @@ button:focus-visible, a:focus-visible { outline: 3px solid #bd4b5d; outline-offs
 .join-setup__action { position: sticky; bottom: .5rem; z-index: 20; border-radius: 1rem; background: rgba(255,255,255,.96); padding: .35rem 0; }
 .quiz-create__layout { display: grid; min-width: 0; gap: 1.25rem; align-items: start; }
 main:has(.quiz-create) { max-width: 1600px; }
-.quiz-create__footer { position: sticky; bottom: .5rem; z-index: 30; }
 .identity-editor-intro { display: grid; gap: 1rem; }
 @media (min-width: 640px) {
   .competition-brand__logo { width: 7rem; height: 4.8rem; }
@@ -326,7 +325,6 @@ main:has(.quiz-create) { max-width: 1600px; }
   .quiz-create__layout { grid-template-columns: minmax(280px,.8fr) minmax(0,1.7fr); }
   .quiz-create__basics { position: sticky; top: 6rem; }
   .quiz-create__theme .identity-editor-intro { grid-template-columns: minmax(0,1fr) minmax(0,1.4fr); align-items: start; }
-  .quiz-create__footer { grid-column: 1 / -1; }
   .quiz-create__theme .identity-image-gallery { max-height: 22rem; overflow-y: auto; padding: .15rem; }
   .quiz-create__theme .theme-library-gallery { max-height: 26rem; overflow-y: auto; padding: .15rem; }
 }

@@ -12,7 +12,7 @@ pnpm install --frozen-lockfile
 pnpm lan:build
 ```
 
-Then double-click `Start-LAN.cmd`, or run `pnpm lan:start`. Keep the terminal open. This is a local web server, not an installed desktop app. Node/pnpm and this checkout are currently required; a portable distribution is not implemented.
+Then double-click `Start-LAN.cmd`: it starts the server and opens the presenter dashboard in your default browser once ready. Keep its terminal open. Alternatively run `pnpm lan:start` and open the URL below manually. This is a local web server, not an installed desktop app. Node and this prepared checkout are required to play; pnpm is needed for installation/builds. A portable distribution is not implemented. The launcher reports missing Node, dependencies, or local pages with setup instructions. Opening the online website does not start this server.
 
 1. Open `http://localhost:3210/local/` on the presenter's machine.
 2. Presenter access opens automatically on the same laptop: no password or account is required. Session bootstrap accepts only a loopback connection AND a localhost/loopback URL with matching Origin; opening the LAN address never grants host access.
