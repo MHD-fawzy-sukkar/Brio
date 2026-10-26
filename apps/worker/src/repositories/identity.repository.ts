@@ -1,4 +1,5 @@
 import { createCompetitionIdentity, CompetitionIdentitySchema, SaveIdentityRequestSchema, type CompetitionIdentity, type SaveIdentityRequest, type IdentityRecordDto } from '@brio/contracts';
+import { prepareThemeCopy } from './theme-library.repository';
 import { IdentityError } from '../http/problem';
 
 interface IdentityRow { id: string; input_json: string; identity_json: string; visibility: 'private' | 'public'; design_locked: number }
@@ -7,7 +8,7 @@ function toDto(row: IdentityRow): IdentityRecordDto {
 }
 
 export async function listIdentities(db: D1Database, creatorId: string): Promise<IdentityRecordDto[]> {
-  const { results } = await db.prepare('SELECT id, input_json, identity_json, visibility, design_locked FROM competition_identities WHERE creator_id=? AND archived_at IS NULL AND design_locked=0 ORDER BY updated_at DESC LIMIT 100')
+  const { results } = await db.prepare('SELECT id, input_json, identity_json, visibility, design_locked FROM competition_identities WHERE creator_id=? AND archived_at IS NULL AND design_locked=0 AND library_hidden=0 ORDER BY updated_at DESC LIMIT 100')
     .bind(creatorId).all<IdentityRow>();
   return (results || []).map(toDto);
 }
@@ -28,46 +29,59 @@ export async function resolveOwnedIdentity(db: D1Database, creatorId: string, in
 
 export async function saveIdentity(db: D1Database, creatorId: string, input: SaveIdentityRequest, id: string = crypto.randomUUID()): Promise<IdentityRecordDto> {
   const previous = await getIdentity(db, id, creatorId);
-  if (previous?.designLocked) throw new IdentityError('هذا الثيم للاستخدام فقط؛ لا يمكنك تعديل تصميمه.', 403);
+  if (previous?.designLocked) throw new IdentityError('هذه الهوية للاستخدام فقط؛ لا يمكنك تعديل تصميمها.', 403);
   requirePublicationConfirmation(input);
   const identity = await resolveOwnedIdentity(db, creatorId, input);
   // Updates cannot transfer ownership or revive an archived identity.
   const statements: D1PreparedStatement[] = [];
   const now = new Date().toISOString();
-  if (previous && await db.prepare('SELECT id FROM quizzes WHERE identity_id=? AND creator_id=? AND archived_at IS NULL LIMIT 1').bind(id, creatorId).first()) {
-    // Library edits must not rewrite the drafts already using this template.
-    const preservedId = crypto.randomUUID();
-    const preserved = SaveIdentityRequestSchema.parse({ ...previous, visibility: 'private', publishConfirmed: false });
-    statements.push(db.prepare('INSERT INTO competition_identities(id,creator_id,name,input_json,identity_json,updated_at,visibility) VALUES(?,?,?,?,?,?,?)')
-      .bind(preservedId, creatorId, previous.name, JSON.stringify(preserved), JSON.stringify(previous.identity), now, 'private'));
-    statements.push(db.prepare('UPDATE quizzes SET identity_id=? WHERE identity_id=? AND creator_id=? AND archived_at IS NULL').bind(preservedId, id, creatorId));
-  }
   statements.push(db.prepare(`INSERT INTO competition_identities(id,creator_id,name,input_json,identity_json,updated_at,visibility)
     VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,input_json=excluded.input_json,
     identity_json=excluded.identity_json,updated_at=excluded.updated_at,visibility=excluded.visibility
     WHERE competition_identities.creator_id=excluded.creator_id AND competition_identities.archived_at IS NULL`)
     .bind(id, creatorId, input.name, JSON.stringify(input), JSON.stringify(identity), now, input.visibility));
+  if (previous) {
+    // Update only this creator's linked drafts; published versions and live rooms are immutable snapshots.
+    const privateInput = { ...input, visibility: 'private', publishConfirmed: false };
+    statements.push(db.prepare('UPDATE competition_identities SET name=?,input_json=?,identity_json=?,updated_at=? WHERE source_theme_id=? AND creator_id=? AND archived_at IS NULL')
+      .bind(input.name, JSON.stringify(privateInput), JSON.stringify(identity), now, id, creatorId));
+    statements.push(db.prepare('UPDATE quizzes SET updated_at=? WHERE creator_id=? AND archived_at IS NULL AND identity_id IN (SELECT id FROM competition_identities WHERE id=? OR (source_theme_id=? AND creator_id=?))')
+      .bind(now, creatorId, id, id, creatorId));
+  }
   const results = await db.batch(statements);
-  if (!results[results.length - 1].meta.changes) throw new IdentityError('الهوية غير موجودة.', 404);
+  if (!results[0].meta.changes) throw new IdentityError('الهوية غير موجودة.', 404);
   return { ...input, id, identity };
 }
 
 export function requirePublicationConfirmation(input: SaveIdentityRequest) {
-  if (input.visibility === 'public' && input.publishConfirmed !== true) throw new IdentityError('أكد نشر الثيم وإتاحة هويته وصوره للجميع أولاً.');
+  if (input.visibility === 'public' && input.publishConfirmed !== true) throw new IdentityError('أكد نشر الهوية وإتاحة صورها للجميع أولاً.');
 }
 
 export async function assignQuizIdentity(db: D1Database, quizId: string, creatorId: string, identityId: string | null) {
-  const result = await db.prepare(`UPDATE quizzes SET identity_id=?,updated_at=? WHERE id=? AND creator_id=? AND archived_at IS NULL
-    AND (? IS NULL OR EXISTS(SELECT 1 FROM competition_identities i WHERE i.id=? AND i.creator_id=? AND i.archived_at IS NULL))`)
-    .bind(identityId, new Date().toISOString(), quizId, creatorId, identityId, identityId, creatorId).run();
-  if (!result.meta.changes) throw new IdentityError('المسابقة أو الهوية غير موجودة أو لا تخص حسابك.', 404);
+  if (!await db.prepare('SELECT id FROM quizzes WHERE id=? AND creator_id=? AND archived_at IS NULL').bind(quizId, creatorId).first()) throw new IdentityError('المسابقة غير موجودة أو لا تخص حسابك.', 404);
+  const now = new Date().toISOString();
+  const statements: D1PreparedStatement[] = [];
+  let assignedId: string | null = null;
+  if (identityId) {
+    const copy = await prepareThemeCopy(db, identityId, creatorId);
+    assignedId = crypto.randomUUID();
+    statements.push(...copy.statements, db.prepare('INSERT INTO competition_identities(id,creator_id,name,input_json,identity_json,updated_at,visibility,design_locked,library_hidden,source_theme_id) VALUES(?,?,?,?,?,?,?,?,1,?)')
+      .bind(assignedId, creatorId, copy.input.name, JSON.stringify(copy.input), JSON.stringify(copy.identity), now, 'private', copy.designLocked ? 1 : 0, copy.designLocked ? null : identityId));
+  }
+  statements.push(db.prepare('UPDATE quizzes SET identity_id=?,updated_at=? WHERE id=? AND creator_id=? AND archived_at IS NULL').bind(assignedId, now, quizId, creatorId));
+  await db.batch(statements);
+  return assignedId;
 }
 
 export async function archiveIdentity(db: D1Database, id: string, creatorId: string) {
-  if (!await getIdentity(db, id, creatorId)) throw new IdentityError('الهوية غير موجودة.', 404);
+  const previous = await getIdentity(db, id, creatorId);
+  if (!previous) throw new IdentityError('الهوية غير موجودة.', 404);
+  const now = new Date().toISOString();
   await db.batch([
-    db.prepare('UPDATE quizzes SET identity_id=NULL,updated_at=? WHERE identity_id=? AND creator_id=?').bind(new Date().toISOString(), id, creatorId),
-    db.prepare('UPDATE competition_identities SET archived_at=? WHERE id=? AND creator_id=?').bind(new Date().toISOString(), id, creatorId)
+    db.prepare('UPDATE quizzes SET identity_id=NULL,updated_at=? WHERE creator_id=? AND identity_id IN (SELECT id FROM competition_identities WHERE creator_id=? AND (id=? OR source_theme_id=?))')
+      .bind(now, creatorId, creatorId, id, id),
+    db.prepare('UPDATE competition_identities SET archived_at=? WHERE creator_id=? AND (id=? OR source_theme_id=?)')
+      .bind(now, creatorId, id, id)
   ]);
 }
 

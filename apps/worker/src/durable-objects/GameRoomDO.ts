@@ -17,6 +17,7 @@ import {
 } from '@brio/game-core';
 import {
   initRoomDbSchema,
+  countRoomParticipations,
   loadGameStateFromDb,
   loadQuizSnapshotFromDb,
   saveQuizSnapshotToDb,
@@ -199,6 +200,11 @@ export class GameRoomDO {
       return new Response(JSON.stringify({ identity: this.quizSnapshot?.identity ?? null }), {
         headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
       });
+    }
+
+    // Internal Worker-to-object aggregation; never exposed through a public route.
+    if (url.pathname === '/participations' && request.method === 'GET') {
+      return Response.json({ count: countRoomParticipations(this.ctx.storage.sql), finished: this.state.phase === 'FINISHED' });
     }
 
     // 2. Player Join HTTP endpoint

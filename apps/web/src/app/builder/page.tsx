@@ -4,15 +4,21 @@ import Link from 'next/link';
 import { QuizIdentitySettings } from '../../features/competition-identity/QuizIdentitySettings';
 import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { AuthoringQuestion, QuestionType } from '@brio/contracts';
 import { AuthGuard } from '../../components/AuthGuard';
+import { useAuth } from '../../components/AuthProvider';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { backgroundUploads, type UploadTask } from '../../services/background-upload';
 import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { validateImage } from '../../services/media-upload';
 import { PageSkeleton, Spinner } from '../../components/Loading';
+import { loadResource, invalidateResources, invalidateQuizResources, peekResource, setResource } from '../../services/resource-cache';
+import { requestJson, jsonBody } from '../../services/http-json';
+import { questionOrderSync } from '../../services/question-order-sync';
+import { useQuestionDrag } from '../../hooks/use-question-drag';
+import { prefetchThemeLibrary } from '../../features/competition-identity/api';
 import { downloadLanBundle } from '../../services/lan-export';
 
 const questionTypeLabels: Record<QuestionType, string> = {
@@ -40,10 +46,12 @@ interface QuizDetail {
 }
 
 function Builder() {
+  const { user } = useAuth();
   const params = useSearchParams();
   const quizId = params.get('quizId');
-  const [quiz, setQuiz] = useState<QuizDetail | null>(null);
-  const [title, setTitle] = useState('');
+  const [quiz, setQuiz] = useState<QuizDetail | null>(() => quizId ? peekResource<QuizDetail>(`/api/quizzes/${quizId}`) ?? null : null);
+  const loadVersion = useRef(0);
+  const [title, setTitle] = useState(() => quizId ? peekResource<QuizDetail>(`/api/quizzes/${quizId}`)?.title ?? '' : '');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleSaved, setTitleSaved] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -56,18 +64,60 @@ function Builder() {
   const [uploadTasks, setUploadTasks] = useState<UploadTask[]>([]);
   const handledUploads = useRef(new Set<string>());
   const [identitySaving, setIdentitySaving] = useState(false);
+  const [reordering, setReordering] = useState(false);
+  const orderQueue = useMemo(() => quizId ? questionOrderSync(quizId) : null, [quizId, user?.id]);
+  const [orderStatus, setOrderStatus] = useState('');
+  const [orderError, setOrderError] = useState('');
+  useEffect(() => {
+    if (!orderQueue) return;
+    const update = () => {
+      const state = orderQueue.snapshot();
+      setReordering(state.saving); setOrderError(state.error);
+      setOrderStatus(state.error ? 'الترتيب ظاهر عندك، لكن لم يُحفظ بعد.' : state.order ? state.saving ? 'جاري حفظ آخر ترتيب…' : 'تم حفظ ترتيب الأسئلة' : '');
+    };
+    update(); return orderQueue.subscribe(update);
+  }, [orderQueue]);
+  const saveOrder = (ids: string[]) => {
+    if (!quiz || !quizId || !orderQueue || quiz.id !== quizId) return;
+    const byId = new Map(quiz.questions.map(question => [question.id, question]));
+    if (ids.length !== byId.size || new Set(ids).size !== ids.length || ids.some(id => !byId.has(id))) return;
+    loadVersion.current++;
+    const next = { ...quiz, questions: ids.map(id => byId.get(id)!) };
+    setQuiz(next); setResource(`/api/quizzes/${quizId}`, next, {transient:true});
+    orderQueue.enqueue(ids);
+  };
   const [starting, setStarting] = useState(false);
   const [downloadingLan, setDownloadingLan] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState('');
+  const [downloadNotice, setDownloadNotice] = useState('');
+  useEffect(() => {
+    if (!downloadNotice) return;
+    const timeout = window.setTimeout(() => setDownloadNotice(''), 6000);
+    return () => window.clearTimeout(timeout);
+  }, [downloadNotice]);
+  useEffect(() => {
+    const restore = () => setStarting(false);
+    window.addEventListener('pageshow', restore);
+    return () => window.removeEventListener('pageshow', restore);
+  }, []);
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
   const [deleteQuestionBusy, setDeleteQuestionBusy] = useState(false);
 
+  const questionDrag = useQuestionDrag(quiz?.questions.map(question => question.id) ?? [], starting || downloadingLan || identitySaving, ids => { void saveOrder(ids); });
+
   const load = async () => {
     if (!quizId) throw new Error('معرّف المسابقة مفقود.');
-    const response = await fetch(`/api/quizzes/${quizId}`, { credentials: 'same-origin' });
-    if (response.status === 401) return void (window.location.href = '/login/');
-    if (!response.ok) throw new Error('تعذر تحميل المسابقة.');
-    const data = (await response.json()) as QuizDetail;
+    const requestVersion = ++loadVersion.current;
+    let data = await loadResource<QuizDetail>(`/api/quizzes/${quizId}`, () => requestJson<QuizDetail>(`/api/quizzes/${quizId}`));
+    if (requestVersion !== loadVersion.current) return;
+    const queued = orderQueue?.snapshot();
+    if (queued?.order && (queued.saving || queued.error)) {
+      const byId = new Map(data.questions.map(question => [question.id, question]));
+      if (queued.order.length === byId.size && queued.order.every(id => byId.has(id))) {
+        data = {...data, questions:queued.order.map(id => byId.get(id)!)};
+        setResource(`/api/quizzes/${quizId}`, data, {transient:true});
+      }
+    }
     const latestCoverTask = backgroundUploads
       .list(quizId)
       .filter((task) => task.target === 'cover' && task.state !== 'failed')
@@ -76,7 +126,7 @@ function Builder() {
     setQuiz(data);
     setTitle((current) => (current ? current : data.title));
     setCover((current) => resolvedCover || current);
-    const prefetchList = (data.questions || [])
+    const prefetchList = (data.questions || []).slice(0, 3)
       .map((q, idx) => ({
         url: q.media_url || q.essentialImage || '',
         questionId: q.id,
@@ -90,15 +140,20 @@ function Builder() {
   };
 
   useEffect(() => {
-    setQuiz(null);
-    setTitle('');
+    const cached = quizId ? peekResource<QuizDetail>(`/api/quizzes/${quizId}`) : undefined;
+    setQuiz(cached ?? null);
+    setTitle(cached?.title ?? '');
     setIsEditingTitle(false);
     setCover('');
     const notice = params.get('notice');
     if (notice === 'cover-upload-failed') setWarning('تم إنشاء المسابقة بنجاح، لكن تعذر رفع الغلاف. يمكنك المحاولة مجدداً من هنا.');
     if (notice === 'question-image-failed') setWarning('تم حفظ السؤال بنجاح، لكن تعذر رفع صورته. يمكنك تعديل السؤال والمحاولة مجدداً.');
-    load().catch((cause) => setError(cause.message));
-  }, [quizId]);
+    setError(null);
+    let active = true;
+    void prefetchThemeLibrary();
+    load().catch(cause => { if (active) setError(cause.message); });
+    return () => { active = false; loadVersion.current++; };
+  }, [quizId, user?.id]);
 
   useEffect(() => {
     const update = () => {
@@ -184,12 +239,13 @@ function Builder() {
       try {
         const response = await fetch(`/api/quizzes/${quizId}`, {
           method: 'PATCH',
-          credentials: 'same-origin',
+          credentials: 'same-origin', signal: AbortSignal.timeout(30000),
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title: trimmed, coverImageUrl: effectiveCoverUrl })
         });
         const body = await response.json().catch(() => null);
-        if (!response.ok) {
+        if (response.ok) invalidateQuizResources(quizId);
+      if (!response.ok) {
           throw new Error(body?.detail || 'تعذر حفظ عنوان المسابقة.');
         }
       } catch (cause) {
@@ -222,17 +278,15 @@ function Builder() {
   };
 
   const confirmRemoveQuestion = async () => {
-    if (!quizId || !deletingQuestionId) return;
-    setDeleteQuestionBusy(true);
-    setError(null);
-    const response = await fetch(`/api/quizzes/${quizId}/questions/${deletingQuestionId}`, {
-      method: 'DELETE',
-      credentials: 'same-origin'
-    });
-    setDeleteQuestionBusy(false);
-    setDeletingQuestionId(null);
-    if (!response.ok) return setError('تعذر حذف السؤال.');
-    await load();
+    if (!quizId || !deletingQuestionId || deleteQuestionBusy) return;
+    setDeleteQuestionBusy(true); setError(null);
+    try {
+      await orderQueue?.flush();
+      await requestJson(`/api/quizzes/${quizId}/questions/${deletingQuestionId}`, { method: 'DELETE' });
+      setDeletingQuestionId(null);
+      await load();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'تعذّر حذف السؤال.'); setDeletingQuestionId(null); }
+    finally { setDeleteQuestionBusy(false); }
   };
 
   const removeCover = async () => {
@@ -249,11 +303,12 @@ function Builder() {
     try {
       const response = await fetch(`/api/quizzes/${quizId}`, {
         method: 'PATCH',
-        credentials: 'same-origin',
+        credentials: 'same-origin', signal: AbortSignal.timeout(30000),
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: title.trim() || quiz.title, coverImageUrl: null })
       });
       const body = await response.json().catch(() => null);
+      if (response.ok) invalidateQuizResources(quizId);
       if (!response.ok) {
         throw new Error(body?.detail || 'تعذر إزالة الغلاف.');
       }
@@ -267,27 +322,19 @@ function Builder() {
   };
 
   const startGame = async () => {
-    if (!quizId) return;
+    if (!quizId || starting || downloadingLan || identitySaving || reordering) return;
     setStarting(true);
     setError(null);
     setMessage(null);
     try {
+      await orderQueue?.flush();
       if (isEditingTitle && title.trim() && title.trim() !== quiz?.title) {
         await commitTitle();
       } else if (pendingTitleSaveRef.current) {
         await pendingTitleSaveRef.current;
       }
-      const publishResponse = await fetch(`/api/quizzes/${quizId}/publish`, { method: 'POST', credentials: 'same-origin' });
-      const published = await publishResponse.json().catch(() => null);
-      if (!publishResponse.ok) throw new Error(published?.detail || 'أضف سؤالاً صالحاً قبل بدء اللعبة.');
-      const response = await fetch('/api/rooms', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quizId })
-      });
-      const room = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(room?.detail || 'تعذر بدء اللعبة.');
+      await requestJson(`/api/quizzes/${quizId}/publish`, { method: 'POST' });
+      const room = await requestJson<{ roomId: string; code: string }>('/api/rooms', jsonBody('POST', { quizId }));
       window.location.assign(
         `/host/?roomId=${encodeURIComponent(room.roomId)}&code=${encodeURIComponent(room.code)}&quizId=${encodeURIComponent(quizId)}`
       );
@@ -298,19 +345,21 @@ function Builder() {
   };
 
   const downloadForLan = async () => {
-    if (!quizId) return;
+    if (!quizId || starting || downloadingLan || identitySaving || reordering) return;
+    setDownloadNotice(''); setDownloadProgress('جاري تجهيز المسابقة…');
     setDownloadingLan(true); setError(null); setMessage(null);
     try {
+      await orderQueue?.flush();
       if (backgroundUploads.list(quizId).some(task => task.state === 'uploading')) throw new Error('انتظر انتهاء رفع الصور قبل تنزيل نسخة للّعب المحلي.');
       if (isEditingTitle && title.trim() && title.trim() !== quiz?.title) await commitTitle();
       else if (pendingTitleSaveRef.current) await pendingTitleSaveRef.current;
       await downloadLanBundle(quizId, setDownloadProgress);
-      setMessage('المسابقة وصورها جاهزة. افتح لوحة المقدّم على اللابتوب واختر «اختيار ملف المسابقة» لإضافتها.');
+      setDownloadNotice('تم تنزيل المسابقة وصورها. أضف الملف من لوحة المقدّم على اللابتوب.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'تعذّر تجهيز نسخة للّعب المحلي.'); }
     finally { setDownloadingLan(false); setDownloadProgress(''); }
   };
 
-  if (!quiz && !error) return <PageSkeleton />;
+  if (!quiz && !error) return <PageSkeleton kind="studio" />;
 
   const deletingQuestion = quiz?.questions.find((q) => q.id === deletingQuestionId);
 
@@ -320,9 +369,9 @@ function Builder() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-black text-slate-900">استوديو المسابقة</h1>
-          <p className="mt-1 text-sm text-slate-500">تُحفظ التعديلات تلقائياً، وكل سؤال يُحرّر في صفحة هادئة مستقلة.</p>
+          <p className="mt-1 text-sm text-slate-500">عدّل معلومات المسابقة وهويتها، وأضف الأسئلة من هنا.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="studio-actions">
           <Link
             href="/dashboard/"
             className="secondary-btn inline-flex items-center justify-center gap-2 border-brand-200/90 bg-white px-5 py-3 text-sm font-black text-brand-700 shadow-2xs transition hover:border-brand-300 hover:bg-brand-50/70"
@@ -330,20 +379,23 @@ function Builder() {
             <span>→</span>
             <span>مسابقاتي</span>
           </Link>
-          <button onClick={downloadForLan} disabled={starting || downloadingLan || identitySaving || !quiz?.questions.length} className="secondary-btn px-5 py-3">{downloadingLan ? downloadProgress : '↓ تنزيل للّعب المحلي'}</button>
-          <button onClick={startGame} disabled={starting || downloadingLan || identitySaving || !quiz?.questions.length} className="primary-btn px-7 py-3">
+          <div className="studio-download">
+            <button onClick={downloadForLan} disabled={starting || downloadingLan || identitySaving || reordering || !quiz?.questions.length} className="secondary-btn w-full px-5 py-3" aria-busy={downloadingLan}>{downloadingLan ? 'جاري التنزيل…' : '↓ تنزيل للّعب المحلي'}</button>
+            <div role="status" aria-live="polite" className="studio-download__status text-xs leading-5 text-slate-600">{downloadingLan ? downloadProgress : downloadNotice}</div>
+          </div>
+          <button onClick={startGame} disabled={starting || downloadingLan || identitySaving || reordering || !quiz?.questions.length} className="primary-btn px-7 py-3">
             {starting ? 'جاري تجهيز الغرفة…' : '▶ ابدأ اللعبة'}
           </button>
         </div>
       </div>
-      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}</div>}
+      {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">{error}{!quiz && <button type="button" className="ms-3 underline" onClick={() => { setError(null); void load().catch(cause => setError(cause.message)); }}>إعادة المحاولة</button>}</div>}
       {warning && (
         <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
           {warning}
           <button onClick={() => setWarning(null)} className="float-left text-amber-600" aria-label="إغلاق التنبيه">×</button>
         </div>
       )}
-      {quiz && quizId && <QuizIdentitySettings key={quizId} quizId={quizId} quizTitle={quiz.title} disabled={starting || downloadingLan} value={quiz.identity_id ?? null} onBusyChange={setIdentitySaving} onSaved={id => setQuiz(current => current?.id === quizId ? { ...current, identity_id: id } : current)} />}
+      {quiz && quizId && <QuizIdentitySettings key={quizId} quizId={quizId} quizTitle={quiz.title} disabled={starting || downloadingLan || reordering} value={quiz.identity_id ?? null} onBusyChange={setIdentitySaving} onSaved={id => { invalidateResources([`/api/quizzes/${quizId}`]); setQuiz(current => current?.id === quizId ? { ...current, identity_id: id } : current); }} />}
       {failedUploads.map((task) => (
         <div key={task.id} role="alert" className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">
           <span>{task.error || 'تعذر رفع الصورة في الخلفية.'}</span>
@@ -501,8 +553,10 @@ function Builder() {
                   {quiz.questions.length ? `${quiz.questions.length} سؤال في هذه المسابقة` : 'لا توجد أسئلة بعد'}
                 </p>
               </div>
-              <Link href={`/questions/?quizId=${quizId}`} className="primary-btn">＋ سؤال جديد</Link>
+              <Link href={`/questions/?quizId=${quizId}`} aria-disabled={reordering} onClick={event => { if (reordering) event.preventDefault(); }} className="primary-btn">＋ سؤال جديد</Link>
             </div>
+            {quiz.questions.length > 1 && <p id="question-order-help" className="mb-3 text-xs leading-6 text-slate-500">اسحب من ⋮⋮ لترتيب الأسئلة، أو استخدم السهم لأعلى أو لأسفل بعد تحديد المقبض. يُحفظ الترتيب فوراً.</p>}
+            <div className="mb-3 min-h-5 text-xs text-brand-700"><span role="status" aria-live="polite">{orderStatus}</span>{orderError && <span role="alert" className="ms-2 text-rose-700">{orderError}<button type="button" className="ms-2 font-bold underline" onClick={() => { void orderQueue?.flush().catch(() => {}); }}>إعادة الحفظ</button></span>}</div>
             {quiz.questions.length === 0 ? (
               <div className="card p-14 text-center">
                 <div className="text-4xl">✍️</div>
@@ -522,14 +576,15 @@ function Builder() {
                     null;
 
                   return (
-                    <article key={question.id} className="card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5">
-                      <div className="flex min-w-0 flex-1 items-center gap-3.5">
-                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-100 font-black text-brand-700">
+                    <article key={question.id} data-question-id={question.id} className={`card question-order-card relative flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:p-3.5 ${questionDrag.draggedId === question.id ? 'question-drag-source' : ''} ${questionDrag.target?.target === question.id && questionDrag.draggedId !== question.id ? questionDrag.target.after ? 'question-drop-after' : 'question-drop-before' : ''}`}>
+                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                        {quiz.questions.length > 1 && <button type="button" disabled={starting || downloadingLan || identitySaving} aria-label={`اسحب لترتيب السؤال ${index + 1}: ${question.text}`} aria-describedby="question-order-help" className="question-drag-handle" {...questionDrag.handleProps(question.id)}>⋮⋮</button>}
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-100 font-black text-brand-700">
                           {index + 1}
                         </span>
                         {questionImage && (
-                          <div className="h-14 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                            <img src={questionImage} alt="صورة السؤال" className="h-full w-full object-contain p-1" />
+                          <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                            <img src={questionImage} loading="lazy" decoding="async" alt="صورة السؤال" className="h-full w-full object-contain p-1" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -544,12 +599,14 @@ function Builder() {
                       <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
                         <Link
                           href={`/questions/?quizId=${quizId}&questionId=${question.id}`}
+                          aria-disabled={reordering} onClick={event => { if (reordering) event.preventDefault(); }}
                           className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/70 px-4 py-2 text-sm font-black text-brand-700 transition hover:border-brand-300 hover:bg-brand-100"
                         >
                           تعديل
                         </Link>
                         <button
                           type="button"
+                          disabled={reordering}
                           onClick={() => setDeletingQuestionId(question.id)}
                           className="inline-flex items-center justify-center rounded-xl border border-rose-200/80 bg-white px-3.5 py-2 text-sm font-bold text-rose-600 transition hover:bg-rose-50"
                         >
@@ -578,5 +635,5 @@ function Builder() {
 }
 
 export default function BuilderPage() {
-  return <AuthGuard><Suspense fallback={<PageSkeleton />}><Builder /></Suspense></AuthGuard>;
+  return <AuthGuard><Suspense fallback={<PageSkeleton kind="studio" />}><Builder /></Suspense></AuthGuard>;
 }

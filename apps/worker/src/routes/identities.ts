@@ -24,7 +24,7 @@ for (const path of ['/identities', '/identities/*', '/identity-assets/*', '/quiz
 identityRoutes.onError((error, c) => {
   if (error instanceof IdentityError) return rfc7807Error(c, error.status, 'identity_error', error.message);
   if (error.name === 'ZodError' || error instanceof SyntaxError) return rfc7807Error(c, 400, 'validation_failed', 'تحقق من اسم الهوية والصور وأدوارها. يجب اختيار صورة واحدة على الأقل وشعار وشخصية واحدة كحد أقصى.');
-  if (/no such table: (?:competition_identities|identity_assets)|no such column: (?:\w+\.)?(?:identity_id|visibility|design_locked)/i.test(error.message)) {
+  if (/no such table: (?:competition_identities|identity_assets)|no such column: (?:\w+\.)?(?:identity_id|visibility|design_locked|library_hidden|source_theme_id)/i.test(error.message)) {
     return rfc7807Error(c, 503, 'identity_setup_required', 'تخصيص الهوية يحتاج تحديث قاعدة بيانات الموقع. حاول مجدداً بعد اكتمال التحديث.');
   }
   console.error('Identity operation failed', error);
@@ -62,8 +62,8 @@ identityRoutes.post('/identity-assets/complete', async c => {
 });
 identityRoutes.put('/quizzes/:id/identity', async c => {
   const input = IdentityAssignmentSchema.parse(await c.req.json());
-  await assignQuizIdentity(c.env.DB, IdentityIdSchema.parse(c.req.param('id')), c.get('creatorId'), input.identityId);
-  return c.json({ status: 'updated' });
+  const identityId = await assignQuizIdentity(c.env.DB, IdentityIdSchema.parse(c.req.param('id')), c.get('creatorId'), input.identityId);
+  return c.json({ status: 'updated', identityId });
 });
 identityRoutes.get('/quizzes/:id/identity', async c => {
   const record = await getQuizIdentity(c.env.DB, IdentityIdSchema.parse(c.req.param('id')), c.get('creatorId'));

@@ -18,11 +18,13 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
   useEffect(() => {
     if (!roomId) return;
     let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | null = null;
     const controller = new AbortController();
 
     const loadManifest = async (attempt = 0) => {
+      if (cancelled) return;
       try {
-        const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/media`, { signal: controller.signal });
+        const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/media`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]) });
         if (!response.ok) throw new Error('Manifest unavailable');
         const items = (await response.json()) as ManifestItem[];
         if (cancelled) return;
@@ -37,7 +39,7 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
         );
       } catch {
         if (!cancelled && attempt < 2) {
-          setTimeout(() => void loadManifest(attempt + 1), 400);
+          retry = setTimeout(() => void loadManifest(attempt + 1), 400);
         }
       }
     };
@@ -45,6 +47,7 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
     void loadManifest();
     return () => {
       cancelled = true;
+      if (retry) clearTimeout(retry);
       controller.abort();
     };
   }, [roomId]);

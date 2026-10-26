@@ -6,7 +6,7 @@ import { useMascotFlight, type MascotFlightOptions } from '../hooks/use-mascot-f
 /** Shared flight stage: motion never needs to know how a character is drawn. */
 export function MascotFlight({ children, ...options }: MascotFlightOptions & { children: ReactNode }) {
   const { areaRef, characterRef, innerRef, ready, dragging, onPointerDown, onPointerMove, endDrag } = useMascotFlight(options);
-  return <div ref={areaRef} data-flight-mode={options.compact ? 'compact' : 'roaming'} className="mascot-flight-area" style={{ visibility: ready ? 'visible' : 'hidden' }} aria-hidden="true">
+  return <div ref={areaRef} data-flight-scope={options.scope ?? 'lobby'} data-flight-mode={options.compact ? 'compact' : 'roaming'} className="mascot-flight-area" style={{ visibility: ready ? 'visible' : 'hidden' }} aria-hidden="true">
     <div
       ref={characterRef}
       onPointerDown={onPointerDown}

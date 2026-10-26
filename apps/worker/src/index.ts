@@ -50,12 +50,26 @@ import {
 } from './repositories/media.repository';
 import { getAuthCreator } from './http/creator';
 import { rfc7807Error } from './http/problem';
+import { creatorParticipationStats, readCreatorParticipationStats } from './repositories/creator-stats.repository';
 import { identityRoutes } from './routes/identities';
 
 export { GameRoomDO };
 
 const app = new Hono<{ Bindings: Env }>();
 app.route('/api', identityRoutes);
+
+// Aggregated owner-only statistics. Reconciliation never changes gameplay state.
+app.get('/api/creator/stats', async c => {
+  const creator = await getAuthCreator(c);
+  if (!creator) return rfc7807Error(c,401,'unauthorized','Authentication required');
+  c.header('Cache-Control','no-store');
+  try {
+    const snapshot = await readCreatorParticipationStats(c.env.DB,creator.id);
+    if (snapshot.pending) c.executionCtx.waitUntil(creatorParticipationStats(c.env,creator.id).catch(() => { console.warn('Participation refresh deferred'); }));
+    return c.json(snapshot);
+  }
+  catch { return rfc7807Error(c,503,'participation_stats_unavailable','تعذّر تحميل إجمالي المشاركات الآن. حاول مجدداً.'); }
+});
 
 // 1. Health check route
 // Private, immutable export source. Media bytes are prepared by the creator's browser,
@@ -344,6 +358,8 @@ app.put('/api/quizzes/:id/question-order', async (c) => {
     return rfc7807Error(c, 401, 'unauthorized', 'Authentication required');
   }
 
+  if (!validateOrigin(c.req.raw)) return rfc7807Error(c, 403, 'forbidden_origin', 'Cross-origin mutation denied');
+
   const quizId = c.req.param('id');
   let body: any;
   try {
@@ -352,8 +368,8 @@ app.put('/api/quizzes/:id/question-order', async (c) => {
     return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body');
   }
 
-  if (!Array.isArray(body.questionIds)) {
-    return rfc7807Error(c, 400, 'validation_failed', 'questionIds must be an array of string IDs');
+  if (!body || !Array.isArray(body.questionIds) || !body.questionIds.every((id: unknown) => typeof id === 'string')) {
+    return rfc7807Error(c, 400, 'validation_failed', 'أرسل قائمة معرّفات الأسئلة بالترتيب المطلوب.');
   }
 
   try {

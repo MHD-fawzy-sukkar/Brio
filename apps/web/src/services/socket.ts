@@ -19,6 +19,8 @@ export class BrioRoomSocket {
   private connectionListeners: Array<(state: 'connecting' | 'connected' | 'disconnected') => void> = [];
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
+  private connectTimer: ReturnType<typeof setTimeout> | null = null;
+  private listening = false;
   private manuallyClosed = false;
   private syncTimer: ReturnType<typeof setInterval> | null = null;
   private lastMessageAt = 0;
@@ -35,6 +37,9 @@ export class BrioRoomSocket {
     if (typeof window === 'undefined') return;
     if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) return;
     this.manuallyClosed = false;
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+    if (!this.listening) { window.addEventListener('online', this.resume); document.addEventListener('visibilitychange', this.resume); this.listening = true; }
     this.emitConnection('connecting');
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -43,9 +48,12 @@ export class BrioRoomSocket {
 
     const ws = new WebSocket(url);
     this.ws = ws;
+    this.connectTimer = setTimeout(() => { if (this.ws === ws && ws.readyState === WebSocket.CONNECTING) ws.close(); }, 10000);
 
     ws.onopen = () => {
       if (this.ws !== ws) return;
+      if (this.connectTimer) clearTimeout(this.connectTimer);
+      this.connectTimer = null;
       this.reconnectAttempt = 0;
       this.lastMessageAt = Date.now();
       this.emitConnection('connected');
@@ -58,8 +66,6 @@ export class BrioRoomSocket {
         }
         this.sync();
       }, 5000);
-      window.addEventListener('online', this.sync);
-      document.addEventListener('visibilitychange', this.sync);
     };
     ws.onerror = () => { if (this.ws === ws) this.emitConnection('disconnected'); };
     ws.onclose = () => {
@@ -117,6 +123,16 @@ export class BrioRoomSocket {
     };
   }
 
+  private resume = (): void => {
+    if (this.manuallyClosed || document.hidden) return;
+    if (this.ws?.readyState === WebSocket.OPEN && Date.now() - this.lastMessageAt <= 15000) { this.sync(); return; }
+    if (this.ws?.readyState === WebSocket.CONNECTING) return;
+    this.ws?.close();
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+    this.connect();
+  };
+
   private sync = (): void => {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: 'room.sync', payload: { t0: Date.now() } }));
@@ -126,8 +142,8 @@ export class BrioRoomSocket {
   private stopSync(): void {
     if (this.syncTimer) clearInterval(this.syncTimer);
     this.syncTimer = null;
-    window.removeEventListener('online', this.sync);
-    document.removeEventListener('visibilitychange', this.sync);
+    if (this.connectTimer) clearTimeout(this.connectTimer);
+    this.connectTimer = null;
   }
 
   onSnapshot(callback: (snapshot: any) => void): () => void {
@@ -191,6 +207,7 @@ export class BrioRoomSocket {
 
   close(): void {
     this.manuallyClosed = true;
+    window.removeEventListener('online', this.resume); document.removeEventListener('visibilitychange', this.resume); this.listening = false;
     this.stopSync();
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;

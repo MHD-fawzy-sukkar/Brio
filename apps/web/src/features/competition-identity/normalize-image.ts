@@ -1,7 +1,17 @@
 import { fitIdentityImage, visibleBounds } from './image-layout';
 
+const normalizedImages = new WeakMap<File, Promise<File>>();
+/** Reuse local normalization during save retries; no network work occurs here. */
+export function normalizeIdentityImage(file: File): Promise<File> {
+  const cached = normalizedImages.get(file);
+  if (cached) return cached;
+  const task = normalizeImage(file).catch(error => { normalizedImages.delete(file); throw error; });
+  normalizedImages.set(file, task);
+  return task;
+}
+
 /** All identity artwork uses the same transparent square, without stretching or removing backgrounds. */
-export async function normalizeIdentityImage(file: File): Promise<File> {
+async function normalizeImage(file: File): Promise<File> {
   if (typeof createImageBitmap === 'undefined' || typeof document === 'undefined') return file;
   let bitmap: ImageBitmap;
   try { bitmap = await createImageBitmap(file); }

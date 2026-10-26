@@ -1,15 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { AuthoringQuestion, PointsMultiplier, QuestionType } from '@brio/contracts';
+import type { AuthoringQuestion, PointsMultiplier, QuestionType, QuizSummaryDto } from '@brio/contracts';
 import { AuthGuard } from '../../components/AuthGuard';
 import { validateImage } from '../../services/media-upload';
 import { backgroundUploads, type UploadTask } from '../../services/background-upload';
 import { ButtonContent, PageSkeleton } from '../../components/Loading';
+import { loadResource, peekResource, setResource } from '../../services/resource-cache';
+import { requestJson, jsonBody } from '../../services/http-json';
 import { multiplierAfterTypeChange } from '../../services/question-form';
 
+type StoredQuestion = { id: string; type: QuestionType; text: string; duration_ms: number; multiplier: PointsMultiplier; media_url?: string | null; essentialImage?: string | null; options: { text: string; is_correct: number }[]; acceptedAlternatives?: string[] };
+const fromStored = (found: StoredQuestion): AuthoringQuestion => ({ id: found.id, type: found.type, text: found.text, durationMs: found.duration_ms, multiplier: found.multiplier, essentialImage: null, options: (found.options ?? []).map(option => ({ text: option.text, isCorrect: option.is_correct === 1 })), acceptedAlternatives: found.acceptedAlternatives ?? [] });
 const typeLabels: Record<QuestionType,string> = { MultipleChoice:'اختيار من متعدد', TrueFalse:'صح أو خطأ', ShortAnswer:'إجابة قصيرة', Poll:'استطلاع رأي' };
 const blankOptions = (count:number) => Array.from({length:count},(_,index) => ({ text:'', isCorrect:index === 0 }));
 
@@ -18,12 +22,16 @@ function QuestionEditor() {
   const params = useSearchParams();
   const quizId = params.get('quizId');
   const questionId = params.get('questionId');
-  const [question, setQuestion] = useState<AuthoringQuestion>({ type:'MultipleChoice', text:'', durationMs:20000, multiplier:'Standard', options:blankOptions(4), acceptedAlternatives:[], essentialImage:null });
+  const cachedQuestion = peekResource<{ questions: StoredQuestion[] }>(`/api/quizzes/${quizId}`)?.questions.find(item => item.id === questionId);
+  const edited = useRef(false);
+  const [loadRevision, setLoadRevision] = useState(0);
+  const [loadingQuestion, setLoadingQuestion] = useState(Boolean(questionId && !cachedQuestion));
+  const [question, setQuestion] = useState<AuthoringQuestion>(cachedQuestion ? fromStored(cachedQuestion) : { type:'MultipleChoice', text:'', durationMs:20000, multiplier:'Standard', options:blankOptions(4), acceptedAlternatives:[], essentialImage:null });
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState<string|null>(null);
   const [imageFile,setImageFile] = useState<File|null>(null);
   const [imagePreview,setImagePreview] = useState<string|null>(null);
-  const [storedImageUrl,setStoredImageUrl] = useState<string|null>(null);
+  const [storedImageUrl,setStoredImageUrl] = useState<string|null>(cachedQuestion?.media_url ?? cachedQuestion?.essentialImage ?? null);
   const [activeUpload,setActiveUpload] = useState<UploadTask|undefined>();
   const uploadedImageUrl=activeUpload?.state==='failed' ? null : activeUpload?.resultUrl || activeUpload?.previewUrl;
   const visibleImageUrl=imagePreview || uploadedImageUrl || storedImageUrl;
@@ -32,18 +40,17 @@ function QuestionEditor() {
 
   useEffect(() => {
     if (!quizId || !questionId) return;
-    fetch(`/api/quizzes/${quizId}`).then(async (response) => {
-      if (response.status === 401) return void (window.location.href='/login/');
-      if (!response.ok) throw new Error('تعذر تحميل السؤال.');
-      const data = await response.json();
-      const found = data.questions.find((item:{id:string}) => item.id === questionId);
+    let active = true;
+    setLoadingQuestion(!cachedQuestion); setError(null);
+    loadResource(`/api/quizzes/${quizId}`, () => requestJson<{ questions: StoredQuestion[] }>(`/api/quizzes/${quizId}`)).then(data => {
+      if (!active) return;
+      const found = data.questions.find(item => item.id === questionId);
       if (!found) throw new Error('السؤال غير موجود.');
-      setQuestion({ id:found.id, type:found.type, text:found.text, durationMs:found.duration_ms, multiplier:found.multiplier, essentialImage:null,
-        options:(found.options || []).map((option:{text:string;is_correct:number}) => ({text:option.text,isCorrect:option.is_correct===1})),
-        acceptedAlternatives:found.acceptedAlternatives || [] });
-      setStoredImageUrl(found.media_url || null);
-    }).catch((cause) => setError(cause.message));
-  },[quizId,questionId]);
+      if (!edited.current) setQuestion(fromStored(found)); setStoredImageUrl(found.media_url ?? found.essentialImage ?? null);
+    }).catch(cause => { if (active) setError(cause.message); })
+      .finally(() => { if (active) setLoadingQuestion(false); });
+    return () => { active = false; };
+  },[quizId,questionId,loadRevision]);
 
   useEffect(()=>{
     if(!quizId||!questionId)return;
@@ -52,6 +59,7 @@ function QuestionEditor() {
   },[quizId,questionId]);
 
   const changeType = (type:QuestionType) => {
+    edited.current = true;
     setQuestion((current) => ({...current,type,multiplier:multiplierAfterTypeChange(current.type,type,current.multiplier),
       options:type==='MultipleChoice'?blankOptions(4):type==='TrueFalse'?[{text:'صح',isCorrect:true},{text:'خطأ',isCorrect:false}]:type==='Poll'?blankOptions(2).map((item)=>({...item,isCorrect:false})):[],
       acceptedAlternatives:type==='ShortAnswer'?['']:[] }));
@@ -76,22 +84,33 @@ function QuestionEditor() {
 
   const save = async (event:React.FormEvent) => {
     event.preventDefault();
+    if (busy || loadingQuestion) return;
     if (!quizId) return setError('معرّف المسابقة مفقود.');
     setBusy(true); setError(null);
     const payload = {...question, essentialImage:null, text:question.text.trim(), options:question.options.map((option)=>({...option,text:option.text.trim()})), acceptedAlternatives:question.acceptedAlternatives.map((item)=>item.trim()).filter(Boolean)};
     const path = questionId ? `/api/quizzes/${quizId}/questions/${questionId}` : `/api/quizzes/${quizId}/questions`;
-    const response = await fetch(path,{method:questionId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const body = await response.json().catch(()=>null);
-    if (!response.ok) { setBusy(false); return setError(body?.detail || 'راجع حقول السؤال والإجابات.'); }
-    const savedQuestionId = questionId || body?.questionId;
-    if (imageFile && savedQuestionId) {
-      backgroundUploads.enqueueQuestion(quizId,savedQuestionId,imageFile);
-    }
-    router.push(`/builder/?quizId=${quizId}`);
+    try {
+      const body = await requestJson<{ questionId?: string }>(path, jsonBody(questionId ? 'PUT' : 'POST', payload));
+      const savedQuestionId = questionId || body?.questionId;
+      const cached = peekResource<{id:string; questions:StoredQuestion[]}>(`/api/quizzes/${quizId}`);
+      if (cached && savedQuestionId) {
+        const previous = cached.questions.find(item => item.id === savedQuestionId);
+        const nextQuestion = {...previous, ...payload, id:savedQuestionId, duration_ms:payload.durationMs, options:payload.options.map(option => ({...option,is_correct:option.isCorrect ? 1 : 0})), media_url:previous?.media_url ?? null};
+        const questions = previous ? cached.questions.map(item => item.id === savedQuestionId ? nextQuestion : item) : [...cached.questions,nextQuestion];
+        setResource(`/api/quizzes/${quizId}`, {...cached, questions});
+        const summaries = peekResource<QuizSummaryDto[]>('/api/quizzes');
+        if (summaries) setResource('/api/quizzes', summaries.map(item => item.id === quizId ? {...item,questionCount:questions.length,updatedAt:new Date().toISOString()} : item));
+      }
+      if (imageFile && savedQuestionId) backgroundUploads.enqueueQuestion(quizId, savedQuestionId, imageFile);
+      router.push(`/builder/?quizId=${quizId}`);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'تعذّر حفظ السؤال.'); }
+    finally { setBusy(false); }
   };
+  if (loadingQuestion) return <PageSkeleton kind="question" />;
+  if (questionId && !question.id && error) return <div className="card mx-auto max-w-5xl space-y-4 p-6"><p role="alert" className="text-sm text-rose-700">{error}</p><div className="flex flex-wrap gap-3"><button type="button" className="primary-btn" onClick={() => { setError(null); setLoadRevision(value => value + 1); }}>إعادة المحاولة</button><Link className="secondary-btn" href={`/builder/?quizId=${quizId ?? ''}`}>العودة إلى المسابقة</Link></div></div>;
 
   return (
-    <form onSubmit={save} className="mx-auto max-w-5xl space-y-6">
+    <form onChangeCapture={() => { edited.current = true; }} onSubmit={save} className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-black">{questionId ? 'تعديل السؤال' : 'سؤال جديد'}</h1>

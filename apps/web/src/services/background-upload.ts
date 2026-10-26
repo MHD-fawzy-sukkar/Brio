@@ -1,5 +1,7 @@
 'use client';
 
+import { invalidateQuizResources } from './resource-cache';
+
 import { uploadQuestionImage, uploadQuizCover } from './media-upload';
 import type { MediaVariantsDto } from '@brio/contracts';
 
@@ -44,9 +46,10 @@ export class BackgroundUploadManager {
     const base={id,quizId:input.quizId,questionId:input.questionId,target:input.target,previewUrl};
     this.tasks.set(id,{...base,label:input.label,state:'uploading'}); this.emit();
     void input.operation().then((media)=>{
+      invalidateQuizResources(input.quizId);
       this.tasks.set(id,{...base,label:'اكتمل رفع الصورة',state:'completed',resultUrl:media.hostUrl}); this.emit();
     }).catch((cause)=>{
-      this.tasks.set(id,{...base,label:'تعذر رفع الصورة، لكن تم حفظ المحتوى',state:'failed',error:cause instanceof Error?cause.message:undefined}); this.emit();
+      this.tasks.set(id,{...base,label:'تعذر رفع الصورة، لكن تم حفظ المحتوى',state:'failed',error:cause?.name==='TimeoutError'?'استغرق رفع الصورة وقتاً أطول من المتوقع. حاول مجدداً.':cause instanceof Error?cause.message:undefined}); this.emit();
     });
     return id;
   }

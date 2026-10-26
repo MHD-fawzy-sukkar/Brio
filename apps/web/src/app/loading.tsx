@@ -1,2 +1,2 @@
-import { PageSkeleton } from '../components/Loading';
-export default function Loading(){return <PageSkeleton/>;}
+import { RouteSkeleton } from '../components/RouteSkeleton';
+export default function Loading(){return <RouteSkeleton/>;}

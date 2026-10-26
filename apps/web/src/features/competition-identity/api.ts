@@ -1,4 +1,5 @@
 import type { IdentityRecordDto, SaveIdentityRequest, ThemeSummaryDto } from '@brio/contracts';
+import { loadResource } from '../../services/resource-cache';
 import { requestJson, jsonBody } from '../../services/http-json';
 import { validateImage } from '../../services/media-upload';
 import { normalizeIdentityImage } from './normalize-image';
@@ -6,8 +7,9 @@ import { normalizeIdentityImage } from './normalize-image';
 export const getQuizIdentity = (quizId: string, signal?: AbortSignal) => requestJson<{ record: IdentityRecordDto | null }>(`/api/quizzes/${encodeURIComponent(quizId)}/identity`, { signal });
 export const saveQuizIdentity = (quizId: string, input: SaveIdentityRequest) => requestJson<IdentityRecordDto>(
   `/api/quizzes/${encodeURIComponent(quizId)}/identity`, jsonBody('POST', input));
-export const assignIdentity = (quizId: string, identityId: string | null) => requestJson(`/api/quizzes/${encodeURIComponent(quizId)}/identity`, jsonBody('PUT', { identityId }));
-export const getThemes = (signal?: AbortSignal) => requestJson<ThemeSummaryDto[]>('/api/themes', { signal });
+export const assignIdentity = (quizId: string, identityId: string | null) => requestJson<{ identityId: string | null }>(`/api/quizzes/${encodeURIComponent(quizId)}/identity`, jsonBody('PUT', { identityId }));
+export const getThemes = () => loadResource('/api/themes', () => requestJson<ThemeSummaryDto[]>('/api/themes'));
+export const prefetchThemeLibrary = () => Promise.allSettled([getThemes()]);
 export const setThemeVisibility = (id: string, visibility: 'private' | 'public', confirmed = false) => requestJson(`/api/themes/${encodeURIComponent(id)}/visibility`, jsonBody('PATCH', { visibility, confirmed }));
 
 export type IdentityAsset = { mediaId: string; src: string };
@@ -33,3 +35,8 @@ export async function uploadIdentityImage(file: File, signal?: AbortSignal): Pro
     assetId: signed.assetId, publicId: result.public_id, version: result.version, signature: result.signature
   }), signal });
 }
+
+export const saveLibraryTheme = (id: string, input: SaveIdentityRequest) => requestJson<IdentityRecordDto>(`/api/identities/${encodeURIComponent(id)}`, jsonBody('PUT', input));
+export const deleteLibraryTheme = (id: string) => requestJson(`/api/identities/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+export const createLibraryTheme = (input: SaveIdentityRequest) => requestJson<IdentityRecordDto>('/api/identities', jsonBody('POST', input));

@@ -7,7 +7,7 @@ export function registerServiceWorker(onForegroundResync?: () => void): () => vo
 
   const register = () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register('/sw.js', { updateViaCache: 'none' })
       .then((registration) => {
         // Defer SW update reloads if an active game session is running
         registration.onupdatefound = () => {

@@ -140,7 +140,7 @@ export async function createQuizForCreator(
   const now = new Date().toISOString();
   const quizId = crypto.randomUUID();
 
-  if (initialIdentity && themeId) throw new Error('اختر ثيماً محفوظاً أو أنشئ ثيماً جديداً.');
+  if (initialIdentity && themeId) throw new Error('اختر هوية محفوظة أو أنشئ هوية جديدة.');
   if (initialIdentity || themeId) {
     const copy = themeId ? await prepareThemeCopy(db, themeId, creatorId) : null;
     const input = copy?.input ?? { ...initialIdentity!, avatarMode: 'auto' as const, motion: 'float' as const };
@@ -150,8 +150,8 @@ export async function createQuizForCreator(
     // D1 rolls back both inserts if either fails; no half-created quiz or identity.
     await db.batch([
       ...(copy?.statements ?? []),
-      db.prepare('INSERT INTO competition_identities(id,creator_id,name,input_json,identity_json,updated_at,visibility,design_locked) VALUES(?,?,?,?,?,?,?,?)')
-        .bind(identityId, creatorId, input.name, JSON.stringify(input), JSON.stringify(identity), now, input.visibility, copy?.designLocked ? 1 : 0),
+      db.prepare('INSERT INTO competition_identities(id,creator_id,name,input_json,identity_json,updated_at,visibility,design_locked,library_hidden,source_theme_id) VALUES(?,?,?,?,?,?,?,?,?,?)')
+        .bind(identityId, creatorId, input.name, JSON.stringify(input), JSON.stringify(identity), now, input.visibility, copy?.designLocked ? 1 : 0, copy ? 1 : 0, copy && !copy.designLocked ? themeId! : null),
       db.prepare('INSERT INTO quizzes (id,creator_id,title,cover_image_url,revision,created_at,updated_at,identity_id) VALUES(?,?,?,?,1,?,?,?)')
         .bind(quizId, creatorId, title, coverImageUrl || null, now, now, identityId)
     ]);
@@ -328,7 +328,7 @@ export async function addQuestionToQuiz(
   const quiz = await getQuizForCreator(db, quizId, creatorId);
   if (!quiz) throw new Error('Quiz not found or unauthorized');
 
-  const position = quiz.questions.length + 1;
+  const position = quiz.questions.reduce((last, question) => Math.max(last, question.position), 0) + 1;
   const questionId = await addQuestionToQuizInternal(db, quizId, position, q);
 
   const now = new Date().toISOString();
@@ -393,28 +393,15 @@ export async function reorderQuizQuestions(
   creatorId: string,
   orderedQuestionIds: string[]
 ): Promise<void> {
-  const quiz = await getQuizForCreator(db, quizId, creatorId);
+  const quiz = await db.prepare('SELECT id FROM quizzes WHERE id=? AND creator_id=? AND archived_at IS NULL').bind(quizId, creatorId).first();
   if (!quiz) throw new Error('Quiz not found or unauthorized');
-
-  const existingIds = quiz.questions.map((q) => q.id);
-  if (existingIds.length !== orderedQuestionIds.length) {
-    throw new Error('Reorder list must contain all existing question IDs');
-  }
-
-  const existingSet = new Set(existingIds);
-  for (const id of orderedQuestionIds) {
-    if (!existingSet.has(id)) {
-      throw new Error(`Invalid or missing question ID: ${id}`);
-    }
-  }
-
-  let pos = 1;
-  for (const id of orderedQuestionIds) {
-    await db.prepare('UPDATE questions SET position = ? WHERE id = ? AND quiz_id = ?').bind(pos++, id, quizId).run();
-  }
-
-  const now = new Date().toISOString();
-  await db.prepare('UPDATE quizzes SET updated_at = ? WHERE id = ?').bind(now, quizId).run();
+  const { results } = await db.prepare('SELECT id FROM questions WHERE quiz_id=?').bind(quizId).all<{ id: string }>();
+  const existing = new Set((results ?? []).map(question => question.id));
+  if (existing.size !== orderedQuestionIds.length || new Set(orderedQuestionIds).size !== orderedQuestionIds.length || orderedQuestionIds.some(id => typeof id !== 'string' || !existing.has(id))) throw new Error('أرسل ترتيباً يحتوي كل الأسئلة مرة واحدة. حدّث الصفحة وحاول مجدداً.');
+  await db.batch([
+    ...orderedQuestionIds.map((id, index) => db.prepare('UPDATE questions SET position=? WHERE id=? AND quiz_id=?').bind(index + 1, id, quizId)),
+    db.prepare('UPDATE quizzes SET updated_at=? WHERE id=? AND creator_id=? AND archived_at IS NULL').bind(new Date().toISOString(), quizId, creatorId)
+  ]);
 }
 
 export async function publishQuizVersion(

@@ -57,7 +57,7 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
       <span style={extra ? { background: palette.color, color: palette.onAccent } : undefined}>{extra ? '✓' : '+'}</span>
     </button>
     <span className="theme-color-control__name">{palette.label}</span>
-    {open && createPortal(<div ref={panel} id={panelId} style={position} className="theme-color-panel" role="group" aria-label="لوحة ألوان الثيم">
+    {open && createPortal(<div ref={panel} id={panelId} style={position} className="theme-color-panel" role="group" aria-label="لوحة ألوان الهوية">
       <div className="flex items-center justify-between"><p className="text-xs font-black text-slate-700">ألوان إضافية</p><button type="button" onClick={close} className="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-slate-50" aria-label="إغلاق لوحة الألوان">×</button></div>
       <div className="mt-2 grid grid-cols-6 justify-items-center gap-2">{presets.map(swatch)}</div>
       <div className="mt-3 border-t border-slate-100 pt-3">

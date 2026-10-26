@@ -4,3 +4,5 @@ export * from './schemas/quiz';
 export * from './schemas/room';
 export * from './schemas/media';
 export * from './schemas/identity';
+
+export * from './schemas/creator-stats';

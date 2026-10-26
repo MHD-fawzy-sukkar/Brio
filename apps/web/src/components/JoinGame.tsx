@@ -31,13 +31,13 @@ export function JoinGame() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/rooms/by-code/${encodeURIComponent(pin)}`, { signal: controller.signal });
+      const response = await fetch(`/api/rooms/by-code/${encodeURIComponent(pin)}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]) });
       const room = await response.json().catch(() => null);
       if (response.status === 404) throw new Error('اللعبة غير موجودة. تحقق من الرمز وحاول مرة أخرى.');
       if (!response.ok || !room?.roomId) throw new Error(room?.detail || 'تعذر التحقق من رمز اللعبة.');
       window.location.assign(`/join/?${new URLSearchParams({ roomId: room.roomId, code: pin })}`);
     } catch (cause) {
-      if ((cause as Error)?.name !== 'AbortError') setError(cause instanceof Error ? cause.message : 'تعذر العثور على اللعبة.');
+      if ((cause as Error)?.name !== 'AbortError') setError((cause as Error)?.name === 'TimeoutError' ? 'استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.' : cause instanceof Error ? cause.message : 'تعذر العثور على اللعبة.');
     } finally {
       if (requestRef.current === controller) {
         requestRef.current = null;

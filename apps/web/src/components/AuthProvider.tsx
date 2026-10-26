@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { setCacheOwner } from '../services/resource-cache';
 import { usePathname } from 'next/navigation';
 
 export interface AuthUser {
@@ -36,6 +37,7 @@ function readCachedAuth(): { user: AuthUser | null; resolved: boolean } {
 }
 
 function writeCachedAuth(user: AuthUser | null) {
+  setCacheOwner(user?.id ?? null);
   memoryAuthCache = { user, resolved: true };
   if (typeof window === 'undefined') return;
   try {
@@ -50,6 +52,11 @@ function writeCachedAuth(user: AuthUser | null) {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    // Creator pages also refresh an existing worker installed during gameplay.
+    if ('serviceWorker' in navigator) void navigator.serviceWorker.getRegistration()
+      .then(registration => registration?.update()).catch(() => {});
+  }, []);
   const pathname = usePathname();
   const normalizedPath = pathname?.replace(/\/$/, '') || '';
   const isLoginRoute = normalizedPath === '/login';
@@ -68,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch('/api/auth/me', {
         credentials: 'same-origin',
-        headers: { Accept: 'application/json' }
+        headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(15000)
       });
 
       // A missing session is a normal anonymous state, not an exception.
@@ -101,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const cached = readCachedAuth();
     if (cached.resolved) {
+      setCacheOwner(cached.user?.id ?? null);
       setUser(cached.user);
       setLoading(false);
     }
@@ -129,6 +137,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear local state even when the network is unavailable.
     }
   }, []);
+
+  useEffect(() => {
+    const syncStoredSession = () => {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) ?? 'null');
+        const nextUser = (stored?.user ?? null) as AuthUser | null;
+        setCacheOwner(nextUser?.id ?? null);
+        if (nextUser?.id !== user?.id) { memoryAuthCache = { user: nextUser, resolved: true }; setUser(nextUser); }
+      } catch { setCacheOwner(null); }
+    };
+    const restored = (event: PageTransitionEvent) => { if (event.persisted) { syncStoredSession(); void refresh(); } };
+    const storageChanged = (event: StorageEvent) => { if (event.key === AUTH_STORAGE_KEY) { syncStoredSession(); void refresh(); } };
+    window.addEventListener('pageshow', restored);
+    window.addEventListener('storage', storageChanged);
+    return () => { window.removeEventListener('pageshow', restored); window.removeEventListener('storage', storageChanged); };
+  }, [refresh, user?.id]);
 
   const effectiveLoading = isLoginRoute ? false : loading;
   const value = useMemo(

@@ -148,18 +148,22 @@ export function useMascotFlight({ scope = 'lobby', celebration = false, dragWith
       rafId = window.requestAnimationFrame(tick);
     };
 
+    const mobileViewport = window.matchMedia('(max-width: 639px)');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const updateMotion = () => {
       window.cancelAnimationFrame(rafId);
       lastTime = performance.now();
-      if (!reducedMotion.matches && !document.hidden) rafId = window.requestAnimationFrame(tick);
+      const hiddenCreator = (scope === 'page' || scope === 'studio') && mobileViewport.matches;
+      if (!hiddenCreator && !reducedMotion.matches && !document.hidden) rafId = window.requestAnimationFrame(tick);
     };
     reducedMotion.addEventListener('change', updateMotion);
+    mobileViewport.addEventListener('change', updateMotion);
     document.addEventListener('visibilitychange', updateMotion);
     updateMotion();
     return () => {
       window.cancelAnimationFrame(rafId);
       reducedMotion.removeEventListener('change', updateMotion);
+      mobileViewport.removeEventListener('change', updateMotion);
       document.removeEventListener('visibilitychange', updateMotion);
       observer.disconnect();
       window.removeEventListener('resize', measure);

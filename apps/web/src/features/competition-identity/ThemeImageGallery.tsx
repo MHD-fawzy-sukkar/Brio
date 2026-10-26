@@ -61,24 +61,24 @@ export function ThemeImageGallery({ items, accent, uploading, onAssign, onRemove
   }, [menu?.id]);
 
   return <div style={{ '--theme-accent': palette.color, '--theme-soft': palette.soft, '--theme-ink': palette.text } as CSSProperties}>
-    <ul className="identity-image-gallery grid grid-cols-3 gap-3" aria-label="صور الثيم">
+    <ul className="identity-image-gallery grid grid-cols-3 gap-3" aria-label="صور الهوية">
       {items.map(({ key, image, pending }) => {
         const src = image?.src ?? pending?.preview;
         const role = image?.roles.includes('logo') ? 'logo' : image?.roles.includes('character') ? 'character' : undefined;
         return <li key={key} className="theme-avatar-tile min-w-0" data-image-role={role}>
           <div className="avatar-choice" title={image?.label ?? pending?.file.name}>
-            {src ? <Avatar src={src} className="w-full rounded-xl" /> : <span className="grid aspect-square place-items-center text-2xl text-slate-300">▧</span>}
-            {role && <span className="theme-avatar-tile__role">{role === 'logo' ? '◇ شعار' : '★ رئيسية'}</span>}
-            {image && <button type="button" className="theme-avatar-tile__more" aria-label={`خيارات ${image.label}`} aria-expanded={menu?.id === image.mediaId} aria-controls={menu?.id === image.mediaId ? menuId : undefined} onClick={event => {
+            {src ? <Avatar src={src} lazy className="w-full rounded-xl" /> : <span className="grid aspect-square place-items-center text-2xl text-slate-300">▧</span>}
+            {role && !pending && <span className="theme-avatar-tile__role">{role === 'logo' ? '◇ شعار' : '★ رئيسية'}</span>}
+            {image && <button type="button" disabled={uploading} className="theme-avatar-tile__more" aria-label={`خيارات ${image.label}`} aria-expanded={menu?.id === image.mediaId} aria-controls={menu?.id === image.mediaId ? menuId : undefined} onClick={event => {
               if (menu?.id === image.mediaId) { close(); return; }
               trigger.current = event.currentTarget;
               setMenu({ id: image.mediaId, ...menuPosition(event.currentTarget) });
             }}>⋯</button>}
-            {!image && <span role="status" className="theme-avatar-tile__progress">{pending?.status === 'failed' ? 'تعذّر الرفع' : pending?.status === 'queued' ? 'بانتظار الدور…' : 'جاري الرفع…'}</span>}
+            {pending && <span role="status" className="theme-avatar-tile__progress">{pending?.status === 'failed' ? 'تعذّر الرفع' : pending?.status === 'staged' ? 'على جهازك فقط' : 'جاري الرفع…'}</span>}
           </div>
           {pending?.status === 'failed' && <div className="mt-2 space-y-1">
             <p role="alert" className="text-xs leading-5 text-rose-700">{pending.error}</p>
-            <div className="flex flex-wrap gap-2 text-xs"><button type="button" disabled={uploading} className="font-bold text-brand-700" onClick={() => onRetry(pending.id)}>إعادة المحاولة</button><button type="button" disabled={uploading} onClick={() => onRemovePending(pending.id)} className="text-rose-700">إزالة</button></div>
+            <div className="flex flex-wrap gap-2 text-xs"><button type="button" disabled={uploading} className="font-bold text-brand-700" onClick={() => onRetry(pending.id)}>المحاولة مع الحفظ</button><button type="button" disabled={uploading} onClick={() => onRemovePending(pending.id)} className="text-rose-700">إزالة</button></div>
           </div>}
         </li>;
       })}

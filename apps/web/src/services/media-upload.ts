@@ -74,6 +74,7 @@ async function uploadImage(input: { quizId: string; questionId?: string; target:
   const signatureResponse = await fetch('/api/media/signature', {
     method: 'POST',
     credentials: 'same-origin',
+    signal: AbortSignal.timeout(30000),
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       quizId,
@@ -95,13 +96,14 @@ async function uploadImage(input: { quizId: string; questionId?: string; target:
   form.append('folder', signature.folder);
   form.append('public_id', signature.publicId);
 
-  const uploadResponse = await fetch(signature.uploadUrl, { method: 'POST', body: form });
+  const uploadResponse = await fetch(signature.uploadUrl, { method: 'POST', body: form, signal: AbortSignal.timeout(60000) });
   if (!uploadResponse.ok) return readProblem(uploadResponse, 'تعذر رفع الصورة إلى Cloudinary.');
   const uploaded = await uploadResponse.json();
 
   const completeResponse = await fetch('/api/media/complete', {
     method: 'POST',
     credentials: 'same-origin',
+    signal: AbortSignal.timeout(30000),
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       quizId,

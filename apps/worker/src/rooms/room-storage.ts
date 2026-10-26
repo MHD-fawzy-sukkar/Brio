@@ -43,6 +43,9 @@ export function initRoomDbSchema(sql: SqlStorageLike): void {
     );
   `);
 
+  sql.exec('CREATE TABLE IF NOT EXISTS participation_history(player_id TEXT PRIMARY KEY, joined_at INTEGER NOT NULL)');
+  sql.exec('INSERT OR IGNORE INTO participation_history(player_id,joined_at) SELECT player_id,joined_at FROM players');
+
   sql.exec(`
     CREATE TABLE IF NOT EXISTS rounds (
       round_id TEXT PRIMARY KEY,
@@ -112,6 +115,7 @@ export function savePlayerToDb(sql: SqlStorageLike, player: PlayerState, session
     player.score,
     player.connectionGeneration
   );
+  sql.exec('INSERT OR IGNORE INTO participation_history(player_id,joined_at) VALUES(?,?)', player.id, player.joinedAt);
 }
 
 export function savePlayerScoreToDb(sql: SqlStorageLike, player: PlayerState): void {
@@ -251,4 +255,11 @@ export function saveRoomMetaToDb(sql: SqlStorageLike, state: GameState): void {
   sql.exec('INSERT OR REPLACE INTO room_meta (key, value) VALUES (?, ?)', 'stateVersion', state.stateVersion.toString());
   sql.exec('INSERT OR REPLACE INTO room_meta (key, value) VALUES (?, ?)', 'currentQuestionIndex', state.currentQuestionIndex.toString());
   sql.exec('INSERT OR REPLACE INTO room_meta (key, value) VALUES (?, ?)', 'pausedQueued', state.pausedQueued ? 'true' : 'false');
+}
+
+
+/** Retains a join after leaving; reconnecting the same session cannot increase the count. */
+export function countRoomParticipations(sql: SqlStorageLike): number {
+  const row = Array.from(sql.exec('SELECT COUNT(*) AS total FROM participation_history'))[0] as { total: number };
+  return Number(row?.total ?? 0);
 }

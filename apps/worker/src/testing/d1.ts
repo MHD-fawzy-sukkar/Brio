@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 export function createTestDatabase(migrationCount = Infinity) {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec('PRAGMA foreign_keys=ON');
-  for (const file of ['0001_initial_schema.sql', '0002_quiz_covers_and_media_columns.sql', '0003_room_lifecycle_indexes.sql', '0004_competition_identities.sql', '0005_theme_library.sql', '0006_theme_design_lock.sql'].slice(0, migrationCount)) {
+  for (const file of ['0001_initial_schema.sql', '0002_quiz_covers_and_media_columns.sql', '0003_room_lifecycle_indexes.sql', '0004_competition_identities.sql', '0005_theme_library.sql', '0006_theme_design_lock.sql', '0007_theme_library_snapshots.sql', '0008_link_owned_themes.sql', '0009_creator_participations.sql', '0010_participation_refresh.sql'].slice(0, migrationCount)) {
     sqlite.exec(readFileSync(new URL(`../../migrations/${file}`, import.meta.url), 'utf8'));
   }
   class Statement {

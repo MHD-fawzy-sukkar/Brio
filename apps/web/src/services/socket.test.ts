@@ -76,3 +76,26 @@ test('room socket repairs missed transitions, adjusts clock drift, and reconnect
   t.mock.timers.tick(30000);
   assert.equal(FakeSocket.instances.length, 2);
 });
+
+
+test('online return reconnects immediately during backoff, and a stuck handshake has a deadline', async t => {
+  t.mock.timers.enable({apis:['setInterval','setTimeout','Date'],now:100000});
+  class FakeSocket {
+    static OPEN=1; static CONNECTING=0; static instances:FakeSocket[]=[];
+    readyState=0; onopen?:()=>void; onclose?:()=>void; onerror?:()=>void; onmessage?:()=>void;
+    constructor(_url:string){FakeSocket.instances.push(this);} send(_message:string){} close(){this.readyState=3;this.onclose?.();}
+    open(){this.readyState=1;this.onopen?.();}
+  }
+  const win=new EventTarget(),doc=new EventTarget();
+  const saved=['window','document','WebSocket'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)] as const);
+  Object.defineProperty(globalThis,'window',{configurable:true,value:Object.assign(win,{location:{protocol:'https:',host:'brio.test'}})});
+  Object.defineProperty(globalThis,'document',{configurable:true,value:doc});Object.defineProperty(globalThis,'WebSocket',{configurable:true,value:FakeSocket});
+  const socket=new BrioRoomSocket('r','host');
+  try {
+    socket.connect();FakeSocket.instances[0].open();FakeSocket.instances[0].close();
+    win.dispatchEvent(new Event('online'));assert.equal(FakeSocket.instances.length,2);
+    t.mock.timers.tick(10000);assert.equal(FakeSocket.instances[1].readyState,3);
+    win.dispatchEvent(new Event('online'));assert.equal(FakeSocket.instances.length,3);
+    FakeSocket.instances[2].open();socket.close();win.dispatchEvent(new Event('online'));t.mock.timers.tick(30000);assert.equal(FakeSocket.instances.length,3);
+  } finally {socket.close();for(const [key,descriptor] of saved){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}}
+});

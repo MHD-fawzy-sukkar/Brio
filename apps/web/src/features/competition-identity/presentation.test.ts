@@ -12,6 +12,26 @@ import { IdentityEditor } from './IdentityEditor';
 import { QuizIdentitySettings } from './QuizIdentitySettings';
 import { ThemeModePicker } from './ThemeModePicker';
 import { PublishThemeDialog } from './PublishThemeDialog';
+import { ThemeLibraryPicker } from './ThemeLibraryPicker';
+import { invalidateResources, setCacheOwner, setResource } from '../../services/resource-cache';
+
+test('identity picker shows card placeholders until loaded and only then reports an empty library', () => {
+  setCacheOwner('picker-loading-test');
+  try {
+    const loading = renderToStaticMarkup(createElement(ThemeLibraryPicker, {selected:null,onSelect:()=>{}}));
+    assert.match(loading, /aria-busy="true"/);
+    assert.match(loading, /جاري تحميل الهويات البصرية/);
+    assert.doesNotMatch(loading, /لا توجد هويات/);
+    setResource('/api/themes', []);
+    const empty = renderToStaticMarkup(createElement(ThemeLibraryPicker, {selected:null,onSelect:()=>{}}));
+    assert.match(empty, /لا توجد هويات بصرية محفوظة بعد/);
+    assert.doesNotMatch(empty, /جاري تحميل الهويات البصرية/);
+    invalidateResources(['/api/themes']);
+    const stale = renderToStaticMarkup(createElement(ThemeLibraryPicker, {selected:null,onSelect:()=>{}}));
+    assert.match(stale, /جاري تحميل الهويات البصرية/);
+    assert.doesNotMatch(stale, /لا توجد هويات/);
+  } finally { setCacheOwner(null); }
+});
 
 const identity: CompetitionIdentity = {
   name: 'Team',
@@ -21,12 +41,12 @@ const identity: CompetitionIdentity = {
 
 test('theme selection uses accessible cards and quiz edits offer no global publication control', () => {
   const cards = renderToStaticMarkup(createElement(ThemeModePicker, { value: 'saved', onChange: () => {} }));
-  assert.match(cards, /role="group" aria-label="اختيار نوع الثيم"/);
+  assert.match(cards, /role="group" aria-label="اختيار نوع الهوية"/);
   assert.equal((cards.match(/type="button"/g) ?? []).length, 3);
   assert.match(cards, /aria-pressed="true"/);
   assert.doesNotMatch(cards, /type="radio"/);
   const editor = renderToStaticMarkup(createElement(IdentityEditor, { quizId: 'quiz', defaultName: 'Quiz' }));
-  assert.doesNotMatch(editor, /إتاحة الثيم|value="public"/);
+  assert.doesNotMatch(editor, /إتاحة الهوية|value="public"/);
   assert.match(editor, /التعديل يخص هذه المسابقة فقط/);
 });
 
@@ -34,8 +54,8 @@ test('publishing asks for explicit consent to reuse the identity and provides a 
   const html = renderToStaticMarkup(createElement(PublishThemeDialog, { open: true, onCancel: () => {}, onConfirm: () => {} }));
   assert.match(html, /role="dialog" aria-modal="true"/);
   assert.match(html, /يستطيع أي شخص استخدام هويتك/);
-  assert.match(html, /إبقاء الثيم خاصاً/);
-  assert.match(html, /نعم، أوافق على إتاحته للجميع/);
+  assert.match(html, /إبقاء الهوية خاصة/);
+  assert.match(html, /نعم، أوافق على إتاحتها للجميع/);
 });
 
 test('quiz identity starts quietly inside the builder and the editor asks for images before metadata', () => {

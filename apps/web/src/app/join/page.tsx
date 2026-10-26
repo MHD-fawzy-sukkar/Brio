@@ -32,11 +32,11 @@ function JoinSetup() {
     if(directRoomId&&/^\d{6}$/.test(directCode)){setResolving(false);return;}
     if(!/^\d{6}$/.test(pin)){setError('رابط الانضمام غير مكتمل. اطلب من المضيف رمزاً جديداً.');setResolving(false);return;}
     const controller=new AbortController(); requestRef.current=controller; setResolving(true); setError(null);
-    fetch(`/api/rooms/by-code/${encodeURIComponent(pin)}`,{signal:controller.signal}).then(async(response)=>{
+    fetch(`/api/rooms/by-code/${encodeURIComponent(pin)}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])}).then(async(response)=>{
       const room=await response.json().catch(()=>null);
       if(!response.ok||!room?.roomId)throw new Error('لم نجد لعبة نشطة بهذا الرمز. تحقق منه وحاول مجدداً.');
       setRoomId(room.roomId);setCode(pin);
-    }).catch((cause)=>{if((cause as Error)?.name!=='AbortError')setError(cause instanceof Error?cause.message:'تعذر تجهيز رابط الانضمام.');}).finally(()=>setResolving(false));
+    }).catch((cause)=>{if((cause as Error)?.name!=='AbortError')setError((cause as Error)?.name==='TimeoutError'?'استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.':cause instanceof Error?cause.message:'تعذر تجهيز رابط الانضمام.');}).finally(()=>setResolving(false));
     return () => { controller.abort(); if(requestRef.current===controller)requestRef.current=null; };
   }, [directRoomId,directCode,pin]);
 
@@ -50,7 +50,7 @@ function JoinSetup() {
     setJoining(true); setError(null);
     try {
       const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/join`, {
-        method: 'POST', signal: controller.signal, headers: { 'Content-Type': 'application/json' },
+        method: 'POST', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]), headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nickname: nickname.trim(), avatarId: avatar })
       });
       const player = await response.json().catch(() => null);
@@ -60,13 +60,13 @@ function JoinSetup() {
       const query = new URLSearchParams({ roomId, code, playerId: player.playerId, nickname: player.nickname, avatar: player.avatarId });
       window.location.assign(`/play/?${query}`);
     } catch (cause) {
-      if ((cause as Error)?.name !== 'AbortError') setError(cause instanceof Error ? cause.message : 'تعذر الانضمام.');
+      if ((cause as Error)?.name !== 'AbortError') setError((cause as Error)?.name === 'TimeoutError' ? 'استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.' : cause instanceof Error ? cause.message : 'تعذر الانضمام.');
     } finally {
       if (requestRef.current === controller) { requestRef.current = null; setJoining(false); }
     }
   };
 
-  if(resolving || roomIdentity.loading)return <PageSkeleton/>;
+  if(resolving || roomIdentity.loading)return <PageSkeleton kind="join"/>;
   if(!roomId||!code||roomIdentity.error)return <div className="card mx-auto max-w-lg p-10 text-center"><div className="text-5xl">🔎</div><h1 className="mt-4 text-xl font-black">تعذر فتح رابط اللعبة</h1><p className="mt-2 text-sm font-bold leading-7 text-rose-600">{roomIdentity.error || error}</p><a href="/join-game/" className="secondary-btn mt-6 inline-block">إدخال الرمز يدوياً</a></div>;
 
   return (

@@ -64,7 +64,7 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="card relative w-full max-w-md overflow-hidden border border-rose-100 bg-white p-7 text-center shadow-2xl sm:p-8"
+        className="card relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto border border-rose-100 bg-white p-7 text-center shadow-2xl sm:p-8"
       >
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 to-amber-50 text-3xl shadow-sm">
           {icon}

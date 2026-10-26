@@ -1,4 +1,4 @@
-const CACHE_NAME = 'brio-static-v5';
+const CACHE_NAME = 'brio-static-v6';
 const MEDIA_CACHE_NAME = 'brio-media-v1';
 
 const APP_SHELL_ASSETS = [
@@ -66,6 +66,15 @@ self.addEventListener('fetch', (event) => {
         { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
       ))
     );
+    return;
+  }
+
+  // Next client navigation/prefetch requests also contain route HTML or RSC.
+  // Cache-first here can revive an old builder with no drag handles after deploy.
+  const isRoute = event.request.headers.get('RSC') === '1' || url.searchParams.has('_rsc') ||
+    !/\.[a-z0-9]+$/i.test(url.pathname) || /\.(html|txt)$/i.test(url.pathname);
+  if (isRoute) {
+    event.respondWith(fetch(event.request));
     return;
   }
 

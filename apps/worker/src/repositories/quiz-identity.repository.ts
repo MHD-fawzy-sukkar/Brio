@@ -16,7 +16,7 @@ export async function getQuizIdentity(db: D1Database, quizId: string, creatorId:
 
 /** Save a fresh revision and attach it atomically. Other quizzes and running rooms keep their copy. */
 export async function saveQuizIdentity(db: D1Database, quizId: string, creatorId: string, input: SaveIdentityRequest): Promise<IdentityRecordDto> {
-  if ((await getQuizIdentity(db, quizId, creatorId))?.designLocked) throw new IdentityError('الثيم العام للاستخدام فقط. يمكنك اختيار ثيم آخر دون تعديل تصميمه.', 403);
+  if ((await getQuizIdentity(db, quizId, creatorId))?.designLocked) throw new IdentityError('الهوية العامة للاستخدام فقط. يمكنك اختيار هوية أخرى دون تعديل تصميمها.', 403);
   // Competition edits always produce a private revision, never a library publication.
   input = { ...input, visibility: 'private', publishConfirmed: false };
   const identity = await resolveOwnedIdentity(db, creatorId, input);

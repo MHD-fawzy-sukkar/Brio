@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
-import { PageSkeleton } from './Loading';
+import { RouteSkeleton } from './RouteSkeleton';
 import { isLanMode } from '../services/runtime-mode';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -17,7 +17,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return <PageSkeleton />;
+    return <RouteSkeleton />;
   }
   return <>{children}</>;
 }

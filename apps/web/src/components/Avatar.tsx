@@ -13,9 +13,10 @@ type AvatarProps = {
   className?: string;
   playerIndex?: number;
   presentation?: 'tile' | 'hero';
+  lazy?: boolean;
 };
 
-export function Avatar({ src, label = '', className = 'h-12 w-12', playerIndex, presentation = 'tile' }: AvatarProps) {
+export function Avatar({ src, label = '', className = 'h-12 w-12', playerIndex, presentation = 'tile', lazy = false }: AvatarProps) {
   const identity = useCompetitionIdentity();
   const source = resolveAvatarSource(identity, src);
   const index = resolveAvatarIndex(source);
@@ -24,7 +25,7 @@ export function Avatar({ src, label = '', className = 'h-12 w-12', playerIndex, 
     role={label ? 'img' : undefined}
     aria-label={label || undefined}
     aria-hidden={label ? undefined : true}
-  ><img src={source} alt="" decoding="async" className="h-full w-full object-contain" /></span>;
+  ><img src={source} alt="" loading={lazy ? 'lazy' : undefined} decoding="async" className="h-full w-full object-contain" /></span>;
   const variant = avatarVariant(index ?? playerIndex ?? 0);
   return <span className={`avatar${presentation === 'hero' ? ' avatar--hero' : ''} ${className}`} style={{ '--avatar-glow': variant.glow } as CSSProperties} role={label ? 'img' : undefined} aria-label={label || undefined} aria-hidden={label ? undefined : true}>
     <span className="avatar__art">
