@@ -20,7 +20,15 @@ const LEFT_HAND = { cx: 365, cy: 725, path: 'M 250 610 L 420 610 L 468 725 L 468
 const RIGHT_HAND = { cx: 1160, cy: 725, path: 'M 1110 610 L 1290 610 L 1290 835 L 1060 835 L 1060 725 Z' };
 
 /** Free-flying spherical mascot with integrated 3D visor & inner LED parallax. */
-export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPage = false }: { scope?: 'lobby' | 'page' | 'studio'; celebration?: boolean; dragWithinPage?: boolean }) {
+export function RoamingBolt({
+  scope = 'lobby',
+  celebration = false,
+  dragWithinPage = false,
+}: {
+  scope?: 'lobby' | 'page' | 'studio';
+  celebration?: boolean;
+  dragWithinPage?: boolean;
+}) {
   const rawId = useId();
   const uid = rawId.replace(/[^a-zA-Z0-9_-]/g, '');
   const visorRef = useRef<SVGGElement>(null);
@@ -42,7 +50,7 @@ export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPa
       const vdy = 14 * sinPitch;
       visorRef.current.setAttribute(
         'transform',
-        `translate(${(VISOR_CX + vdx).toFixed(1)} ${(VISOR_CY + vdy).toFixed(1)}) scale(${cosYaw.toFixed(3)} ${cosPitch.toFixed(3)}) translate(${-VISOR_CX} ${-VISOR_CY})`
+        `translate(${(VISOR_CX + vdx).toFixed(1)} ${(VISOR_CY + vdy).toFixed(1)}) scale(${cosYaw.toFixed(3)} ${cosPitch.toFixed(3)}) translate(${-VISOR_CX} ${-VISOR_CY})`,
       );
     }
     if (faceRef.current && leftEyeRef.current && rightEyeRef.current) {
@@ -52,10 +60,16 @@ export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPa
       const rEyeScaleX = Math.max(0.64, Math.cos(s.yaw + 0.24)) / cosYaw;
       faceRef.current.setAttribute(
         'transform',
-        `translate(${(FACE_CX + fdx).toFixed(1)} ${(FACE_CY + fdy).toFixed(1)}) translate(${-FACE_CX} ${-FACE_CY})`
+        `translate(${(FACE_CX + fdx).toFixed(1)} ${(FACE_CY + fdy).toFixed(1)}) translate(${-FACE_CX} ${-FACE_CY})`,
       );
-      leftEyeRef.current.setAttribute('transform', `translate(654 485) scale(${lEyeScaleX.toFixed(3)} 1) translate(-654 -485)`);
-      rightEyeRef.current.setAttribute('transform', `translate(870 485) scale(${rEyeScaleX.toFixed(3)} 1) translate(-870 -485)`);
+      leftEyeRef.current.setAttribute(
+        'transform',
+        `translate(654 485) scale(${lEyeScaleX.toFixed(3)} 1) translate(-654 -485)`,
+      );
+      rightEyeRef.current.setAttribute(
+        'transform',
+        `translate(870 485) scale(${rEyeScaleX.toFixed(3)} 1) translate(-870 -485)`,
+      );
     }
     if (leftHandRef.current && rightHandRef.current) {
       const lScale = 1 + 0.12 * sinYaw;
@@ -64,18 +78,17 @@ export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPa
       const rDx = 54 * sinYaw - 22 * (1 - cosYaw);
       leftHandRef.current.setAttribute(
         'transform',
-        `translate(${(LEFT_HAND.cx + lDx).toFixed(1)} ${(LEFT_HAND.cy + 14 * sinPitch).toFixed(1)}) scale(${lScale.toFixed(3)}) translate(${-LEFT_HAND.cx} ${-LEFT_HAND.cy})`
+        `translate(${(LEFT_HAND.cx + lDx).toFixed(1)} ${(LEFT_HAND.cy + 14 * sinPitch).toFixed(1)}) scale(${lScale.toFixed(3)}) translate(${-LEFT_HAND.cx} ${-LEFT_HAND.cy})`,
       );
       rightHandRef.current.setAttribute(
         'transform',
-        `translate(${(RIGHT_HAND.cx + rDx).toFixed(1)} ${(RIGHT_HAND.cy + 14 * sinPitch).toFixed(1)}) scale(${rScale.toFixed(3)}) translate(${-RIGHT_HAND.cx} ${-RIGHT_HAND.cy})`
+        `translate(${(RIGHT_HAND.cx + rDx).toFixed(1)} ${(RIGHT_HAND.cy + 14 * sinPitch).toFixed(1)}) scale(${rScale.toFixed(3)}) translate(${-RIGHT_HAND.cx} ${-RIGHT_HAND.cy})`,
       );
     }
     if (specRef.current) {
       specRef.current.setAttribute('cx', (640 - 140 * sinYaw).toFixed(1));
       specRef.current.setAttribute('cy', (250 - 90 * sinPitch).toFixed(1));
     }
-
   }, []);
 
   return (
@@ -90,14 +103,28 @@ export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPa
             <stop offset="0.65" stopColor="white" />
             <stop offset="1" stopColor="black" />
           </radialGradient>
-          <linearGradient id={`${uid}-dome`} x1="495" y1="440" x2="1032" y2="520" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id={`${uid}-dome`}
+            x1="495"
+            y1="440"
+            x2="1032"
+            y2="520"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop offset="0" stopColor="#f8f4ec" />
             <stop offset="0.22" stopColor="#f5efe1" />
             <stop offset="0.68" stopColor="#dde6e8" />
             <stop offset="0.88" stopColor="#b4cbd9" />
             <stop offset="1" stopColor="#9fb9bd" />
           </linearGradient>
-          <linearGradient id={`${uid}-visor-patch`} x1="600" y1="435" x2="910" y2="560" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id={`${uid}-visor-patch`}
+            x1="600"
+            y1="435"
+            x2="910"
+            y2="560"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop offset="0" stopColor="#1c222c" />
             <stop offset="0.35" stopColor="#10151d" />
             <stop offset="0.7" stopColor="#0c1016" />
@@ -107,24 +134,64 @@ export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPa
             <stop offset="0" stopColor="#ffffff" stopOpacity="0.38" />
             <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
-          <mask id={`${uid}-nohands`} maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1024" style={{ maskType: 'luminance' }}>
+          <mask
+            id={`${uid}-nohands`}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="1536"
+            height="1024"
+            style={{ maskType: 'luminance' }}
+          >
             <rect width="1536" height="1024" fill="white" />
             <path d={LEFT_HAND.path} fill="black" />
             <path d={RIGHT_HAND.path} fill="black" />
           </mask>
-          <mask id={`${uid}-visor-noled`} maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1024" style={{ maskType: 'luminance' }}>
+          <mask
+            id={`${uid}-visor-noled`}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="1536"
+            height="1024"
+            style={{ maskType: 'luminance' }}
+          >
             <rect width="1536" height="1024" fill="white" />
             <ellipse cx="654" cy="485" rx="60" ry="54" fill={`url(#${uid}-cut)`} />
             <ellipse cx="870" cy="485" rx="60" ry="54" fill={`url(#${uid}-cut)`} />
             <ellipse cx="763" cy="538" rx="90" ry="48" fill={`url(#${uid}-cut)`} />
           </mask>
-          <mask id={`${uid}-leye`} maskUnits="userSpaceOnUse" x="585" y="425" width="140" height="120" style={{ maskType: 'luminance' }}>
+          <mask
+            id={`${uid}-leye`}
+            maskUnits="userSpaceOnUse"
+            x="585"
+            y="425"
+            width="140"
+            height="120"
+            style={{ maskType: 'luminance' }}
+          >
             <ellipse cx="654" cy="485" rx="56" ry="50" fill={`url(#${uid}-glow)`} />
           </mask>
-          <mask id={`${uid}-reye`} maskUnits="userSpaceOnUse" x="800" y="425" width="140" height="120" style={{ maskType: 'luminance' }}>
+          <mask
+            id={`${uid}-reye`}
+            maskUnits="userSpaceOnUse"
+            x="800"
+            y="425"
+            width="140"
+            height="120"
+            style={{ maskType: 'luminance' }}
+          >
             <ellipse cx="870" cy="485" rx="56" ry="50" fill={`url(#${uid}-glow)`} />
           </mask>
-          <mask id={`${uid}-mouth`} maskUnits="userSpaceOnUse" x="665" y="485" width="196" height="106" style={{ maskType: 'luminance' }}>
+          <mask
+            id={`${uid}-mouth`}
+            maskUnits="userSpaceOnUse"
+            x="665"
+            y="485"
+            width="196"
+            height="106"
+            style={{ maskType: 'luminance' }}
+          >
             <ellipse cx="763" cy="538" rx="86" ry="45" fill={`url(#${uid}-glow)`} />
           </mask>
           <clipPath id={`${uid}-visor`} clipPathUnits="userSpaceOnUse">
@@ -163,7 +230,15 @@ export function RoamingBolt({ scope = 'lobby', celebration = false, dragWithinPa
             </g>
           </g>
           {/* World-fixed light: highlight drifts as the sphere turns */}
-          <ellipse ref={specRef} cx="640" cy="250" rx="210" ry="140" fill={`url(#${uid}-spec)`} style={{ mixBlendMode: 'screen' }} />
+          <ellipse
+            ref={specRef}
+            cx="640"
+            cy="250"
+            rx="210"
+            ry="140"
+            fill={`url(#${uid}-spec)`}
+            style={{ mixBlendMode: 'screen' }}
+          />
         </g>
 
         <g ref={leftHandRef}>

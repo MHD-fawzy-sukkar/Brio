@@ -5,7 +5,7 @@ import type {
   PointsMultiplier,
   PlayerSnapshotDto,
   HostSnapshotDto,
-  PublicQuestion
+  PublicQuestion,
 } from '@brio/contracts';
 
 export interface PublishedOption {

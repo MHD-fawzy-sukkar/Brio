@@ -3,7 +3,7 @@ import type { PointsMultiplier } from '@brio/contracts';
 export const BASE_POINTS = {
   Standard: 1000,
   Double: 2000,
-  Zero: 0
+  Zero: 0,
 } as const;
 
 /**
@@ -15,7 +15,7 @@ export function calculatePoints(
   isCorrect: boolean,
   multiplier: PointsMultiplier,
   responseTimeMs?: number,
-  durationMs?: number
+  durationMs?: number,
 ): number {
   if (!isCorrect || multiplier === 'Zero') {
     return 0;
@@ -60,7 +60,7 @@ export function calculateCompetitionRanks(players: PlayerScoreEntry[]): RankedPl
     }
     result.push({
       ...sorted[i],
-      rank: currentRank
+      rank: currentRank,
     });
   }
 

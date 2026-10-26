@@ -1,0 +1,209 @@
+.theme-color-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.4rem;
+  border: 1px solid #dfe3eb;
+  background: white;
+}
+
+.theme-color-swatch {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+
+.theme-color-swatch[aria-pressed='true'] {
+  border-color: currentColor;
+}
+
+.theme-color-swatch > span {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.theme-color-control__name {
+  min-width: 0;
+  margin-inline-start: auto;
+  padding-inline: 0.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.theme-color-more > span {
+  border: 1px solid #cbd5e1;
+  background: conic-gradient(#be185d, #92400e, #047857, #0369a1, #6d28d9, #be185d);
+}
+
+.theme-color-panel {
+  position: fixed;
+  z-index: 80;
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 12px 35px #0f172a26;
+}
+
+.theme-custom-color {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: linear-gradient(135deg, #f8fafc, white);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.theme-custom-color:hover,
+.theme-custom-color:focus-within {
+  border-color: #bd4b5d;
+  box-shadow: 0 0 0 3px #fff1f3;
+}
+
+.theme-custom-color__preview {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid white;
+  border-radius: 0.8rem;
+  box-shadow:
+    0 0 0 1px #e2e8f0,
+    0 3px 8px #0f172a12;
+}
+
+.theme-custom-color__preview > span {
+  position: absolute;
+  bottom: -0.3rem;
+  inset-inline-end: -0.3rem;
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  background: white;
+  color: #475569;
+  font-size: 0.75rem;
+}
+
+.theme-color-spectrum {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+  padding: 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: #f8fafc;
+}
+
+.theme-color-spectrum__plane {
+  position: relative;
+  height: 8rem;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  background-image:
+    linear-gradient(to top, black, transparent), linear-gradient(to right, white, transparent);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.theme-color-spectrum__plane:focus-visible {
+  outline: 3px solid #bd4b5d;
+  outline-offset: 3px;
+}
+
+.theme-color-spectrum__point {
+  position: absolute;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #0f172a80;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.theme-color-spectrum__hue {
+  appearance: none;
+  width: 100%;
+  height: 0.65rem;
+  margin-block: 0.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  cursor: pointer;
+}
+
+.theme-color-spectrum__hue::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1px #64748b;
+}
+
+.theme-color-spectrum__hue::-moz-range-thumb {
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1px #64748b;
+}
+
+.theme-color-apply {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  height: 2.5rem;
+  padding-inline: 1rem;
+  border: 1px solid #84263a;
+  border-radius: 0.75rem;
+  background: #9f3043;
+  color: white;
+  box-shadow: 0 3px 8px #9f30432b;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transition:
+    background 0.15s,
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+.theme-color-apply:hover {
+  background: #84263a;
+  box-shadow: 0 4px 12px #9f304345;
+}
+
+.theme-color-apply:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}

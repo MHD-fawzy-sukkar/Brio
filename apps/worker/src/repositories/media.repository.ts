@@ -10,7 +10,7 @@ export interface CloudinaryEnv {
 export async function generateCloudinarySignature(
   env: CloudinaryEnv,
   creatorId: string,
-  request: UploadSignatureRequest
+  request: UploadSignatureRequest,
 ): Promise<{
   uploadUrl: string;
   apiKey: string;
@@ -26,9 +26,7 @@ export async function generateCloudinarySignature(
   const apiSecret = env.CLOUDINARY_API_SECRET;
 
   // Stable IDs overwrite previous versions instead of accumulating paid orphan assets.
-  const publicId = request.target === 'cover'
-    ? `cover_${request.quizId}`
-    : `question_${request.questionId!}`;
+  const publicId = request.target === 'cover' ? `cover_${request.quizId}` : `question_${request.questionId!}`;
   const folder = `brio/${creatorId}/${request.quizId}`;
 
   if (env.DEV_MEDIA_BYPASS === 'true') {
@@ -40,7 +38,7 @@ export async function generateCloudinarySignature(
       signature: `mock_signature_${timestamp}`,
       folder,
       publicId,
-      mock: true
+      mock: true,
     };
   }
 
@@ -65,7 +63,7 @@ export async function generateCloudinarySignature(
     signature,
     folder,
     publicId,
-    mock: false
+    mock: false,
   };
 }
 
@@ -73,7 +71,7 @@ export async function saveMediaRecord(
   db: D1Database,
   creatorId: string,
   env: CloudinaryEnv,
-  req: UploadCompleteRequest
+  req: UploadCompleteRequest,
 ): Promise<MediaVariantsDto> {
   const mediaId = crypto.randomUUID();
   const cloudName = env.CLOUDINARY_CLOUD_NAME;
@@ -98,13 +96,15 @@ export async function saveMediaRecord(
   const now = new Date().toISOString();
 
   await db
-    .prepare(`
+    .prepare(
+      `
       INSERT INTO media (
         id, creator_id, provider_public_id, rendition_json, version_hash, status,
         quiz_id, question_id, host_url, mobile_url, is_essential, byte_size, width, height, created_at
       )
       VALUES (?, ?, ?, ?, ?, 'ready', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
+    `,
+    )
     .bind(
       mediaId,
       creatorId,
@@ -119,22 +119,28 @@ export async function saveMediaRecord(
       req.byteSize,
       req.width,
       req.height,
-      now
+      now,
     )
     .run();
 
   if (req.target === 'cover') {
-    const updated = await db.prepare('UPDATE quizzes SET cover_image_url = ?, updated_at = ? WHERE id = ? AND creator_id = ?')
-      .bind(hostUrl, now, req.quizId, creatorId).run();
+    const updated = await db
+      .prepare('UPDATE quizzes SET cover_image_url = ?, updated_at = ? WHERE id = ? AND creator_id = ?')
+      .bind(hostUrl, now, req.quizId, creatorId)
+      .run();
     if (updated.meta.changes === 0) {
       await db.prepare('DELETE FROM media WHERE id = ?').bind(mediaId).run();
       throw new Error('Quiz not found or unauthorized');
     }
-    await db.prepare('DELETE FROM media WHERE quiz_id = ? AND question_id IS NULL AND id <> ?')
-      .bind(req.quizId, mediaId).run();
+    await db
+      .prepare('DELETE FROM media WHERE quiz_id = ? AND question_id IS NULL AND id <> ?')
+      .bind(req.quizId, mediaId)
+      .run();
   } else {
-    const previous = await db.prepare('SELECT media_id FROM questions WHERE id = ? AND quiz_id = ?')
-      .bind(req.questionId, req.quizId).first<{ media_id:string|null }>();
+    const previous = await db
+      .prepare('SELECT media_id FROM questions WHERE id = ? AND quiz_id = ?')
+      .bind(req.questionId, req.quizId)
+      .first<{ media_id: string | null }>();
     if (!previous) {
       await db.prepare('DELETE FROM media WHERE id = ?').bind(mediaId).run();
       throw new Error('Question not found in this quiz');
@@ -157,6 +163,6 @@ export async function saveMediaRecord(
     isEssential: req.isEssential,
     byteSize: req.byteSize,
     width: req.width,
-    height: req.height
+    height: req.height,
   };
 }

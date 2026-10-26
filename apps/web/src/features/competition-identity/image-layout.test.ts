@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { fitIdentityImage, visibleBounds } from './image-layout';
 
 test('portrait and landscape artwork fit the same square without distortion or clipping', () => {
-  for (const [width, height] of [[1200, 300], [200, 900], [500, 500]]) {
+  for (const [width, height] of [
+    [1200, 300],
+    [200, 900],
+    [500, 500],
+  ]) {
     const fitted = fitIdentityImage(width, height);
     assert.ok(Math.abs(fitted.width / fitted.height - width / height) < 0.00001);
     assert.ok(fitted.x > 0 && fitted.y > 0);

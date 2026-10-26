@@ -1,0 +1,7 @@
+export const COUNTDOWN_DURATION_MS = 3000;
+
+export const STATS_DURATION_MS = 3000;
+
+export const LEADERBOARD_DURATION_MS = 5000;
+
+export const OVERDUE_RECOVERY_THRESHOLD_MS = 5000;

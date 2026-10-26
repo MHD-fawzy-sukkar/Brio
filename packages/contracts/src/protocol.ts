@@ -12,7 +12,7 @@ export const ErrorResponseSchema = z.object({
   code: z.string(),
   traceId: z.string(),
   detail: z.string(),
-  errors: z.record(z.array(z.string())).optional()
+  errors: z.record(z.array(z.string())).optional(),
 });
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
@@ -28,7 +28,7 @@ export const GamePhaseSchema = z.enum([
   'LEADERBOARD',
   'FINISHED',
   'PAUSED',
-  'RECOVERY_PAUSED'
+  'RECOVERY_PAUSED',
 ]);
 
 export type GamePhase = z.infer<typeof GamePhaseSchema>;
@@ -45,7 +45,7 @@ export const ClientMessageTypeSchema = z.enum([
   'host.pause',
   'host.resume',
   'host.end',
-  'host.recover'
+  'host.recover',
 ]);
 
 export type ClientMessageType = z.infer<typeof ClientMessageTypeSchema>;
@@ -55,7 +55,7 @@ export const ClientSocketMessageSchema = z.object({
   type: ClientMessageTypeSchema,
   requestId: z.string().uuid(),
   roomId: z.string(),
-  payload: z.unknown()
+  payload: z.unknown(),
 });
 
 export type ClientSocketMessage = z.infer<typeof ClientSocketMessageSchema>;
@@ -75,7 +75,7 @@ export const ServerMessageTypeSchema = z.enum([
   'room.finished',
   'connection.replaced',
   'clock.sample',
-  'error'
+  'error',
 ]);
 
 export type ServerMessageType = z.infer<typeof ServerMessageTypeSchema>;
@@ -87,7 +87,7 @@ export const ServerSocketMessageSchema = z.object({
   requestId: z.string().optional(),
   stateVersion: z.number().int().optional(),
   serverNow: z.number().int(),
-  payload: z.unknown()
+  payload: z.unknown(),
 });
 
 export type ServerSocketMessage = z.infer<typeof ServerSocketMessageSchema>;

@@ -8,7 +8,7 @@ import { normalizeShortAnswer, type NormalizationOptions } from './arabic';
 export function matchShortAnswer(
   submittedText: string,
   acceptedAlternatives: string[],
-  options?: NormalizationOptions
+  options?: NormalizationOptions,
 ): boolean {
   if (!submittedText || !acceptedAlternatives || acceptedAlternatives.length === 0) {
     return false;

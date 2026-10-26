@@ -27,7 +27,7 @@ export function ConfirmDialog({
   busyLabel = 'جاري الحذف…',
   cancelLabel = 'تراجع',
   onCancel,
-  onConfirm
+  onConfirm,
 }: ConfirmDialogProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -39,14 +39,28 @@ export function ConfirmDialog({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !busy) onCancel();
       if (event.key !== 'Tab') return;
-      const buttons = Array.from(dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
-      const first = buttons[0], last = buttons[buttons.length - 1];
-      if (!first) { event.preventDefault(); return; }
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      const buttons = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [],
+      );
+      const first = buttons[0],
+        last = buttons[buttons.length - 1];
+      if (!first) {
+        event.preventDefault();
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => { window.removeEventListener('keydown', onKeyDown); if (previousFocus?.isConnected) previousFocus.focus(); };
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
   }, [open, busy, onCancel]);
 
   if (!open) return null;

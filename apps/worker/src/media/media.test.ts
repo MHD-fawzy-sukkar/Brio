@@ -27,7 +27,7 @@ function createMockDoStorage() {
           stmt.run(...bindings);
           return [];
         }
-      }
+      },
     },
     async setAlarm(scheduledTime: number) {
       currentAlarm = scheduledTime;
@@ -37,7 +37,7 @@ function createMockDoStorage() {
     },
     async deleteAlarm() {
       currentAlarm = null;
-    }
+    },
   };
 }
 
@@ -66,9 +66,9 @@ const mockQuizWithImages: PublishedQuizSnapshot = {
         { id: 'opt_1', text: 'Option A', isCorrect: true },
         { id: 'opt_2', text: 'Option B', isCorrect: false },
         { id: 'opt_3', text: 'Option C', isCorrect: false },
-        { id: 'opt_4', text: 'Option D', isCorrect: false }
+        { id: 'opt_4', text: 'Option D', isCorrect: false },
       ],
-      acceptedAlternatives: []
+      acceptedAlternatives: [],
     },
     {
       id: 'q_img_2',
@@ -81,15 +81,14 @@ const mockQuizWithImages: PublishedQuizSnapshot = {
         { id: 'opt_1', text: 'True', isCorrect: true },
         { id: 'opt_2', text: 'False', isCorrect: false },
         { id: 'opt_3', text: 'Unknown', isCorrect: false },
-        { id: 'opt_4', text: 'None', isCorrect: false }
+        { id: 'opt_4', text: 'None', isCorrect: false },
       ],
-      acceptedAlternatives: []
-    }
-  ]
+      acceptedAlternatives: [],
+    },
+  ],
 };
 
 describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', () => {
-
   describe('Cloudinary Constrained Signing & Media Records', () => {
     it('generates SHA-1 signature or deterministic mock for creator media uploads', async () => {
       const mockEnv = { DEV_MEDIA_BYPASS: 'true' };
@@ -99,7 +98,7 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         target: 'question',
         byteSize: 1024 * 500,
         mimeType: 'image/webp',
-        isEssential: true
+        isEssential: true,
       });
 
       assert.equal(sig.mock, true);
@@ -113,7 +112,7 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         quizId: '11111111-1111-1111-1111-111111111111',
         questionId: '22222222-2222-2222-2222-222222222222',
         byteSize: 6 * 1024 * 1024, // 6MB exceeds 5MB limit
-        mimeType: 'image/jpeg'
+        mimeType: 'image/jpeg',
       };
 
       const result = UploadSignatureRequestSchema.safeParse(invalidPayload);
@@ -122,15 +121,16 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
 
     it('fails closed when Cloudinary credentials are absent outside explicit development bypass', async () => {
       await assert.rejects(
-        () => generateCloudinarySignature({}, 'creator_1', {
-          quizId: '11111111-1111-1111-1111-111111111111',
-          questionId: '22222222-2222-2222-2222-222222222222',
-          target: 'question',
-          byteSize: 1024,
-          mimeType: 'image/png',
-          isEssential: true
-        }),
-        /Cloudinary|رفع الصور/
+        () =>
+          generateCloudinarySignature({}, 'creator_1', {
+            quizId: '11111111-1111-1111-1111-111111111111',
+            questionId: '22222222-2222-2222-2222-222222222222',
+            target: 'question',
+            byteSize: 1024,
+            mimeType: 'image/png',
+            isEssential: true,
+          }),
+        /Cloudinary|رفع الصور/,
       );
     });
   });
@@ -142,21 +142,35 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         id: { toString: () => 'room_t06' },
         storage,
         getWebSockets: () => [],
-        acceptWebSocket: () => {}
+        acceptWebSocket: () => {},
       };
 
       const doInstance = new GameRoomDO(mockCtx as any, {} as any);
       await doInstance.initQuizSnapshot(mockQuizWithImages);
 
       // Player 1 (Fast) and Player 2 (Delayed 12s)
-      await doInstance.fetch(new Request('http://internal/join', {
-        method: 'POST',
-        body: JSON.stringify({ playerId: 'p1_fast', nickname: 'FastPlayer', avatarId: 'a1', sessionHash: 'h1' })
-      }));
-      await doInstance.fetch(new Request('http://internal/join', {
-        method: 'POST',
-        body: JSON.stringify({ playerId: 'p2_delayed', nickname: 'DelayedPlayer', avatarId: 'a2', sessionHash: 'h2' })
-      }));
+      await doInstance.fetch(
+        new Request('http://internal/join', {
+          method: 'POST',
+          body: JSON.stringify({
+            playerId: 'p1_fast',
+            nickname: 'FastPlayer',
+            avatarId: 'a1',
+            sessionHash: 'h1',
+          }),
+        }),
+      );
+      await doInstance.fetch(
+        new Request('http://internal/join', {
+          method: 'POST',
+          body: JSON.stringify({
+            playerId: 'p2_delayed',
+            nickname: 'DelayedPlayer',
+            avatarId: 'a2',
+            sessionHash: 'h2',
+          }),
+        }),
+      );
 
       const hostWs = new MockWebSocket();
       const now = Date.now();
@@ -171,16 +185,19 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
 
       // Fast player answers at t = 2s
       const wsFast = new MockWebSocket();
-      await doInstance.webSocketMessage(wsFast as any, JSON.stringify({
-        type: 'answer.submit',
-        requestId: 'req_fast',
-        payload: {
-          playerId: 'p1_fast',
-          roundId: doInstance.state.activeRound!.roundId,
-          submissionId: 'sub_fast',
-          optionId: 'opt_1'
-        }
-      }));
+      await doInstance.webSocketMessage(
+        wsFast as any,
+        JSON.stringify({
+          type: 'answer.submit',
+          requestId: 'req_fast',
+          payload: {
+            playerId: 'p1_fast',
+            roundId: doInstance.state.activeRound!.roundId,
+            submissionId: 'sub_fast',
+            optionId: 'opt_1',
+          },
+        }),
+      );
 
       // 12 seconds pass (Delayed player's image arrives at t = 12s)
       // Verify server room endsAt timeline HAS NOT CHANGED
@@ -188,16 +205,19 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
 
       // Delayed player submits answer at t = 12s (well before initialEndsAt = 30s)
       const wsDelayed = new MockWebSocket();
-      await doInstance.webSocketMessage(wsDelayed as any, JSON.stringify({
-        type: 'answer.submit',
-        requestId: 'req_delayed',
-        payload: {
-          playerId: 'p2_delayed',
-          roundId: doInstance.state.activeRound!.roundId,
-          submissionId: 'sub_delayed',
-          optionId: 'opt_1'
-        }
-      }));
+      await doInstance.webSocketMessage(
+        wsDelayed as any,
+        JSON.stringify({
+          type: 'answer.submit',
+          requestId: 'req_delayed',
+          payload: {
+            playerId: 'p2_delayed',
+            roundId: doInstance.state.activeRound!.roundId,
+            submissionId: 'sub_delayed',
+            optionId: 'opt_1',
+          },
+        }),
+      );
 
       const lastMsg = JSON.parse(wsDelayed.sentMessages[0]);
       assert.equal(lastMsg.type, 'answer.receipt');
@@ -212,16 +232,23 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         id: { toString: () => 'room_t07' },
         storage,
         getWebSockets: () => [],
-        acceptWebSocket: () => {}
+        acceptWebSocket: () => {},
       };
 
       const doInstance = new GameRoomDO(mockCtx as any, {} as any);
       await doInstance.initQuizSnapshot(mockQuizWithImages);
 
-      await doInstance.fetch(new Request('http://internal/join', {
-        method: 'POST',
-        body: JSON.stringify({ playerId: 'p1_failed_img', nickname: 'FailedImgPlayer', avatarId: 'a1', sessionHash: 'h1' })
-      }));
+      await doInstance.fetch(
+        new Request('http://internal/join', {
+          method: 'POST',
+          body: JSON.stringify({
+            playerId: 'p1_failed_img',
+            nickname: 'FailedImgPlayer',
+            avatarId: 'a1',
+            sessionHash: 'h1',
+          }),
+        }),
+      );
 
       const hostWs = new MockWebSocket();
       await doInstance.webSocketMessage(hostWs as any, JSON.stringify({ type: 'host.start' }));
@@ -248,7 +275,7 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         id: { toString: () => 'room_t08' },
         storage,
         getWebSockets: () => [],
-        acceptWebSocket: () => {}
+        acceptWebSocket: () => {},
       };
 
       const doInstance = new GameRoomDO(mockCtx as any, {} as any);
@@ -257,10 +284,13 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
       const ws = new MockWebSocket();
 
       // Client sends forged media.ready message
-      await doInstance.webSocketMessage(ws as any, JSON.stringify({
-        type: 'media.ready',
-        payload: { ready: false, forceExtend: 100000 }
-      }));
+      await doInstance.webSocketMessage(
+        ws as any,
+        JSON.stringify({
+          type: 'media.ready',
+          payload: { ready: false, forceExtend: 100000 },
+        }),
+      );
 
       // Phase MUST remain in LOBBY (unaltered)
       assert.equal(doInstance.state.phase, 'LOBBY');
@@ -274,16 +304,18 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         id: { toString: () => 'room_t21' },
         storage,
         getWebSockets: () => [],
-        acceptWebSocket: () => {}
+        acceptWebSocket: () => {},
       };
 
       const doInstance = new GameRoomDO(mockCtx as any, {} as any);
       await doInstance.initQuizSnapshot(mockQuizWithImages);
 
-      await doInstance.fetch(new Request('http://internal/join', {
-        method: 'POST',
-        body: JSON.stringify({ playerId: 'p1', nickname: 'Ali', avatarId: 'a1', sessionHash: 'h1' })
-      }));
+      await doInstance.fetch(
+        new Request('http://internal/join', {
+          method: 'POST',
+          body: JSON.stringify({ playerId: 'p1', nickname: 'Ali', avatarId: 'a1', sessionHash: 'h1' }),
+        }),
+      );
 
       const hostWs = new MockWebSocket();
       await doInstance.webSocketMessage(hostWs as any, JSON.stringify({ type: 'host.start' }));
@@ -307,5 +339,4 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
       assert.ok(rankingDuration <= 5000);
     });
   });
-
 });

@@ -10,13 +10,13 @@ test('verifyGoogleIdToken rejects invalid JWT token format', async () => {
     async () => {
       await verifyGoogleIdToken('invalid.token', 'test-client-id');
     },
-    (err: Error) => err.message.includes('Invalid JWT token format')
+    (err: Error) => err.message.includes('Invalid JWT token format'),
   );
 });
 
 test('verifyGoogleIdToken allows mock bypass only when explicit dev flag is passed', async () => {
   const result = await verifyGoogleIdToken('mock:sub123:user@brio.com:TestUser', 'my-client-id', {
-    allowDevBypass: true
+    allowDevBypass: true,
   });
   assert.equal(result.sub, 'sub123');
   assert.equal(result.email, 'user@brio.com');
@@ -25,7 +25,7 @@ test('verifyGoogleIdToken allows mock bypass only when explicit dev flag is pass
   // Fails if allowDevBypass is false
   await assert.rejects(async () => {
     await verifyGoogleIdToken('mock:sub123:user@brio.com:TestUser', 'my-client-id', {
-      allowDevBypass: false
+      allowDevBypass: false,
     });
   });
 });
@@ -53,22 +53,24 @@ test('validateQuestionTypeRules validates MultipleChoice questions (2+ dynamic o
       { text: 'الرياض', isCorrect: true },
       { text: 'جدة', isCorrect: false },
       { text: 'مكة', isCorrect: false },
-      { text: 'الدمام', isCorrect: false }
+      { text: 'الدمام', isCorrect: false },
     ],
-    acceptedAlternatives: []
+    acceptedAlternatives: [],
   };
 
   assert.doesNotThrow(() => validateQuestionTypeRules(validMCQ));
 
-  assert.doesNotThrow(() => validateQuestionTypeRules({
-    ...validMCQ,
-    options: [...validMCQ.options, { text: 'الخبر', isCorrect: false }, { text: 'أبها', isCorrect: false }]
-  }));
+  assert.doesNotThrow(() =>
+    validateQuestionTypeRules({
+      ...validMCQ,
+      options: [...validMCQ.options, { text: 'الخبر', isCorrect: false }, { text: 'أبها', isCorrect: false }],
+    }),
+  );
 
   // Invalid: fewer than 2 options
   const invalidMCQCount: AuthoringQuestion = {
     ...validMCQ,
-    options: validMCQ.options.slice(0, 1)
+    options: validMCQ.options.slice(0, 1),
   };
   assert.throws(() => validateQuestionTypeRules(invalidMCQCount), /must have at least 2 options/);
 
@@ -79,8 +81,8 @@ test('validateQuestionTypeRules validates MultipleChoice questions (2+ dynamic o
       { text: 'الرياض', isCorrect: true },
       { text: 'جدة', isCorrect: true },
       { text: 'مكة', isCorrect: false },
-      { text: 'الدمام', isCorrect: false }
-    ]
+      { text: 'الدمام', isCorrect: false },
+    ],
   };
   assert.throws(() => validateQuestionTypeRules(invalidMCQCorrect), /must have exactly 1 correct option/);
 });
@@ -93,9 +95,9 @@ test('validateQuestionTypeRules validates TrueFalse questions (exactly 2 options
     multiplier: 'Standard',
     options: [
       { text: 'صح', isCorrect: true },
-      { text: 'خطأ', isCorrect: false }
+      { text: 'خطأ', isCorrect: false },
     ],
-    acceptedAlternatives: []
+    acceptedAlternatives: [],
   };
 
   assert.doesNotThrow(() => validateQuestionTypeRules(validTF));
@@ -104,8 +106,8 @@ test('validateQuestionTypeRules validates TrueFalse questions (exactly 2 options
     ...validTF,
     options: [
       { text: 'صح', isCorrect: true },
-      { text: 'خطأ', isCorrect: true }
-    ]
+      { text: 'خطأ', isCorrect: true },
+    ],
   };
   assert.throws(() => validateQuestionTypeRules(invalidTF), /must have exactly 1 correct option/);
 });
@@ -119,23 +121,25 @@ test('validateQuestionTypeRules validates Poll questions (2+ dynamic options, 0 
     options: [
       { text: 'أزرق', isCorrect: false },
       { text: 'أحمر', isCorrect: false },
-      { text: 'أخضر', isCorrect: false }
+      { text: 'أخضر', isCorrect: false },
     ],
-    acceptedAlternatives: []
+    acceptedAlternatives: [],
   };
 
   assert.doesNotThrow(() => validateQuestionTypeRules(validPoll));
-  assert.doesNotThrow(() => validateQuestionTypeRules({
-    ...validPoll,
-    options: Array.from({ length: 8 }, (_, index) => ({ text: `خيار ${index + 1}`, isCorrect: false }))
-  }));
+  assert.doesNotThrow(() =>
+    validateQuestionTypeRules({
+      ...validPoll,
+      options: Array.from({ length: 8 }, (_, index) => ({ text: `خيار ${index + 1}`, isCorrect: false })),
+    }),
+  );
 
   const invalidPoll: AuthoringQuestion = {
     ...validPoll,
     options: [
       { text: 'أزرق', isCorrect: true },
-      { text: 'أحمر', isCorrect: false }
-    ]
+      { text: 'أحمر', isCorrect: false },
+    ],
   };
   assert.throws(() => validateQuestionTypeRules(invalidPoll), /must not have any correct options marked/);
 });
@@ -147,16 +151,19 @@ test('validateQuestionTypeRules validates ShortAnswer questions (>=1 accepted al
     durationMs: 20000,
     multiplier: 'Standard',
     options: [],
-    acceptedAlternatives: ['الرياض']
+    acceptedAlternatives: ['الرياض'],
   };
 
   assert.doesNotThrow(() => validateQuestionTypeRules(validSA));
 
   const invalidSA: AuthoringQuestion = {
     ...validSA,
-    acceptedAlternatives: []
+    acceptedAlternatives: [],
   };
-  assert.throws(() => validateQuestionTypeRules(invalidSA), /must have at least 1 explicit accepted alternative/);
+  assert.throws(
+    () => validateQuestionTypeRules(invalidSA),
+    /must have at least 1 explicit accepted alternative/,
+  );
 });
 
 test('validateQuestionTypeRules enforces duration limits (10s - 120s)', () => {
@@ -166,18 +173,18 @@ test('validateQuestionTypeRules enforces duration limits (10s - 120s)', () => {
     durationMs: 15000,
     multiplier: 'Standard',
     options: [],
-    acceptedAlternatives: ['بديل']
+    acceptedAlternatives: ['بديل'],
   };
 
   assert.doesNotThrow(() => validateQuestionTypeRules(valid));
 
   assert.throws(
     () => validateQuestionTypeRules({ ...valid, durationMs: 5000 }),
-    /duration must be between 10 and 120 seconds/
+    /duration must be between 10 and 120 seconds/,
   );
 
   assert.throws(
     () => validateQuestionTypeRules({ ...valid, durationMs: 150000 }),
-    /duration must be between 10 and 120 seconds/
+    /duration must be between 10 and 120 seconds/,
   );
 });

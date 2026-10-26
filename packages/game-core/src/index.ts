@@ -5,3 +5,5 @@ export * from './ports/index';
 export * from './engine/types';
 export * from './engine/state-machine';
 export * from './serializers/public';
+
+export type { SnapshotProjection } from './serializers/projection';

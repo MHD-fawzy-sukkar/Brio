@@ -1,10 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  normalizeShortAnswer,
-  calculatePoints,
-  calculateCompetitionRanks
-} from './index';
+import { normalizeShortAnswer, calculatePoints, calculateCompetitionRanks } from './index';
 
 test('normalizeShortAnswer collapses spaces, applies NFC, case-folding, and optional diacritics', () => {
   assert.equal(normalizeShortAnswer('  مَرحَباً  بِكُم  '), 'مرحبا بكم');
@@ -32,7 +28,7 @@ test('calculateCompetitionRanks calculates competition ranks (1,1,3) with join o
     { id: 'p1', score: 1000, joinedAt: 100 },
     { id: 'p2', score: 2000, joinedAt: 200 },
     { id: 'p3', score: 2000, joinedAt: 150 }, // Tied with p2 at 2000 points
-    { id: 'p4', score: 500, joinedAt: 300 }
+    { id: 'p4', score: 500, joinedAt: 300 },
   ];
 
   const ranked = calculateCompetitionRanks(players);

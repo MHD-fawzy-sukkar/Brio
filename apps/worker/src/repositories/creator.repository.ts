@@ -10,7 +10,7 @@ export async function findOrCreateCreator(
   db: D1Database,
   googleSub: string,
   email: string,
-  displayName: string
+  displayName: string,
 ): Promise<CreatorRecord> {
   const existing = await db
     .prepare('SELECT id, google_sub, display_name, email, created_at FROM creators WHERE google_sub = ?')
@@ -26,12 +26,18 @@ export async function findOrCreateCreator(
     google_sub: googleSub,
     display_name: displayName,
     email: email,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
   };
 
   await db
     .prepare('INSERT INTO creators (id, google_sub, display_name, email, created_at) VALUES (?, ?, ?, ?, ?)')
-    .bind(newCreator.id, newCreator.google_sub, newCreator.display_name, newCreator.email, newCreator.created_at)
+    .bind(
+      newCreator.id,
+      newCreator.google_sub,
+      newCreator.display_name,
+      newCreator.email,
+      newCreator.created_at,
+    )
     .run();
 
   return newCreator;
@@ -41,7 +47,7 @@ export async function createSessionRecord(
   db: D1Database,
   creatorId: string,
   sessionHash: string,
-  expiresAt: string
+  expiresAt: string,
 ): Promise<void> {
   const now = new Date().toISOString();
   await db
@@ -52,16 +58,18 @@ export async function createSessionRecord(
 
 export async function findCreatorBySessionHash(
   db: D1Database,
-  sessionHash: string
+  sessionHash: string,
 ): Promise<CreatorRecord | null> {
   const now = new Date().toISOString();
   const row = await db
-    .prepare(`
+    .prepare(
+      `
       SELECT c.id, c.google_sub, c.display_name, c.email, c.created_at
       FROM creator_sessions s
       JOIN creators c ON s.creator_id = c.id
       WHERE s.id_hash = ? AND s.expires_at > ? AND s.revoked_at IS NULL
-    `)
+    `,
+    )
     .bind(sessionHash, now)
     .first<CreatorRecord>();
 

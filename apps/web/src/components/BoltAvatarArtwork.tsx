@@ -72,7 +72,15 @@ export function BoltAvatarArtwork({ variant }: { variant: ReturnType<typeof avat
           <stop offset="0.82" stopColor="black" />
           <stop offset="1" stopColor="white" />
         </radialGradient>
-        <mask id={`${id}-eyes`} maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1024" style={{ maskType: 'luminance' }}>
+        <mask
+          id={`${id}-eyes`}
+          maskUnits="userSpaceOnUse"
+          x="0"
+          y="0"
+          width="1536"
+          height="1024"
+          style={{ maskType: 'luminance' }}
+        >
           <rect width="1536" height="1024" fill="white" />
           {[654, 870].map((x) => (
             <ellipse key={x} cx={x} cy="485" rx="58" ry="52" fill={`url(#${id}-cut)`} />
@@ -96,17 +104,35 @@ export function BoltAvatarArtwork({ variant }: { variant: ReturnType<typeof avat
           <g key={x} className="bolt-avatar-led" transform={`translate(${x} 485)`}>
             {eyeStyle === 'round' && <ellipse className="bolt-avatar-led__solid" rx="25" ry="29" />}
             {eyeStyle === 'wink' &&
-              (index === 0 ? <ellipse className="bolt-avatar-led__solid" rx="24" ry="29" /> : <path d="M-28 8 Q0 -22 28 8" />)}
+              (index === 0 ? (
+                <ellipse className="bolt-avatar-led__solid" rx="24" ry="29" />
+              ) : (
+                <path d="M-28 8 Q0 -22 28 8" />
+              ))}
             {eyeStyle === 'joyful' && <path d="M-29 9 Q0 -34 29 9" />}
-            {eyeStyle === 'sparkle' && <path className="bolt-avatar-led__solid" d="M0 -34 10 -10 34 0 10 10 0 34 -10 10 -34 0 -10 -10Z" />}
+            {eyeStyle === 'sparkle' && (
+              <path
+                className="bolt-avatar-led__solid"
+                d="M0 -34 10 -10 34 0 10 10 0 34 -10 10 -34 0 -10 -10Z"
+              />
+            )}
             {eyeStyle === 'heart' && (
-              <path className="bolt-avatar-led__solid" d="M0 29 -26 3 C-48 -24 -10 -43 0 -21 C10 -43 48 -24 26 3Z" />
+              <path
+                className="bolt-avatar-led__solid"
+                d="M0 29 -26 3 C-48 -24 -10 -43 0 -21 C10 -43 48 -24 26 3Z"
+              />
             )}
             {eyeStyle === 'curious' && (
-              <ellipse className="bolt-avatar-led__solid" rx={index === 0 ? 18 : 27} ry={index === 0 ? 23 : 33} />
+              <ellipse
+                className="bolt-avatar-led__solid"
+                rx={index === 0 ? 18 : 27}
+                ry={index === 0 ? 23 : 33}
+              />
             )}
             {eyeStyle === 'sleepy' && <path d="M-28 -5 Q0 22 28 -5" />}
-            {eyeStyle === 'focused' && <path d={index === 0 ? 'M-28 -16 26 8 -23 18' : 'M28 -16 -26 8 23 18'} />}
+            {eyeStyle === 'focused' && (
+              <path d={index === 0 ? 'M-28 -16 26 8 -23 18' : 'M28 -16 -26 8 23 18'} />
+            )}
           </g>
         ))}
     </svg>

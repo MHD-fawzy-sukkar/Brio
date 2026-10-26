@@ -5,14 +5,14 @@ import {
   GoogleAuthRequestSchema,
   SubmitAnswerPayloadSchema,
   ErrorResponseSchema,
-  PROTOCOL_VERSION
+  PROTOCOL_VERSION,
 } from './index';
 
 test('JoinRoomRequestSchema validates correct room code and nickname', () => {
   const valid = JoinRoomRequestSchema.parse({
     code: '123456',
     nickname: 'أحمد',
-    avatarId: '/avatars/avatar-1.svg'
+    avatarId: '/avatars/avatar-1.svg',
   });
   assert.equal(valid.code, '123456');
   assert.equal(valid.nickname, 'أحمد');
@@ -36,7 +36,7 @@ test('ErrorResponseSchema parses RFC 7807 problem details structure', () => {
     status: 404,
     code: 'not_found',
     traceId: 'uuid-1234',
-    detail: 'Resource not found'
+    detail: 'Resource not found',
   });
   assert.equal(err.status, 404);
   assert.equal(err.code, 'not_found');

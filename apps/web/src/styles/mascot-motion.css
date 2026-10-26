@@ -1,0 +1,70 @@
+@keyframes lobby-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1deg);
+  }
+  50% {
+    transform: translate3d(0, -13px, 0) rotate(2deg);
+  }
+}
+
+.lobby-avatar {
+  animation: lobby-float 3.2s ease-in-out infinite;
+}
+
+/* The decorative mascot keeps its original bitmap face. */
+
+@keyframes animate-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+}
+
+.bolt-mascot {
+  display: inline-grid;
+  place-items: center;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.bolt-mascot__stage {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  direction: ltr;
+  transform-origin: 50% 58%;
+}
+
+.bolt-mascot__stage.animate-float,
+.avatar__canvas.animate-float {
+  animation: animate-float 3.6s ease-in-out infinite;
+}
+
+.bolt-mascot__pose {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 58%;
+}
+
+/* Keep the pose separate from the animated stage so motion cannot overwrite it. */
+
+.bolt-mascot__pose--floating {
+  transform: perspective(850px) rotateY(-14deg) rotateZ(-7deg) skewY(2deg);
+  filter: drop-shadow(0 14px 12px rgba(109, 35, 53, 0.18));
+}
+
+.bolt-mascot__body {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}

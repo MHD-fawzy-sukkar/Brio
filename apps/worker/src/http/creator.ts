@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import type { Env } from '../durable-objects/GameRoomDO';
+import type { Env } from '../env';
 import { parseCookies, SESSION_COOKIE_NAME, hashSessionToken } from '../auth/session';
 import { findCreatorBySessionHash } from '../repositories/creator.repository';
 

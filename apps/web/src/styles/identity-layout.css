@@ -1,0 +1,71 @@
+.join-setup__card {
+  display: grid;
+}
+
+.join-setup__preview {
+  padding: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.join-setup__avatar {
+  width: 6.5rem;
+  flex-shrink: 0;
+}
+
+.join-setup__form {
+  min-width: 0;
+  padding: 1.2rem;
+}
+
+.join-setup .avatar-choice {
+  border-radius: 1rem;
+}
+
+.join-setup__action {
+  position: sticky;
+  bottom: 0.5rem;
+  z-index: 20;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0.35rem 0;
+}
+
+.quiz-create__columns {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.quiz-create__layout {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+main:has(.quiz-create) {
+  max-width: 1600px;
+}
+
+.identity-editor-intro {
+  display: grid;
+  gap: 1rem;
+}
+
+.identity-editor-options > * {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  align-content: start;
+}
+
+.identity-editor-options > * > :nth-child(2) {
+  height: 2.75rem;
+  min-height: 0;
+  border-radius: 0.75rem;
+}
+
+.identity-editor-options select {
+  padding: 0 0.85rem;
+  font-size: 0.8rem;
+}

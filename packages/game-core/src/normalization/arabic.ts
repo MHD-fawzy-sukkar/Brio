@@ -11,7 +11,7 @@ export const DEFAULT_NORMALIZATION_OPTIONS: NormalizationOptions = {
   stripTatweel: true,
   foldAlef: true,
   foldTehMarbuta: false,
-  foldAlefMaksura: false
+  foldAlefMaksura: false,
 };
 
 /**
@@ -24,7 +24,10 @@ export const DEFAULT_NORMALIZATION_OPTIONS: NormalizationOptions = {
  * - Optional Arabic diacritic/tatweel removal and alef folding
  * - DOES NOT automatically merge ة/ه or ى/ي unless explicitly enabled by options.
  */
-export function normalizeShortAnswer(input: string, options: NormalizationOptions = DEFAULT_NORMALIZATION_OPTIONS): string {
+export function normalizeShortAnswer(
+  input: string,
+  options: NormalizationOptions = DEFAULT_NORMALIZATION_OPTIONS,
+): string {
   if (!input) return '';
 
   // 1. Unicode NFC & Trim & Lowercase

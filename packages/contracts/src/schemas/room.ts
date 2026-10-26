@@ -6,7 +6,7 @@ import { CompetitionIdentitySchema } from './identity';
 export const JoinRoomRequestSchema = z.object({
   code: z.string().length(6, 'Room code must be exactly 6 characters'),
   nickname: z.string().min(1, 'Nickname is required').max(24, 'Nickname cannot exceed 24 characters'),
-  avatarId: z.string().min(1, 'Avatar is required')
+  avatarId: z.string().min(1, 'Avatar is required'),
 });
 
 export type JoinRoomRequest = z.infer<typeof JoinRoomRequestSchema>;
@@ -16,20 +16,20 @@ export const JoinRoomResponseSchema = z.object({
   playerId: z.string(),
   nickname: z.string(),
   avatarId: z.string(),
-  sessionToken: z.string()
+  sessionToken: z.string(),
 });
 
 export type JoinRoomResponse = z.infer<typeof JoinRoomResponseSchema>;
 
 export const CreateRoomRequestSchema = z.object({
-  quizId: z.string().uuid()
+  quizId: z.string().uuid(),
 });
 
 export type CreateRoomRequest = z.infer<typeof CreateRoomRequestSchema>;
 
 export const CreateRoomResponseSchema = z.object({
   roomId: z.string(),
-  code: z.string()
+  code: z.string(),
 });
 
 export type CreateRoomResponse = z.infer<typeof CreateRoomResponseSchema>;
@@ -38,7 +38,7 @@ export const SubmitAnswerPayloadSchema = z.object({
   roundId: z.string(),
   submissionId: z.string().uuid(),
   optionId: z.string().optional(),
-  textAnswer: z.string().max(200).optional()
+  textAnswer: z.string().max(200).optional(),
 });
 
 export type SubmitAnswerPayload = z.infer<typeof SubmitAnswerPayloadSchema>;
@@ -47,7 +47,7 @@ export const AnswerReceiptSchema = z.object({
   submissionId: z.string().uuid(),
   roundId: z.string(),
   status: z.enum(['accepted', 'duplicate', 'rejected']),
-  acceptedAt: z.number().int()
+  acceptedAt: z.number().int(),
 });
 
 export type AnswerReceipt = z.infer<typeof AnswerReceiptSchema>;
@@ -74,10 +74,10 @@ export const PlayerSnapshotDtoSchema = z.object({
       nickname: z.string(),
       avatarId: z.string(),
       score: z.number().int(),
-      rank: z.number().int()
-    })
+      rank: z.number().int(),
+    }),
   ),
-  lobbyPlayers: z.array(z.object({ id: z.string(), nickname: z.string(), avatarId: z.string() }))
+  lobbyPlayers: z.array(z.object({ id: z.string(), nickname: z.string(), avatarId: z.string() })),
 });
 
 export type PlayerSnapshotDto = z.infer<typeof PlayerSnapshotDtoSchema>;
@@ -87,7 +87,7 @@ export const LeaderboardEntrySchema = z.object({
   nickname: z.string(),
   avatarId: z.string(),
   score: z.number().int(),
-  rank: z.number().int()
+  rank: z.number().int(),
 });
 
 export const AnswerStatSchema = z.object({
@@ -95,7 +95,7 @@ export const AnswerStatSchema = z.object({
   label: z.string(),
   count: z.number().int().nonnegative(),
   percentage: z.number().min(0).max(100),
-  isCorrect: z.boolean().optional()
+  isCorrect: z.boolean().optional(),
 });
 
 /**
@@ -118,7 +118,7 @@ export const HostSnapshotDtoSchema = z.object({
   acceptedAnswersCount: z.number().int().nonnegative(),
   question: PublicQuestionSchema.nullable(),
   answerStats: z.array(AnswerStatSchema),
-  leaderboard: z.array(LeaderboardEntrySchema)
+  leaderboard: z.array(LeaderboardEntrySchema),
 });
 
 export type HostSnapshotDto = z.infer<typeof HostSnapshotDtoSchema>;

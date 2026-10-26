@@ -1,0 +1,87 @@
+@media (min-width: 640px) {
+  .identity-image-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  }
+  .competition-brand__logo {
+    width: 7rem;
+    height: 4.8rem;
+  }
+  .competition-brand__name {
+    font-size: 1.25rem;
+  }
+  .join-setup__form {
+    padding: 1.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .identity-editor-options {
+    grid-template-rows: auto auto 1fr;
+    row-gap: 0;
+  }
+  .identity-editor-options > * {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+  }
+}
+
+@media (min-width: 1024px) {
+  .join-setup__card {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+  .join-setup__preview {
+    display: grid;
+    align-content: center;
+    padding: 2rem;
+    border-bottom: 0;
+    border-inline-end: 1px solid var(--line);
+  }
+  .join-setup__avatar {
+    width: 15rem;
+  }
+  .join-setup__form {
+    padding: 2rem;
+  }
+  .join-setup__action {
+    position: static;
+  }
+}
+
+@media (min-width: 1200px) {
+  .quiz-create__columns {
+    grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.7fr);
+  }
+  .quiz-create__basics {
+    position: sticky;
+    top: 6rem;
+    max-height: calc(100dvh - 7rem);
+    overflow-y: auto;
+  }
+  .quiz-create__theme .theme-library-gallery {
+    max-height: 26rem;
+    overflow-y: auto;
+    padding: 0.15rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .join-setup {
+    padding-bottom: 5rem;
+  }
+  .join-setup__action {
+    position: fixed;
+    inset-inline: 0.75rem;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    padding: 0.5rem;
+    border: 1px solid var(--line);
+    box-shadow: 0 5px 24px rgba(15, 23, 42, 0.14);
+  }
+  .join-code {
+    min-height: auto;
+    padding: 0.7rem;
+    border-radius: 1.5rem;
+  }
+  .join-code input {
+    letter-spacing: 0.18em;
+  }
+}

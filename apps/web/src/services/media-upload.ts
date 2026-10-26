@@ -62,11 +62,21 @@ export async function uploadQuizCover(quizId: string, file: File): Promise<Media
   return uploadImage({ quizId, target: 'cover', file, isEssential: false });
 }
 
-export async function uploadQuestionImage(quizId: string, questionId: string, file: File): Promise<MediaVariantsDto> {
+export async function uploadQuestionImage(
+  quizId: string,
+  questionId: string,
+  file: File,
+): Promise<MediaVariantsDto> {
   return uploadImage({ quizId, questionId, target: 'question', file, isEssential: true });
 }
 
-async function uploadImage(input: { quizId: string; questionId?: string; target: 'cover' | 'question'; file: File; isEssential: boolean }): Promise<MediaVariantsDto> {
+async function uploadImage(input: {
+  quizId: string;
+  questionId?: string;
+  target: 'cover' | 'question';
+  file: File;
+  isEssential: boolean;
+}): Promise<MediaVariantsDto> {
   const { quizId, questionId, target, file, isEssential } = input;
   validateImage(file);
   const optimizedFile = await optimizeImageForUpload(file);
@@ -82,8 +92,8 @@ async function uploadImage(input: { quizId: string; questionId?: string; target:
       target,
       byteSize: optimizedFile.size,
       mimeType: optimizedFile.type,
-      isEssential
-    })
+      isEssential,
+    }),
   });
   if (!signatureResponse.ok) return readProblem(signatureResponse, 'تعذر تجهيز رفع الصورة.');
   const signature = await signatureResponse.json();
@@ -96,7 +106,11 @@ async function uploadImage(input: { quizId: string; questionId?: string; target:
   form.append('folder', signature.folder);
   form.append('public_id', signature.publicId);
 
-  const uploadResponse = await fetch(signature.uploadUrl, { method: 'POST', body: form, signal: AbortSignal.timeout(60000) });
+  const uploadResponse = await fetch(signature.uploadUrl, {
+    method: 'POST',
+    body: form,
+    signal: AbortSignal.timeout(60000),
+  });
   if (!uploadResponse.ok) return readProblem(uploadResponse, 'تعذر رفع الصورة إلى Cloudinary.');
   const uploaded = await uploadResponse.json();
 
@@ -115,8 +129,8 @@ async function uploadImage(input: { quizId: string; questionId?: string; target:
       width: uploaded.width || 1280,
       height: uploaded.height || 720,
       byteSize: uploaded.bytes || optimizedFile.size,
-      isEssential
-    })
+      isEssential,
+    }),
   });
   if (!completeResponse.ok) return readProblem(completeResponse, 'رُفعت الصورة ولكن تعذر ربطها بالمسابقة.');
   const media = (await completeResponse.json()) as MediaVariantsDto;
@@ -128,7 +142,7 @@ async function uploadImage(input: { quizId: string; questionId?: string; target:
       url,
       questionId: questionId || quizId,
       isEssential,
-      priority: 1
+      priority: 1,
     }));
   if (warmItems.length > 0) {
     globalMediaPrefetchEngine.queueImages(warmItems);

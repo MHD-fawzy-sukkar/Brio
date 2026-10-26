@@ -13,7 +13,7 @@ interface ManifestItem {
 export function useRoomMediaPrefetch(roomId: string, questionIndex: number | null | undefined) {
   const [manifest, setManifest] = useState<ManifestItem[]>([]);
   const [, setMediaTick] = useState(0);
-  useEffect(() => globalMediaPrefetchEngine.subscribe(() => setMediaTick(tick => tick + 1)), []);
+  useEffect(() => globalMediaPrefetchEngine.subscribe(() => setMediaTick((tick) => tick + 1)), []);
 
   useEffect(() => {
     if (!roomId) return;
@@ -24,18 +24,22 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
     const loadManifest = async (attempt = 0) => {
       if (cancelled) return;
       try {
-        const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/media`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]) });
+        const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/media`, {
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10000)]),
+        });
         if (!response.ok) throw new Error('Manifest unavailable');
         const items = (await response.json()) as ManifestItem[];
         if (cancelled) return;
         setManifest(items);
         globalMediaPrefetchEngine.queueImages(
-          items.filter(item => item.questionIndex <= 2).map((item) => ({
-            url: item.url,
-            questionId: item.mediaId,
-            isEssential: item.isEssential,
-            priority: item.questionIndex <= 2 ? 1 : 2
-          }))
+          items
+            .filter((item) => item.questionIndex <= 2)
+            .map((item) => ({
+              url: item.url,
+              questionId: item.mediaId,
+              isEssential: item.isEssential,
+              priority: item.questionIndex <= 2 ? 1 : 2,
+            })),
         );
       } catch {
         if (!cancelled && attempt < 2) {
@@ -56,7 +60,8 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
     if (!manifest.length) return;
     const currentIdx = questionIndex ?? -1;
     const upcoming = manifest.filter(
-      (item) => item.questionIndex >= Math.max(0,currentIdx) && item.questionIndex <= Math.max(0,currentIdx) + 2
+      (item) =>
+        item.questionIndex >= Math.max(0, currentIdx) && item.questionIndex <= Math.max(0, currentIdx) + 2,
     );
     for (const item of upcoming) {
       globalMediaPrefetchEngine.prioritizeUpcoming(item.url, item.isEssential);
@@ -64,7 +69,10 @@ export function useRoomMediaPrefetch(roomId: string, questionIndex: number | nul
   }, [manifest, questionIndex]);
 
   const start = Math.max(0, questionIndex ?? 0);
-  const window = manifest.filter(item => item.questionIndex >= start && item.questionIndex <= start + 2);
-  return { total: window.length, ready: window.filter(item => globalMediaPrefetchEngine.isLoaded(item.url)).length,
-    failed: window.filter(item => globalMediaPrefetchEngine.getState(item.url)?.status === 'error').length };
+  const window = manifest.filter((item) => item.questionIndex >= start && item.questionIndex <= start + 2);
+  return {
+    total: window.length,
+    ready: window.filter((item) => globalMediaPrefetchEngine.isLoaded(item.url)).length,
+    failed: window.filter((item) => globalMediaPrefetchEngine.getState(item.url)?.status === 'error').length,
+  };
 }

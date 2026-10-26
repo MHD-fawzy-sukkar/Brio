@@ -1,0 +1,16 @@
+{
+  "baselineCommit": "c711fd2a3d07838b825e08389dd9ba933379d1ee",
+  "players": 150,
+  "iterations": 100,
+  "workload": "Host + 150 player DTOs per broadcast; ranking/projection only, excludes network and JSON transport",
+  "independent": {
+    "p50Ms": 2.568,
+    "p95Ms": 3.522
+  },
+  "shared": {
+    "p50Ms": 0.038,
+    "p95Ms": 0.064
+  },
+  "reductionP50Percent": 98.5,
+  "identicalSnapshots": true
+}

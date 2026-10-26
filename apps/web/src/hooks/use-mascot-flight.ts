@@ -17,7 +17,13 @@ const MAX_YAW = 0.38;
 const MAX_PITCH = 0.14;
 
 /** Artwork-independent flight, pointer capture and animation lifecycle. */
-export function useMascotFlight({ scope = 'lobby', celebration = false, dragWithinPage = false, compact = false, onPose }: MascotFlightOptions) {
+export function useMascotFlight({
+  scope = 'lobby',
+  celebration = false,
+  dragWithinPage = false,
+  compact = false,
+  onPose,
+}: MascotFlightOptions) {
   const areaRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -45,7 +51,7 @@ export function useMascotFlight({ scope = 'lobby', celebration = false, dragWith
     lastPointerY: 0,
     dragVx: 0,
     dragVy: 0,
-    initialized: false
+    initialized: false,
   });
 
   useEffect(() => {
@@ -64,7 +70,9 @@ export function useMascotFlight({ scope = 'lobby', celebration = false, dragWith
       const rootRect = root.getBoundingClientRect();
       const characterW = characterRef.current.offsetWidth || 160;
       const characterH = characterRef.current.offsetHeight || 105;
-      const contentBoundary = boundary ? Math.max(0, boundary.getBoundingClientRect().top - rootRect.top) : rootRect.height;
+      const contentBoundary = boundary
+        ? Math.max(0, boundary.getBoundingClientRect().top - rootRect.top)
+        : rootRect.height;
       const flightHeight =
         scope === 'studio'
           ? Math.min(380, Math.max(220, rootRect.height * 0.55))
@@ -116,7 +124,8 @@ export function useMascotFlight({ scope = 'lobby', celebration = false, dragWith
         pitchTarget = pose.pitch;
         bankTarget = pose.bank;
       } else if (!s.isDragging) {
-        const dx = s.targetX - s.x, dy = s.targetY - s.y;
+        const dx = s.targetX - s.x,
+          dy = s.targetY - s.y;
         const distance = Math.hypot(dx, dy);
         if (distance < 28) waypoint();
         s.vx += ((dx / Math.max(1, distance)) * speed - s.vx) * 0.022 * dt;
@@ -154,7 +163,8 @@ export function useMascotFlight({ scope = 'lobby', celebration = false, dragWith
       window.cancelAnimationFrame(rafId);
       lastTime = performance.now();
       const hiddenCreator = (scope === 'page' || scope === 'studio') && mobileViewport.matches;
-      if (!hiddenCreator && !reducedMotion.matches && !document.hidden) rafId = window.requestAnimationFrame(tick);
+      if (!hiddenCreator && !reducedMotion.matches && !document.hidden)
+        rafId = window.requestAnimationFrame(tick);
     };
     reducedMotion.addEventListener('change', updateMotion);
     mobileViewport.addEventListener('change', updateMotion);
@@ -196,11 +206,15 @@ export function useMascotFlight({ scope = 'lobby', celebration = false, dragWith
     const characterW = characterRef.current?.offsetWidth || 160;
     const characterH = characterRef.current?.offsetHeight || 105;
 
-    const page = dragWithinPage ? areaRef.current.closest('[data-mascot-drag-root]')?.getBoundingClientRect() : null;
+    const page = dragWithinPage
+      ? areaRef.current.closest('[data-mascot-drag-root]')?.getBoundingClientRect()
+      : null;
     const minX = page ? page.left - areaRect.left : -16;
     const maxX = page ? page.right - areaRect.left - characterW : rootRect.width - characterW + 16;
     const minY = page ? page.top - areaRect.top : -12;
-    const maxY = page ? page.bottom - areaRect.top - characterH : Math.max(rootRect.height - characterH, s.maxY + 240);
+    const maxY = page
+      ? page.bottom - areaRect.top - characterH
+      : Math.max(rootRect.height - characterH, s.maxY + 240);
     s.x = Math.max(minX, Math.min(maxX, e.clientX - areaRect.left - s.dragOffsetX));
     s.y = Math.max(minY, Math.min(maxY, e.clientY - areaRect.top - s.dragOffsetY));
 

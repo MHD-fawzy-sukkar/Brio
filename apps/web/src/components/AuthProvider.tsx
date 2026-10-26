@@ -1,6 +1,15 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { setCacheOwner } from '../services/resource-cache';
 import { usePathname } from 'next/navigation';
 
@@ -26,7 +35,8 @@ function readCachedAuth(): { user: AuthUser | null; resolved: boolean } {
   if (memoryAuthCache.resolved) return memoryAuthCache;
   if (typeof window === 'undefined') return { user: null, resolved: false };
   try {
-    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY) ?? window.sessionStorage.getItem(AUTH_STORAGE_KEY);
+    const raw =
+      window.localStorage.getItem(AUTH_STORAGE_KEY) ?? window.sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return { user: null, resolved: false };
     const parsed = JSON.parse(raw) as { user?: AuthUser | null };
     memoryAuthCache = { user: parsed?.user || null, resolved: true };
@@ -54,8 +64,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Creator pages also refresh an existing worker installed during gameplay.
-    if ('serviceWorker' in navigator) void navigator.serviceWorker.getRegistration()
-      .then(registration => registration?.update()).catch(() => {});
+    if ('serviceWorker' in navigator)
+      void navigator.serviceWorker
+        .getRegistration()
+        .then((registration) => registration?.update())
+        .catch(() => {});
   }, []);
   const pathname = usePathname();
   const normalizedPath = pathname?.replace(/\/$/, '') || '';
@@ -75,7 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch('/api/auth/me', {
         credentials: 'same-origin',
-        headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(15000)
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(15000),
       });
 
       // A missing session is a normal anonymous state, not an exception.
@@ -144,20 +158,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const stored = JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) ?? 'null');
         const nextUser = (stored?.user ?? null) as AuthUser | null;
         setCacheOwner(nextUser?.id ?? null);
-        if (nextUser?.id !== user?.id) { memoryAuthCache = { user: nextUser, resolved: true }; setUser(nextUser); }
-      } catch { setCacheOwner(null); }
+        if (nextUser?.id !== user?.id) {
+          memoryAuthCache = { user: nextUser, resolved: true };
+          setUser(nextUser);
+        }
+      } catch {
+        setCacheOwner(null);
+      }
     };
-    const restored = (event: PageTransitionEvent) => { if (event.persisted) { syncStoredSession(); void refresh(); } };
-    const storageChanged = (event: StorageEvent) => { if (event.key === AUTH_STORAGE_KEY) { syncStoredSession(); void refresh(); } };
+    const restored = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        syncStoredSession();
+        void refresh();
+      }
+    };
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === AUTH_STORAGE_KEY) {
+        syncStoredSession();
+        void refresh();
+      }
+    };
     window.addEventListener('pageshow', restored);
     window.addEventListener('storage', storageChanged);
-    return () => { window.removeEventListener('pageshow', restored); window.removeEventListener('storage', storageChanged); };
+    return () => {
+      window.removeEventListener('pageshow', restored);
+      window.removeEventListener('storage', storageChanged);
+    };
   }, [refresh, user?.id]);
 
   const effectiveLoading = isLoginRoute ? false : loading;
   const value = useMemo(
     () => ({ user, loading: effectiveLoading, refresh, acceptSession, logout }),
-    [user, effectiveLoading, refresh, acceptSession, logout]
+    [user, effectiveLoading, refresh, acceptSession, logout],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

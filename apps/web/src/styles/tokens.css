@@ -1,0 +1,23 @@
+@theme {
+  --color-brand-50: #fff7f7;
+  --color-brand-100: #fdebed;
+  --color-brand-200: #f8d4d8;
+  --color-brand-300: #edaeb6;
+  --color-brand-400: #d97886;
+  --color-brand-500: #bd4b5d;
+  --color-brand-600: #9f3043;
+  --color-brand-700: #84263a;
+  --color-brand-800: #6d2335;
+  --color-brand-900: #5a2131;
+  --color-brand-950: #35101b;
+}
+
+:root {
+  --ink: #172033;
+  --muted: #68748a;
+  --line: #e6e9f0;
+  --primary: #9f3043;
+  --primary-dark: #84263a;
+  --surface: #ffffff;
+  --canvas: #f7f8fc;
+}

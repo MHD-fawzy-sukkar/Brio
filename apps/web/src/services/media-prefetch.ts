@@ -1,17 +1,5 @@
-export interface PrefetchItem {
-  url: string;
-  questionId: string;
-  isEssential: boolean;
-  priority: number; // 1 = highest (first 3 images / next immediate question), 2 = normal, 3 = background
-}
-
-export interface PrefetchState {
-  status: 'idle' | 'loading' | 'loaded' | 'error';
-  url: string;
-  isEssential: boolean;
-  error?: string;
-  decoded: boolean;
-}
+import type { PrefetchItem, PrefetchState } from './media-prefetch-types';
+export type { PrefetchItem, PrefetchState } from './media-prefetch-types';
 
 export class MediaPrefetchEngine {
   private memoryCache: Map<string, { blobUrl: string; bytes: number; timestamp: number }> = new Map();
@@ -58,7 +46,7 @@ export class MediaPrefetchEngine {
           status: 'loading',
           url: item.url,
           isEssential: item.isEssential,
-          decoded: false
+          decoded: false,
         });
       }
     }
@@ -101,11 +89,13 @@ export class MediaPrefetchEngine {
 
   getMetrics(): { totalRequested: number; readyCount: number; readyRatePercentage: number } {
     const readyRatePercentage =
-      this.totalRequestedCount > 0 ? Math.round((this.readyDecodedCount / this.totalRequestedCount) * 100) : 100;
+      this.totalRequestedCount > 0
+        ? Math.round((this.readyDecodedCount / this.totalRequestedCount) * 100)
+        : 100;
     return {
       totalRequested: this.totalRequestedCount,
       readyCount: this.readyDecodedCount,
-      readyRatePercentage
+      readyRatePercentage,
     };
   }
 
@@ -130,7 +120,10 @@ export class MediaPrefetchEngine {
     const maxRetries = 3;
     const controller = new AbortController();
     let timedOut = false;
-    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 10000);
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 10000);
     this.inFlightAbortControllers.set(item.url, controller);
 
     try {
@@ -187,7 +180,8 @@ export class MediaPrefetchEngine {
         decoded = true; // Environment fallback
       }
 
-      const blobUrl = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(blob) : item.url;
+      const blobUrl =
+        typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(blob) : item.url;
 
       // Warm browser native HTMLImageElement bitmap cache for instant 0ms <img> paint
       if (typeof window !== 'undefined' && typeof window.Image !== 'undefined') {
@@ -199,7 +193,13 @@ export class MediaPrefetchEngine {
             await img.decode();
             decoded = true;
           } else {
-            await new Promise<void>((ok, fail) => { if (img.complete && img.naturalWidth > 0) ok(); else { img.onload = () => ok(); img.onerror = () => fail(new Error('Image decode failed')); } });
+            await new Promise<void>((ok, fail) => {
+              if (img.complete && img.naturalWidth > 0) ok();
+              else {
+                img.onload = () => ok();
+                img.onerror = () => fail(new Error('Image decode failed'));
+              }
+            });
             decoded = true;
           }
           this.decodedImageElements.set(item.url, img);
@@ -221,13 +221,17 @@ export class MediaPrefetchEngine {
         status: 'loaded',
         url: item.url,
         isEssential: item.isEssential,
-        decoded
+        decoded,
       });
     } catch (err: any) {
       if (err.name === 'AbortError' && !timedOut) return;
 
       if (typeof caches !== 'undefined') {
-        try { await (await caches.open('brio-media-v1')).delete(item.url); } catch { /* Memory fallback remains available. */ }
+        try {
+          await (await caches.open('brio-media-v1')).delete(item.url);
+        } catch {
+          /* Memory fallback remains available. */
+        }
       }
 
       if (attempt < maxRetries) {
@@ -243,7 +247,7 @@ export class MediaPrefetchEngine {
           url: item.url,
           isEssential: item.isEssential,
           error: err.message || 'Image prefetch failed after retries',
-          decoded: false
+          decoded: false,
         });
       }
     } finally {
@@ -259,7 +263,8 @@ export class MediaPrefetchEngine {
 
   private addToCache(url: string, blobUrl: string, bytes: number): void {
     while (
-      (this.memoryCache.size >= this.maxCacheEntries || this.currentMemoryBytes + bytes > this.maxMemoryBytes) &&
+      (this.memoryCache.size >= this.maxCacheEntries ||
+        this.currentMemoryBytes + bytes > this.maxMemoryBytes) &&
       this.memoryCache.size > 0
     ) {
       const oldestKey = this.memoryCache.keys().next().value;

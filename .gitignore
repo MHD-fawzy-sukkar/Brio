@@ -43,3 +43,6 @@ pnpm-debug.log*
 .idea/
 .vscode/*
 !.vscode/settings.json
+
+# TypeScript compiler caches
+*.tsbuildinfo

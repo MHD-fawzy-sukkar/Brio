@@ -23,12 +23,14 @@ export async function hashSessionToken(token: string): Promise<string> {
 export async function createSessionInfo(remember = false): Promise<SessionInfo> {
   const sessionToken = crypto.randomUUID() + '-' + crypto.randomUUID();
   const sessionHash = await hashSessionToken(sessionToken);
-  const expiresAt = new Date(Date.now() + (remember ? REMEMBERED_SESSION_LIFETIME_MS : SESSION_LIFETIME_MS)).toISOString();
+  const expiresAt = new Date(
+    Date.now() + (remember ? REMEMBERED_SESSION_LIFETIME_MS : SESSION_LIFETIME_MS),
+  ).toISOString();
 
   return {
     sessionToken,
     sessionHash,
-    expiresAt
+    expiresAt,
   };
 }
 

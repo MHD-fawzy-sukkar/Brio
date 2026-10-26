@@ -1,20 +1,11 @@
 import { z } from 'zod';
 import { SaveIdentityRequestSchema } from './identity';
 
-export const QuestionTypeSchema = z.enum([
-  'MultipleChoice',
-  'TrueFalse',
-  'ShortAnswer',
-  'Poll'
-]);
+export const QuestionTypeSchema = z.enum(['MultipleChoice', 'TrueFalse', 'ShortAnswer', 'Poll']);
 
 export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 
-export const PointsMultiplierSchema = z.enum([
-  'Standard',
-  'Double',
-  'Zero'
-]);
+export const PointsMultiplierSchema = z.enum(['Standard', 'Double', 'Zero']);
 
 export type PointsMultiplier = z.infer<typeof PointsMultiplierSchema>;
 
@@ -23,7 +14,7 @@ export type PointsMultiplier = z.infer<typeof PointsMultiplierSchema>;
  */
 export const PublicQuestionOptionSchema = z.object({
   id: z.string(),
-  text: z.string()
+  text: z.string(),
 });
 
 export type PublicQuestionOption = z.infer<typeof PublicQuestionOptionSchema>;
@@ -38,7 +29,7 @@ export const PublicQuestionSchema = z.object({
   durationMs: z.number().int().min(10000).max(120000),
   multiplier: PointsMultiplierSchema,
   essentialImage: z.string().nullable().optional(),
-  options: z.array(PublicQuestionOptionSchema).optional()
+  options: z.array(PublicQuestionOptionSchema).optional(),
 });
 
 export type PublicQuestion = z.infer<typeof PublicQuestionSchema>;
@@ -49,7 +40,7 @@ export type PublicQuestion = z.infer<typeof PublicQuestionSchema>;
 export const AuthoringQuestionOptionSchema = z.object({
   id: z.string().optional(),
   text: z.string().min(1).max(200),
-  isCorrect: z.boolean()
+  isCorrect: z.boolean(),
 });
 
 export type AuthoringQuestionOption = z.infer<typeof AuthoringQuestionOptionSchema>;
@@ -65,7 +56,7 @@ export const AuthoringQuestionSchema = z.object({
   multiplier: PointsMultiplierSchema.default('Standard'),
   options: z.array(AuthoringQuestionOptionSchema).default([]),
   acceptedAlternatives: z.array(z.string()).default([]),
-  essentialImage: z.string().nullable().optional()
+  essentialImage: z.string().nullable().optional(),
 });
 
 export type AuthoringQuestion = z.infer<typeof AuthoringQuestionSchema>;
@@ -78,7 +69,7 @@ export const SaveQuizRequestSchema = z.object({
   coverImageUrl: z.string().url().max(2048).nullable().optional(),
   identity: SaveIdentityRequestSchema.optional(),
   identityId: z.string().uuid().optional(),
-  questions: z.array(AuthoringQuestionSchema).default([])
+  questions: z.array(AuthoringQuestionSchema).default([]),
 });
 
 export type SaveQuizRequest = z.infer<typeof SaveQuizRequestSchema>;
@@ -92,7 +83,7 @@ export const QuizSummaryDtoSchema = z.object({
   coverImageUrl: z.string().nullable().optional(),
   questionCount: z.number().int(),
   createdAt: z.string(),
-  updatedAt: z.string()
+  updatedAt: z.string(),
 });
 
 export type QuizSummaryDto = z.infer<typeof QuizSummaryDtoSchema>;

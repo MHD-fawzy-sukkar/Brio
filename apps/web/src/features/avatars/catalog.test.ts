@@ -4,9 +4,9 @@ import { avatarVariant, AVATAR_VARIANT_COUNT, BOLT_AVATARS, resolveAvatarIndex }
 
 test('15 avatars retain distinct hues with upright front-facing artwork', () => {
   const variants = Array.from({ length: AVATAR_VARIANT_COUNT }, (_, index) => avatarVariant(index));
-  assert.equal(new Set(variants.map(variant => variant.hue)).size, 15);
-  assert.equal(new Set(variants.map(variant => variant.eyeStyle)).size, 8);
-  assert.equal(new Set(variants.map(variant => `${variant.hue}:${variant.eyeStyle}`)).size, 15);
+  assert.equal(new Set(variants.map((variant) => variant.hue)).size, 15);
+  assert.equal(new Set(variants.map((variant) => variant.eyeStyle)).size, 8);
+  assert.equal(new Set(variants.map((variant) => `${variant.hue}:${variant.eyeStyle}`)).size, 15);
 });
 
 test('new avatar IDs and saved legacy IDs resolve to the same identity', () => {
@@ -18,7 +18,9 @@ test('new avatar IDs and saved legacy IDs resolve to the same identity', () => {
 });
 
 test('invalid IDs and custom image URLs are not treated as built-in avatars', () => {
-  ['/avatars/avatar-0.svg', 'bolt-avatar-16', 'avatar_99', '/custom.png'].forEach(id => assert.equal(resolveAvatarIndex(id), null));
+  ['/avatars/avatar-0.svg', 'bolt-avatar-16', 'avatar_99', '/custom.png'].forEach((id) =>
+    assert.equal(resolveAvatarIndex(id), null),
+  );
 });
 
 test('avatar variants remain deterministic and wrap safely for long player lists', () => {

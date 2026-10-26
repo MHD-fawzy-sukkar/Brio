@@ -1,0 +1,8 @@
+node_modules
+.pnpm-store
+**/dist
+**/out
+**/out-lan
+**/.next
+**/.wrangler
+pnpm-lock.yaml

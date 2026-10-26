@@ -1,16 +1,25 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DEFAULT_COMPETITION_IDENTITY, identityAvatars, resolveAvatarSource, selectedAvatar, type CompetitionIdentity } from './model';
+import {
+  DEFAULT_COMPETITION_IDENTITY,
+  identityAvatars,
+  resolveAvatarSource,
+  selectedAvatar,
+  type CompetitionIdentity,
+} from './model';
 
 const custom: CompetitionIdentity = {
   name: 'Volunteer team',
   character: { kind: 'image', src: '/team/character.png', label: 'Team character', motion: 'float' },
-  avatars: [{ id: 'team:bird', src: '/team/bird.png', label: 'Bird' }]
+  avatars: [{ id: 'team:bird', src: '/team/bird.png', label: 'Bird' }],
 };
 
 test('the main character is the default avatar and changing the selection preserves the chosen source', () => {
-  const identity: CompetitionIdentity = { ...custom, character: { kind: 'image', src: '/team/main.png', label: 'Main', motion: 'float' },
-    avatars: [...custom.avatars, { id: 'team:main', src: '/team/main.png', label: 'Main' }] };
+  const identity: CompetitionIdentity = {
+    ...custom,
+    character: { kind: 'image', src: '/team/main.png', label: 'Main', motion: 'float' },
+    avatars: [...custom.avatars, { id: 'team:main', src: '/team/main.png', label: 'Main' }],
+  };
   assert.equal(selectedAvatar(identity, ''), 'team:main');
   assert.equal(selectedAvatar(identity, 'team:bird'), 'team:bird');
   assert.equal(resolveAvatarSource(identity, selectedAvatar(identity, 'team:bird')), '/team/bird.png');
@@ -18,10 +27,17 @@ test('the main character is the default avatar and changing the selection preser
 
 test('automatic picker matches the server threshold and repairs a hidden Bolt selection', () => {
   for (const count of [0, 1, 4, 5, 20]) {
-    const identity: CompetitionIdentity = { ...custom, avatarMode: 'auto', avatars: Array.from({ length: count }, (_, i) => ({ ...custom.avatars[0], id: `team:${i}` })) };
+    const identity: CompetitionIdentity = {
+      ...custom,
+      avatarMode: 'auto',
+      avatars: Array.from({ length: count }, (_, i) => ({ ...custom.avatars[0], id: `team:${i}` })),
+    };
     const choices = identityAvatars(identity);
     assert.equal(choices.length, count + (count < 5 ? 15 : 0));
-    assert.equal(choices.some(avatar => avatar.id === 'bolt-avatar-01'), count < 5);
+    assert.equal(
+      choices.some((avatar) => avatar.id === 'bolt-avatar-01'),
+      count < 5,
+    );
     if (count >= 5) assert.equal(selectedAvatar(identity, 'bolt-avatar-01'), 'team:0');
   }
 });

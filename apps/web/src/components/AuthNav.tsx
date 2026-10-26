@@ -16,7 +16,9 @@ export function NavbarLinks() {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/builder') ||
     pathname.startsWith('/questions') ||
-    pathname.startsWith('/quizzes') || pathname.startsWith('/local') || pathname.startsWith('/identities');
+    pathname.startsWith('/quizzes') ||
+    pathname.startsWith('/local') ||
+    pathname.startsWith('/identities');
 
   return (
     <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label="التنقل الرئيسي">
@@ -62,34 +64,40 @@ export function AuthNav() {
   // Local sessions belong to this machine; there is no account to sign out of.
   if (isLanMode) return null;
   const playerPage = pathname.startsWith('/join') || pathname.startsWith('/play');
-  return <div className={playerPage ? 'hidden sm:block' : ''}>{user ? (
-    <div className="flex items-center gap-3">
-      <span className="hidden text-sm font-bold text-slate-600 sm:inline">مرحباً، {user.displayName}</span>
-      <span className="hidden h-4 w-px bg-slate-200 sm:inline" aria-hidden="true" />
-      <button
-        type="button"
-        onClick={() => setConfirmOpen(true)}
-        className="secondary-btn cursor-pointer !px-3.5 !py-2 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-700"
-      >
-        تسجيل الخروج
-      </button>
+  return (
+    <div className={playerPage ? 'hidden sm:block' : ''}>
+      {user ? (
+        <div className="flex items-center gap-3">
+          <span className="hidden text-sm font-bold text-slate-600 sm:inline">
+            مرحباً، {user.displayName}
+          </span>
+          <span className="hidden h-4 w-px bg-slate-200 sm:inline" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            className="secondary-btn cursor-pointer !px-3.5 !py-2 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-700"
+          >
+            تسجيل الخروج
+          </button>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        icon="👋"
-        title="تأكيد تسجيل الخروج"
-        description="هل أنت متأكد من رغبتك في تسجيل الخروج من حسابك؟ ستحتاج إلى تسجيل الدخول مجدداً لإدارة مسابقاتك."
-        confirmLabel="نعم، تسجيل الخروج"
-        busyLabel="جاري الخروج…"
-        cancelLabel="البقاء في الحساب"
-        busy={loggingOut}
-        onCancel={() => setConfirmOpen(false)}
-        onConfirm={handleConfirmLogout}
-      />
+          <ConfirmDialog
+            open={confirmOpen}
+            icon="👋"
+            title="تأكيد تسجيل الخروج"
+            description="هل أنت متأكد من رغبتك في تسجيل الخروج من حسابك؟ ستحتاج إلى تسجيل الدخول مجدداً لإدارة مسابقاتك."
+            confirmLabel="نعم، تسجيل الخروج"
+            busyLabel="جاري الخروج…"
+            cancelLabel="البقاء في الحساب"
+            busy={loggingOut}
+            onCancel={() => setConfirmOpen(false)}
+            onConfirm={handleConfirmLogout}
+          />
+        </div>
+      ) : (
+        <Link href={isLanMode ? '/local/' : '/login/'} className="primary-btn !px-4 !py-2 text-sm">
+          دخول المنشئ
+        </Link>
+      )}
     </div>
-  ) : (
-    <Link href={isLanMode ? '/local/' : '/login/'} className="primary-btn !px-4 !py-2 text-sm">
-      دخول المنشئ
-    </Link>
-  )}</div>;
+  );
 }

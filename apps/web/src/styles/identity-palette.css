@@ -1,0 +1,91 @@
+.competition-theme[data-theme-custom='true'] .card {
+  border-top: 3px solid var(--competition-accent);
+  background: linear-gradient(155deg, #fff 60%, var(--competition-soft));
+}
+
+.competition-theme[data-theme-custom='true'] .primary-btn {
+  color: var(--competition-on-accent, white);
+  background: var(--competition-accent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--competition-accent) 22%, transparent);
+}
+
+.competition-theme[data-theme-custom='true'] .primary-btn:hover {
+  background: var(--competition-hover, color-mix(in srgb, var(--competition-accent) 85%, black));
+}
+
+.competition-theme[data-theme-custom='true']
+  :is(.text-brand-600, .text-brand-700, .text-brand-800, .text-brand-900, .text-brand-950) {
+  color: var(--competition-ink, var(--competition-accent));
+}
+
+.competition-theme[data-theme-custom='true'] .bg-brand-50 {
+  background-color: var(--competition-soft);
+}
+
+.competition-theme[data-theme-custom='true'] .game-surface {
+  background-color: var(--competition-soft);
+}
+
+.competition-theme[data-theme-custom='true'] .border-brand-100 {
+  border-color: color-mix(in srgb, var(--competition-accent) 25%, white);
+}
+
+.theme-mode-card {
+  position: relative;
+  min-width: 0;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 1.2rem;
+  background: white;
+  text-align: start;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.theme-mode-card:hover {
+  border-color: #d18a98;
+}
+
+.theme-mode-card--selected {
+  border-color: var(--primary);
+  background: linear-gradient(150deg, #fff, #fff1f3);
+  box-shadow: 0 5px 16px rgba(159, 48, 67, 0.1);
+}
+
+.theme-mode-card__icon {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 3.5rem;
+  margin-bottom: 0.6rem;
+  border-radius: 0.8rem;
+  background: #f8fafc;
+  color: var(--primary);
+  font-size: 1.8rem;
+}
+
+.theme-mode-card__check {
+  position: absolute;
+  top: 0.7rem;
+  inset-inline-end: 0.7rem;
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.theme-mode-card--selected .theme-mode-card__check {
+  background: var(--primary);
+  color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .competition-character__image--float {
+    animation: none;
+  }
+}

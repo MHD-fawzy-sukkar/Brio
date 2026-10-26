@@ -10,15 +10,25 @@ export function useRoomIdentity(roomId: string) {
   useEffect(() => {
     if (!roomId) return;
     const controller = new AbortController();
-    requestJson<{ identity: unknown }>(`/api/rooms/${encodeURIComponent(roomId)}/identity`, { signal: controller.signal })
-      .then(body => {
-        const identity = body.identity == null ? DEFAULT_COMPETITION_IDENTITY : CompetitionIdentitySchema.parse(body.identity);
+    requestJson<{ identity: unknown }>(`/api/rooms/${encodeURIComponent(roomId)}/identity`, {
+      signal: controller.signal,
+    })
+      .then((body) => {
+        const identity =
+          body.identity == null
+            ? DEFAULT_COMPETITION_IDENTITY
+            : CompetitionIdentitySchema.parse(body.identity);
         if (!controller.signal.aborted) setState({ roomId, identity });
-      }).catch(error => {
-        if (!controller.signal.aborted) setState({ roomId, identity: DEFAULT_COMPETITION_IDENTITY, error: error.message });
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted)
+          setState({ roomId, identity: DEFAULT_COMPETITION_IDENTITY, error: error.message });
       });
     return () => controller.abort();
   }, [roomId]);
-  return { identity: state?.roomId === roomId ? state.identity : DEFAULT_COMPETITION_IDENTITY,
-    loading: Boolean(roomId && state?.roomId !== roomId), error: state?.roomId === roomId ? state.error : undefined };
+  return {
+    identity: state?.roomId === roomId ? state.identity : DEFAULT_COMPETITION_IDENTITY,
+    loading: Boolean(roomId && state?.roomId !== roomId),
+    error: state?.roomId === roomId ? state.error : undefined,
+  };
 }

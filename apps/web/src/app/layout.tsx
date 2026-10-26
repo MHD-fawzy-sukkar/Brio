@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   icons: {
     icon: { url: '/favicon.png', type: 'image/png' },
     shortcut: '/favicon.png',
-    apple: '/favicon.png'
-  }
+    apple: '/favicon.png',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -30,10 +30,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preload" as="image" href="/bolt-original.png" fetchPriority="high" />
         <link rel="preload" as="image" href="/avatars/bolt-base-v2.png" fetchPriority="high" />
-        {!isLanMode && <><link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://api.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://accounts.google.com" />
-        <script src="https://accounts.google.com/gsi/client?hl=ar" async defer /></>}
+        {!isLanMode && (
+          <>
+            <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+            <link rel="preconnect" href="https://api.cloudinary.com" crossOrigin="anonymous" />
+          </>
+        )}
       </head>
       <body className="app-shell min-h-screen flex flex-col antialiased">
         <AmbientBackground fixed />
@@ -45,7 +47,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <AuthNav />
             </div>
           </header>
-          <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8">{children}</main>
+          <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-6 sm:py-8">
+            {children}
+          </main>
           <footer className="relative z-10 border-t border-white/80 bg-white/80 py-5 text-center text-xs text-slate-500">
             Brio © 2026 — متعة أكثر، إعداد أقل.
           </footer>

@@ -1,0 +1,110 @@
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  aspect-ratio: 1;
+}
+
+.avatar__art {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  filter: drop-shadow(0 3px 5px var(--avatar-glow, rgba(159, 48, 67, 0.4)));
+  transition: transform 0.25s ease;
+}
+
+.avatar__canvas {
+  display: block;
+  width: 145%;
+  max-width: none;
+  aspect-ratio: 3 / 2;
+  line-height: 0;
+}
+
+.bolt-avatar-artwork {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bolt-avatar-led {
+  fill: none;
+  stroke: #fff2b0;
+  stroke-width: 11;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px #ffc34c);
+}
+
+.bolt-avatar-led__solid {
+  fill: #fff2b0;
+  stroke-width: 3;
+}
+
+.avatar--hero {
+  aspect-ratio: 3 / 2;
+}
+
+.avatar--hero .avatar__art {
+  overflow: visible;
+  filter: none;
+}
+
+.avatar--hero .avatar__canvas {
+  width: 100%;
+}
+
+.avatar-choice {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  padding: 0.25rem;
+  border: 2px solid #e8eaf0;
+  border-radius: 1.25rem;
+  background: linear-gradient(145deg, #fff, #f5f6fa);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+.roaming-mascot--studio {
+  width: clamp(9.5rem, 14vw, 12.5rem);
+}
+
+.avatar-choice:hover {
+  border-color: #d18a98;
+  transform: translateY(-2px);
+}
+
+.avatar-choice[aria-pressed='true'] {
+  border-color: var(--theme-accent, var(--primary));
+  background: var(--theme-soft, #fff1f3);
+  box-shadow: 0 0 0 3px var(--theme-soft, rgba(159, 48, 67, 0.1));
+}
+
+.avatar-choice[aria-pressed='true']::after {
+  content: '✓';
+  position: absolute;
+  bottom: -0.2rem;
+  inset-inline-end: -0.2rem;
+  display: grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: var(--theme-accent, var(--primary));
+  color: var(--theme-on-accent, white);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #bd4b5d;
+  outline-offset: 4px;
+}

@@ -3,9 +3,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthProvider';
 import { isLanMode } from '../services/runtime-mode';
-import { localRequest, localRoomHref, type LocalInfo, type LocalQuiz, type LocalRoom } from '../services/local-dashboard';
+import {
+  localRequest,
+  localRoomHref,
+  type LocalInfo,
+  type LocalQuiz,
+  type LocalRoom,
+} from '../services/local-dashboard';
 
-type PendingAction = { type: 'end'; quizId?: string } | { type: 'quiz'; quiz: LocalQuiz } | { type: 'session'; room: LocalRoom };
+type PendingAction =
+  | { type: 'end'; quizId?: string }
+  | { type: 'quiz'; quiz: LocalQuiz }
+  | { type: 'session'; room: LocalRoom };
 
 export function useLocalDashboard() {
   const { refresh } = useAuth();
@@ -18,34 +27,52 @@ export function useLocalDashboard() {
   const [pending, setPending] = useState<PendingAction | null>(null);
   const load = useCallback(async () => setInfo(await localRequest<LocalInfo>('/api/local/info')), []);
   const connect = useCallback(async () => {
-    setLoading(true); setError('');
+    setLoading(true);
+    setError('');
     try {
       await localRequest('/api/local/login', { method: 'POST' });
-      await refresh(); await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'تعذّر فتح لوحة المقدّم.'); }
-    finally { setLoading(false); }
+      await refresh();
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'تعذّر فتح لوحة المقدّم.');
+    } finally {
+      setLoading(false);
+    }
   }, [load, refresh]);
-  useEffect(() => { if (isLanMode) void connect(); }, [connect]);
-  const activeRoom = info?.rooms.find(room => room.phase !== 'FINISHED');
-  const pastRooms = info?.rooms.filter(room => room.phase === 'FINISHED') || [];
+  useEffect(() => {
+    if (isLanMode) void connect();
+  }, [connect]);
+  const activeRoom = info?.rooms.find((room) => room.phase !== 'FINISHED');
+  const pastRooms = info?.rooms.filter((room) => room.phase === 'FINISHED') || [];
 
   const perform = async (action: () => Promise<void>, onError?: (message: string) => void) => {
-    setBusy(true); setError(''); setQuizDeleteError(null); setMessage('');
-    try { await action(); }
-    catch (cause) {
+    setBusy(true);
+    setError('');
+    setQuizDeleteError(null);
+    setMessage('');
+    try {
+      await action();
+    } catch (cause) {
       setPending(null);
       const detail = cause instanceof Error ? cause.message : 'تعذّر إتمام العملية. يرجى المحاولة مجدداً.';
-      if (onError) onError(detail); else setError(detail);
+      if (onError) onError(detail);
+      else setError(detail);
+    } finally {
+      setBusy(false);
     }
-    finally { setBusy(false); }
   };
   const openRoom = async (quizId: string) => {
     try {
       const room = await localRequest<LocalRoom>('/api/rooms', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quizId })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quizId }),
       });
       window.location.assign(localRoomHref(room));
-    } catch (cause) { await load(); throw cause; }
+    } catch (cause) {
+      await load();
+      throw cause;
+    }
   };
   const start = (quizId: string) => {
     if (activeRoom) setPending({ type: 'end', quizId });
@@ -54,50 +81,102 @@ export function useLocalDashboard() {
   const importFile = (file?: File) => {
     if (!file) return;
     void perform(async () => {
-      if (file.size > 48 * 1024 * 1024) throw new Error('حجم الملف يتجاوز 48 ميغابايت. يرجى تقليل أحجام الصور وإعادة تنزيل المسابقة.');
-      await localRequest('/api/local/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: file });
-      await load(); setMessage('أُضيفت المسابقة وصورها بنجاح. اختر «فتح غرفة» لبدء جلسة جديدة.');
+      if (file.size > 48 * 1024 * 1024)
+        throw new Error('حجم الملف يتجاوز 48 ميغابايت. يرجى تقليل أحجام الصور وإعادة تنزيل المسابقة.');
+      await localRequest('/api/local/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: file,
+      });
+      await load();
+      setMessage('أُضيفت المسابقة وصورها بنجاح. اختر «فتح غرفة» لبدء جلسة جديدة.');
     });
   };
   const confirm = () => {
     const deletingQuizId = pending?.type === 'quiz' ? pending.quiz.id : null;
-    void perform(async () => {
-      if (!pending) return;
-      if (pending.type === 'end') {
-        if (!activeRoom) { setPending(null); await load(); return; }
-        await localRequest(`/api/rooms/${activeRoom.roomId}`, { method: 'DELETE' });
-        await load(); setPending(null);
-        if (pending.quizId) await openRoom(pending.quizId);
-        else setMessage('انتهت الغرفة وحُفظت نتائج الجلسة.');
-      } else {
-        const path = pending.type === 'quiz' ? `quizzes/${encodeURIComponent(pending.quiz.id)}` : `rooms/${pending.room.roomId}`;
-        await localRequest(`/api/local/${path}`, { method: 'DELETE' });
-        await load(); setPending(null);
-        setMessage(pending.type === 'quiz' ? 'حُذفت المسابقة من هذا الجهاز. نتائج الجلسات السابقة محفوظة.' : 'حُذفت نتائج الجلسة.');
-      }
-    }, deletingQuizId ? detail => setQuizDeleteError({ quizId: deletingQuizId, message: detail }) : undefined);
+    void perform(
+      async () => {
+        if (!pending) return;
+        if (pending.type === 'end') {
+          if (!activeRoom) {
+            setPending(null);
+            await load();
+            return;
+          }
+          await localRequest(`/api/rooms/${activeRoom.roomId}`, { method: 'DELETE' });
+          await load();
+          setPending(null);
+          if (pending.quizId) await openRoom(pending.quizId);
+          else setMessage('انتهت الغرفة وحُفظت نتائج الجلسة.');
+        } else {
+          const path =
+            pending.type === 'quiz'
+              ? `quizzes/${encodeURIComponent(pending.quiz.id)}`
+              : `rooms/${pending.room.roomId}`;
+          await localRequest(`/api/local/${path}`, { method: 'DELETE' });
+          await load();
+          setPending(null);
+          setMessage(
+            pending.type === 'quiz'
+              ? 'حُذفت المسابقة من هذا الجهاز. نتائج الجلسات السابقة محفوظة.'
+              : 'حُذفت نتائج الجلسة.',
+          );
+        }
+      },
+      deletingQuizId
+        ? (detail) => setQuizDeleteError({ quizId: deletingQuizId, message: detail })
+        : undefined,
+    );
   };
-  const confirmation = pending?.type === 'quiz' ? {
-    title: 'حذف المسابقة من هذا الجهاز؟',
-    description: `ستُحذف «${pending.quiz.title}» من المسابقات الجاهزة. ستبقى نتائج جلساتها السابقة، ويمكنك إضافة ملف المسابقة مجدداً في أي وقت.`,
-    confirmLabel: 'حذف المسابقة', icon: '🗑️'
-  } : pending?.type === 'session' ? {
-    title: 'حذف نتائج الجلسة؟',
-    description: `ستُحذف نتائج «${pending.room.title}» ذات الرمز ${pending.room.code} نهائياً من هذا الجهاز. لن تُحذف المسابقة نفسها.`,
-    confirmLabel: 'حذف النتائج', icon: '🗑️'
-  } : {
-    title: pending?.quizId ? 'إنهاء الغرفة وفتح غرفة جديدة؟' : 'إنهاء الغرفة الحالية؟',
-    description: `ستنتهي جلسة «${activeRoom?.title || ''}» لجميع اللاعبين، وستُحفظ نتائجها.${pending?.quizId ? ' ستُفتح بعدها غرفة للمسابقة التي اخترتها.' : ''}`,
-    confirmLabel: pending?.quizId ? 'إنهاء وفتح غرفة جديدة' : 'إنهاء الغرفة', icon: '🏁'
-  };
-  return { info, loading, busy, error, quizDeleteError, message, activeRoom, pastRooms, pending, confirmation,
-    connect, start, importFile, confirm, cancel: () => setPending(null),
+  const confirmation =
+    pending?.type === 'quiz'
+      ? {
+          title: 'حذف المسابقة من هذا الجهاز؟',
+          description: `ستُحذف «${pending.quiz.title}» من المسابقات الجاهزة. ستبقى نتائج جلساتها السابقة، ويمكنك إضافة ملف المسابقة مجدداً في أي وقت.`,
+          confirmLabel: 'حذف المسابقة',
+          icon: '🗑️',
+        }
+      : pending?.type === 'session'
+        ? {
+            title: 'حذف نتائج الجلسة؟',
+            description: `ستُحذف نتائج «${pending.room.title}» ذات الرمز ${pending.room.code} نهائياً من هذا الجهاز. لن تُحذف المسابقة نفسها.`,
+            confirmLabel: 'حذف النتائج',
+            icon: '🗑️',
+          }
+        : {
+            title: pending?.quizId ? 'إنهاء الغرفة وفتح غرفة جديدة؟' : 'إنهاء الغرفة الحالية؟',
+            description: `ستنتهي جلسة «${activeRoom?.title || ''}» لجميع اللاعبين، وستُحفظ نتائجها.${pending?.quizId ? ' ستُفتح بعدها غرفة للمسابقة التي اخترتها.' : ''}`,
+            confirmLabel: pending?.quizId ? 'إنهاء وفتح غرفة جديدة' : 'إنهاء الغرفة',
+            icon: '🏁',
+          };
+  return {
+    info,
+    loading,
+    busy,
+    error,
+    quizDeleteError,
+    message,
+    activeRoom,
+    pastRooms,
+    pending,
+    confirmation,
+    connect,
+    start,
+    importFile,
+    confirm,
+    cancel: () => setPending(null),
     endRoom: () => setPending({ type: 'end' }),
     deleteQuiz: (quiz: LocalQuiz) => {
-      setError(''); setMessage(''); setQuizDeleteError(null);
+      setError('');
+      setMessage('');
+      setQuizDeleteError(null);
       if (activeRoom?.quizId === quiz.id) {
-        setQuizDeleteError({ quizId: quiz.id, message: `لا يمكن حذف المسابقة لأنها مستخدمة في الغرفة الحالية (${activeRoom.code}). أنهِ الغرفة أولاً، ثم احذف المسابقة.` });
+        setQuizDeleteError({
+          quizId: quiz.id,
+          message: `لا يمكن حذف المسابقة لأنها مستخدمة في الغرفة الحالية (${activeRoom.code}). أنهِ الغرفة أولاً، ثم احذف المسابقة.`,
+        });
       } else setPending({ type: 'quiz', quiz });
     },
-    deleteSession: (room: LocalRoom) => setPending({ type: 'session', room }) };
+    deleteSession: (room: LocalRoom) => setPending({ type: 'session', room }),
+  };
 }

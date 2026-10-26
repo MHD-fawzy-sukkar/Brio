@@ -1,0 +1,156 @@
+@keyframes podium-rise {
+  from {
+    opacity: 0;
+    transform: translateY(35px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-30px) rotate(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(540px) rotate(520deg);
+    opacity: 0;
+  }
+}
+
+.podium-rise {
+  animation: podium-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 15px;
+  border-radius: 3px;
+  animation: confetti-fall 3.8s linear infinite;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #eef0f5 25%, #f8f9fc 50%, #eef0f5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes answer-confirmed {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.answer-confirmation {
+  animation: answer-confirmed 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes answer-lock {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.35);
+  }
+  55% {
+    box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+  }
+  100% {
+    box-shadow: 0 12px 28px rgba(79, 70, 229, 0.22);
+  }
+}
+
+.answer-locked {
+  animation: answer-lock 0.65s ease-out both;
+}
+
+@keyframes winner-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes podium-glow {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes back-arrow-glide {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3.5px);
+  }
+}
+
+.back-arrow-glide {
+  animation: back-arrow-glide 1.8s ease-in-out infinite;
+}
+
+.group:hover .back-arrow-glide {
+  animation-duration: 0.9s;
+}
+
+.podium-winner {
+  animation: winner-float 3.2s ease-in-out infinite;
+}
+
+.podium-step-1 {
+  animation: podium-glow 2.4s ease-in-out infinite;
+  box-shadow: 0 -10px 35px rgba(251, 191, 36, 0.24);
+}
+
+.podium-step-2,
+.podium-step-3 {
+  box-shadow: 0 -8px 26px rgba(159, 48, 67, 0.1);
+}
+
+@media (max-width: 639px) {
+  .game-controls {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1.2rem;
+  }
+  .card {
+    border-radius: 1.2rem;
+  }
+  .primary-btn,
+  .secondary-btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-orb,
+  .lobby-avatar,
+  .bolt-mascot__stage.animate-float,
+  .avatar__canvas.animate-float {
+    animation: none;
+  }
+}

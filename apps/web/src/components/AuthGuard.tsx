@@ -12,7 +12,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace(isLanMode ? '/local/' : `/login/?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      router.replace(
+        isLanMode
+          ? '/local/'
+          : `/login/?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+      );
     }
   }, [loading, user, router]);
 

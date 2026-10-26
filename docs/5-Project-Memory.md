@@ -1,6 +1,15 @@
 # Brio — Project Memory and Current Decisions
 
-Updated: 2026-10-25. Read this on every engineering iteration; update only with observed work/evidence.
+Updated: 2026-10-27. Read this on every engineering iteration; update only with observed work/evidence.
+
+## 2026-10-27 — Architecture refactor, bounded caches and verified release
+
+- Split frontend screens into feature components/hooks, Worker routes/repositories and Durable Object adapters into focused modules, and LAN transports from server composition. Pure game transitions and serializers remain shared across runtimes. CSS extraction preserves cascade order.
+- Added architecture checks for 300-line production modules, 400-line test modules, dependency boundaries and runtime cycles; 269 source files pass. Added formatting and a reproducible full verification command. Removed tracked generated TypeScript cache.
+- Broadcasts share one ephemeral public snapshot projection per state update. LAN SQLite reuses at most 32 prepared statements while reading current durable data. Account-scoped frontend caches and optimistic question ordering remain intact. Google SDK now loads only on login.
+- Evidence: 148 passing tests (6 contracts, 10 core, 58 Worker, 65 web, 9 LAN), workspace type checks, cloud/LAN builds and browser checks with production assets. Browser rehearsal covered studio reorder/edit, failed presenter-end retry, durable player receipt/finale and 390px layout. The 150-client localhost rehearsal had receipt p95 219ms; physical router/phone rehearsal remains pending.
+- Reproducible benchmark asserts identical host/150-player DTOs and records approximately 98% less median projection CPU time; this excludes network and JSON transport and is not a whole-site speed claim. Details: `22-Architecture-and-Performance.md` and `performance/snapshot-projection.json`.
+- Published release `2107fc72-8acd-479a-a041-be99e29a6ce8` to the existing workers.dev site. Eight live pages and health returned 200; three protected APIs returned 401 without a session. All eight page HTML documents and 28 linked JS/CSS assets match the tested cloud build. No database migration or production fixture mutation was needed.
 
 ## 2026-10-25 — Responsive creation/join layout and offline rehearsal
 

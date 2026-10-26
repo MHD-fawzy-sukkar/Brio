@@ -33,7 +33,7 @@ async function fetchGoogleJwks(): Promise<CachedKeys['keys']> {
       throw new Error(`Failed to fetch Google JWKS: ${res.status}`);
     }
 
-    const data = await res.json() as any;
+    const data = (await res.json()) as any;
     const cacheControl = res.headers.get('Cache-Control');
     let maxAge = 3600; // Default 1 hour
     if (cacheControl) {
@@ -45,7 +45,7 @@ async function fetchGoogleJwks(): Promise<CachedKeys['keys']> {
 
     jwksCache = {
       keys: data.keys,
-      expiresAt: now + maxAge * 1000
+      expiresAt: now + maxAge * 1000,
     };
 
     return data.keys;
@@ -73,7 +73,7 @@ function base64UrlDecode(str: string): Uint8Array {
 export async function verifyGoogleIdToken(
   idToken: string,
   expectedClientId: string,
-  options?: { allowDevBypass?: boolean; expectedNonce?: string }
+  options?: { allowDevBypass?: boolean; expectedNonce?: string },
 ): Promise<GoogleTokenPayload> {
   // 1. Development Auth Bypass Guard (Local testing only)
   if (options?.allowDevBypass && idToken.startsWith('mock:')) {
@@ -85,7 +85,7 @@ export async function verifyGoogleIdToken(
       iss: 'https://accounts.google.com',
       aud: expectedClientId,
       exp: Math.floor(Date.now() / 1000) + 3600,
-      nonce: options?.expectedNonce
+      nonce: options?.expectedNonce,
     };
   }
 
@@ -142,7 +142,7 @@ export async function verifyGoogleIdToken(
       matchingKey,
       { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
       false,
-      ['verify']
+      ['verify'],
     );
 
     const signedData = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
@@ -152,7 +152,7 @@ export async function verifyGoogleIdToken(
       'RSASSA-PKCS1-v1_5',
       cryptoKey,
       signatureBytes.buffer as ArrayBuffer,
-      signedData
+      signedData,
     );
 
     if (!isValid) {

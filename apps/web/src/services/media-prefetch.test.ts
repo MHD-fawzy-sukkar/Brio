@@ -2,51 +2,75 @@ import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { MediaPrefetchEngine } from './media-prefetch';
 
-test('a hanging image download times out with bounded retries instead of occupying a slot forever', async t => {
+test('a hanging image download times out with bounded retries instead of occupying a slot forever', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const engine = new MediaPrefetchEngine();
   const original = global.fetch;
   let attempts = 0;
   global.fetch = async (_url, options) => {
     attempts++;
-    return new Promise<Response>((_resolve, reject) => options?.signal?.addEventListener('abort', () => reject(new DOMException('Timed out', 'AbortError')), { once: true }));
+    return new Promise<Response>((_resolve, reject) =>
+      options?.signal?.addEventListener('abort', () => reject(new DOMException('Timed out', 'AbortError')), {
+        once: true,
+      }),
+    );
   };
   try {
-    engine.queueImages([{ url: 'https://test.invalid/hanging.png', questionId: 'hanging', isEssential: true, priority: 1 }]);
+    engine.queueImages([
+      { url: 'https://test.invalid/hanging.png', questionId: 'hanging', isEssential: true, priority: 1 },
+    ]);
     for (let i = 0; i < 4; i++) {
-      t.mock.timers.tick(10000); await new Promise<void>(r => setImmediate(r));
-      t.mock.timers.tick(1000); await new Promise<void>(r => setImmediate(r));
+      t.mock.timers.tick(10000);
+      await new Promise<void>((r) => setImmediate(r));
+      t.mock.timers.tick(1000);
+      await new Promise<void>((r) => setImmediate(r));
     }
     assert.equal(attempts, 4);
     assert.equal(engine.getState('https://test.invalid/hanging.png')?.status, 'error');
-  } finally { global.fetch = original; }
+  } finally {
+    global.fetch = original;
+  }
 });
 
 test('failed prefetch retries never release or duplicate a concurrent download slot', async () => {
   const engine = new MediaPrefetchEngine();
   const original = global.fetch;
-  let active = 0, maximum = 0;
+  let active = 0,
+    maximum = 0;
   const attempts = new Map<string, number>();
-  global.fetch = async input => {
+  global.fetch = async (input) => {
     const url = String(input);
-    active++; maximum = Math.max(maximum, active);
-    await new Promise(r => setTimeout(r, 20));
+    active++;
+    maximum = Math.max(maximum, active);
+    await new Promise((r) => setTimeout(r, 20));
     active--;
-    const attempt = (attempts.get(url) || 0) + 1; attempts.set(url, attempt);
-    return attempt < 3 ? new Response('temporary failure', { status: 503 }) : new Response(new Blob(['image'], { type: 'image/png' }));
+    const attempt = (attempts.get(url) || 0) + 1;
+    attempts.set(url, attempt);
+    return attempt < 3
+      ? new Response('temporary failure', { status: 503 })
+      : new Response(new Blob(['image'], { type: 'image/png' }));
   };
   try {
-    engine.queueImages(Array.from({ length: 6 }, (_, i) => ({ url: `https://test.invalid/${i}.png`, questionId: String(i), isEssential: true, priority: 1 })));
-    for (let i = 0; i < 140 && engine.getMetrics().readyCount < 6; i++) await new Promise(r => setTimeout(r, 25));
+    engine.queueImages(
+      Array.from({ length: 6 }, (_, i) => ({
+        url: `https://test.invalid/${i}.png`,
+        questionId: String(i),
+        isEssential: true,
+        priority: 1,
+      })),
+    );
+    for (let i = 0; i < 140 && engine.getMetrics().readyCount < 6; i++)
+      await new Promise((r) => setTimeout(r, 25));
     assert.equal(engine.getMetrics().readyCount, 6);
     assert.equal(maximum, 2);
     assert.equal(attempts.size, 6);
     for (const count of attempts.values()) assert.equal(count, 3);
-  } finally { global.fetch = original; }
+  } finally {
+    global.fetch = original;
+  }
 });
 
 describe('Phase P5 — Frontend Resilience & Media Prefetch Tests', () => {
-
   describe('T17 — Cache Disabled/Full & Malformed Image Fallback', () => {
     it('handles image prefetch failures gracefully with bounded retries and no infinite loop', async () => {
       const engine = new MediaPrefetchEngine();
@@ -59,7 +83,7 @@ describe('Phase P5 — Frontend Resilience & Media Prefetch Tests', () => {
 
       try {
         engine.queueImages([
-          { url: 'https://fixtures.brio/malformed.jpg', questionId: 'q_bad', isEssential: true, priority: 1 }
+          { url: 'https://fixtures.brio/malformed.jpg', questionId: 'q_bad', isEssential: true, priority: 1 },
         ]);
 
         // Wait 2500ms for all 3 retry attempts with exponential backoff to complete
@@ -85,7 +109,7 @@ describe('Phase P5 — Frontend Resilience & Media Prefetch Tests', () => {
 
       try {
         engine.queueImages([
-          { url: 'https://fixtures.brio/valid.jpg', questionId: 'q_valid', isEssential: true, priority: 1 }
+          { url: 'https://fixtures.brio/valid.jpg', questionId: 'q_valid', isEssential: true, priority: 1 },
         ]);
 
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -123,7 +147,7 @@ describe('Phase P5 — Frontend Resilience & Media Prefetch Tests', () => {
       try {
         engine.queueImages([
           { url: 'https://fixtures.brio/img1.webp', questionId: 'q1', isEssential: true, priority: 1 },
-          { url: 'https://fixtures.brio/img2.webp', questionId: 'q2', isEssential: true, priority: 1 }
+          { url: 'https://fixtures.brio/img2.webp', questionId: 'q2', isEssential: true, priority: 1 },
         ]);
 
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -137,5 +161,4 @@ describe('Phase P5 — Frontend Resilience & Media Prefetch Tests', () => {
       }
     });
   });
-
 });

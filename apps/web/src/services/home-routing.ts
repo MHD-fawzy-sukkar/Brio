@@ -12,5 +12,8 @@ export function resolveHomeExperience(loading: boolean, authenticated: boolean):
 }
 
 export function normalizePin(value: string): string {
-  return value.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/\D/g, '').slice(0, 6);
+  return value
+    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/\D/g, '')
+    .slice(0, 6);
 }

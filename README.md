@@ -25,8 +25,13 @@ See [LAN setup, architecture, tests and pending acceptance](docs/14-LAN.md). Phy
 - `apps/local`: local HTTP/WebSocket server, SQLite and quiz/media import.
 - `packages/contracts`: DTOs and input schemas.
 - `packages/game-core`: authoritative rules, scoring and public serializers.
-- `backend`: retained legacy .NET implementation.
 
 Canonical documents start at [Project Structure](docs/Project-Structure.md) and [Project Memory](docs/5-Project-Memory.md).
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`. LAN integration tests bind local HTTP/WebSocket ports.
+
+## Maintainability and verification
+
+Run `pnpm quality` for architecture limits, formatting, types, all tests, production export and a repeatable performance benchmark. `pnpm architecture` checks dependency boundaries and import cycles; `pnpm format` applies the pinned formatter. Production source files are limited to 300 lines, tests to 400.
+
+See [current architecture and performance evidence](docs/22-Architecture-and-Performance.md). Historical .NET sources are in Git history, not the active working tree.

@@ -30,7 +30,7 @@ export class BrioRoomSocket {
   constructor(
     private roomId: string,
     private role: 'host' | 'player',
-    private playerId: string = ''
+    private playerId: string = '',
   ) {}
 
   connect(): void {
@@ -39,7 +39,11 @@ export class BrioRoomSocket {
     this.manuallyClosed = false;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
-    if (!this.listening) { window.addEventListener('online', this.resume); document.addEventListener('visibilitychange', this.resume); this.listening = true; }
+    if (!this.listening) {
+      window.addEventListener('online', this.resume);
+      document.addEventListener('visibilitychange', this.resume);
+      this.listening = true;
+    }
     this.emitConnection('connecting');
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -48,7 +52,9 @@ export class BrioRoomSocket {
 
     const ws = new WebSocket(url);
     this.ws = ws;
-    this.connectTimer = setTimeout(() => { if (this.ws === ws && ws.readyState === WebSocket.CONNECTING) ws.close(); }, 10000);
+    this.connectTimer = setTimeout(() => {
+      if (this.ws === ws && ws.readyState === WebSocket.CONNECTING) ws.close();
+    }, 10000);
 
     ws.onopen = () => {
       if (this.ws !== ws) return;
@@ -67,7 +73,9 @@ export class BrioRoomSocket {
         this.sync();
       }, 5000);
     };
-    ws.onerror = () => { if (this.ws === ws) this.emitConnection('disconnected'); };
+    ws.onerror = () => {
+      if (this.ws === ws) this.emitConnection('disconnected');
+    };
     ws.onclose = () => {
       if (this.ws !== ws) return;
       this.stopSync();
@@ -125,7 +133,10 @@ export class BrioRoomSocket {
 
   private resume = (): void => {
     if (this.manuallyClosed || document.hidden) return;
-    if (this.ws?.readyState === WebSocket.OPEN && Date.now() - this.lastMessageAt <= 15000) { this.sync(); return; }
+    if (this.ws?.readyState === WebSocket.OPEN && Date.now() - this.lastMessageAt <= 15000) {
+      this.sync();
+      return;
+    }
     if (this.ws?.readyState === WebSocket.CONNECTING) return;
     this.ws?.close();
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
@@ -155,7 +166,9 @@ export class BrioRoomSocket {
 
   onConnectionState(callback: (state: 'connecting' | 'connected' | 'disconnected') => void): () => void {
     this.connectionListeners.push(callback);
-    return () => { this.connectionListeners = this.connectionListeners.filter((listener) => listener !== callback); };
+    return () => {
+      this.connectionListeners = this.connectionListeners.filter((listener) => listener !== callback);
+    };
   }
 
   private emitConnection(state: 'connecting' | 'connected' | 'disconnected'): void {
@@ -169,13 +182,14 @@ export class BrioRoomSocket {
   }
 
   recoverQuiz(action: 'void_and_replay' | 'void_and_skip'): void {
-    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ type: 'host.recover', payload: { action } }));
+    if (this.ws?.readyState === WebSocket.OPEN)
+      this.ws.send(JSON.stringify({ type: 'host.recover', payload: { action } }));
   }
 
   submitAnswer(
     roundId: string,
     submissionId: string,
-    answer: { optionId?: string; textAnswer?: string }
+    answer: { optionId?: string; textAnswer?: string },
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
@@ -189,25 +203,35 @@ export class BrioRoomSocket {
         this.rejectedListeners.delete(requestId);
         reject(new Error('لم يصل تأكيد الإجابة. حاول إرسالها مجدداً.'));
       }, 10000);
-      this.receiptListeners.set(requestId, (receipt) => { clearTimeout(timeout); resolve(receipt); });
-      this.rejectedListeners.set(requestId, (reason) => { clearTimeout(timeout); reject(new Error(reason)); });
+      this.receiptListeners.set(requestId, (receipt) => {
+        clearTimeout(timeout);
+        resolve(receipt);
+      });
+      this.rejectedListeners.set(requestId, (reason) => {
+        clearTimeout(timeout);
+        reject(new Error(reason));
+      });
 
-      this.ws.send(JSON.stringify({
-        type: 'answer.submit',
-        requestId,
-        payload: {
-          playerId: this.playerId,
-          roundId,
-          submissionId,
-          ...answer
-        }
-      }));
+      this.ws.send(
+        JSON.stringify({
+          type: 'answer.submit',
+          requestId,
+          payload: {
+            playerId: this.playerId,
+            roundId,
+            submissionId,
+            ...answer,
+          },
+        }),
+      );
     });
   }
 
   close(): void {
     this.manuallyClosed = true;
-    window.removeEventListener('online', this.resume); document.removeEventListener('visibilitychange', this.resume); this.listening = false;
+    window.removeEventListener('online', this.resume);
+    document.removeEventListener('visibilitychange', this.resume);
+    this.listening = false;
     this.stopSync();
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;

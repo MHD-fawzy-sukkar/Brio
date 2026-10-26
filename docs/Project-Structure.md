@@ -1,6 +1,6 @@
 # Brio — Project Structure
 
-Revision: 2026-10-24 / architecture v2. Runtime: apps/web, apps/worker, apps/local and shared packages. Sections listing planned feature directories remain architectural targets.
+Revision: 2026-10-26 / architecture v2. Runtime: apps/web, apps/worker, apps/local and shared packages. Sections listing planned feature directories remain architectural targets.
 
 ## Authority
 Read SRS-Architecture.md, this file, Reference-Architecture-v2.md, 6-Implementation-Plan.md, 8-Protocol-and-Data.md, and 5-Project-Memory.md before changes. These v2 documents replace conflicting v1 .NET/Redis requirements. Legacy backend/, empty frontend/ and docs/archive/ were explicitly retired by the owner on 2026-10-24; recover historical sources from stable/v2 or Git history if needed. The old Reference-Architecture.md was NOT supplied to the planner; inspect it in P0 and mark its conflicting instructions historical. Do not silently delete unrelated requirements.
@@ -8,14 +8,19 @@ Read SRS-Architecture.md, this file, Reference-Architecture-v2.md, 6-Implementat
 ## Selected target
 TypeScript throughout the new application. Next.js static-export frontend; Cloudflare Worker API; SQLite-backed Durable Object per live room; D1 for authoring/accounts/results; Cloudinary for prepared images. No Redis, SQL Server, SignalR, SSR, or Next Server Actions in the new cloud runtime.
 
+## Implemented module boundaries (2026-10-26)
+
+The active source has been refactored into route entries, feature controllers/views, repositories, room adapters and pure engine modules. The checked-in [architecture and performance report](22-Architecture-and-Performance.md) describes the actual folders and verification commands. `pnpm quality` now enforces source-size, formatting, dependency and regression checks. The older target paths below remain a roadmap when their names differ from the implemented feature folders.
+
 ## Repository map
 | Path | Responsibility |
 | --- | --- |
 | `apps/web/` | Next.js App Router, static export, mobile player and host UI |
 | `apps/worker/` | HTTP API, authentication, Cloudflare bindings, room runtime |
-| `apps/worker/src/http/` | Thin routing/HTTP validation and response mapping |
+| `apps/worker/src/routes/` | Feature HTTP/WS route modules; `http/` maps transport errors and creator requests |
 | `apps/worker/src/auth/` | Google token verification, creator sessions, CSRF, local development auth guard |
-| `apps/worker/src/rooms/` | GameRoom Durable Object, alarm adapter, WebSocket adapter, SQL migrations |
+| `apps/worker/src/durable-objects/room/` | Typed runtime port, HTTP/socket handlers, effects, broadcast and telemetry |
+| `apps/worker/src/rooms/storage/` | Room SQLite schema, read and write adapters |
 | `apps/worker/src/repositories/` | D1 authoring repositories; no per-answer D1 access |
 | `apps/worker/migrations/` | Versioned D1 SQL migrations |
 | `apps/worker/wrangler.jsonc` | Worker, static-assets, D1, DO SQLite migration bindings |
