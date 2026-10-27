@@ -99,7 +99,7 @@ export function loadGameStateFromDb(sql: SqlStorageLike, roomId: string, quizVer
   }
 
   return {
-    roomId,
+    roomId: metaMap.get('roomId') || roomId,
     quizVersionId,
     phase,
     stateVersion,

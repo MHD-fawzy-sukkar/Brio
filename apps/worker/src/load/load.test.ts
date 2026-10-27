@@ -1,3 +1,4 @@
+import { hostTestEnv } from '../rooms/testing-fixtures';
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
@@ -41,6 +42,7 @@ function createMockDoStorage() {
 }
 
 class MockWebSocket {
+  constructor(public tags: string[] = ['role:host', 'host-session:test']) {}
   sentMessages: string[] = [];
   readyState = 1;
 
@@ -87,9 +89,10 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
         storage,
         getWebSockets: () => [],
         acceptWebSocket: () => {},
+        getTags: (ws: MockWebSocket) => ws.tags,
       };
 
-      const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+      const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
       const quiz = generateMockQuiz(30);
       await doInstance.initQuizSnapshot(quiz);
 
@@ -130,7 +133,7 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
 
         // Near-deadline answer burst: Submit answers from all 150 players in parallel using fresh socket instances per round
         const submitPromises = playerIds.map(async (pId) => {
-          const ws = new MockWebSocket();
+          const ws = new MockWebSocket([`player:${pId}`, 'generation:1']);
           const reqId = `req_${qIdx}_${pId}`;
           const subId = `sub_${qIdx}_${pId}`;
           const selectedOption = `opt_${qIdx + 1}_${(parseInt(pId.split('_')[1]) % 4) + 1}`;
@@ -151,7 +154,7 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
 
           // Retry submission with duplicate submissionId to test idempotency (dropped ACK simulation)
           if (pId === 'player_1' || pId === 'player_50') {
-            const retryWs = new MockWebSocket();
+            const retryWs = new MockWebSocket([`player:${pId}`, 'generation:1']);
             await doInstance.webSocketMessage(
               retryWs as any,
               JSON.stringify({
@@ -204,9 +207,10 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
         storage,
         getWebSockets: () => [],
         acceptWebSocket: () => {},
+        getTags: (ws: MockWebSocket) => ws.tags,
       };
 
-      const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+      const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
       await doInstance.initQuizSnapshot(generateMockQuiz(2));
 
       // Simulate 150 players joining from same NAT IP (e.g. 198.51.100.45)
@@ -241,8 +245,9 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
           storage: storage1,
           getWebSockets: () => [],
           acceptWebSocket: () => {},
+          getTags: (ws: MockWebSocket) => ws.tags,
         } as any,
-        {} as any,
+        hostTestEnv as any,
       );
       const roomB = new GameRoomDO(
         {
@@ -250,8 +255,9 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
           storage: storage2,
           getWebSockets: () => [],
           acceptWebSocket: () => {},
+          getTags: (ws: MockWebSocket) => ws.tags,
         } as any,
-        {} as any,
+        hostTestEnv as any,
       );
 
       await roomA.initQuizSnapshot(generateMockQuiz(5));
@@ -301,8 +307,9 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
           storage,
           getWebSockets: () => [],
           acceptWebSocket: () => {},
+          getTags: (ws: MockWebSocket) => ws.tags,
         } as any,
-        {} as any,
+        hostTestEnv as any,
       );
       await doInstance.initQuizSnapshot(generateMockQuiz(1));
 
@@ -326,8 +333,9 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
           storage,
           getWebSockets: () => [],
           acceptWebSocket: () => {},
+          getTags: (ws: MockWebSocket) => ws.tags,
         } as any,
-        {} as any,
+        hostTestEnv as any,
       );
 
       const quizShort: PublishedQuizSnapshot = {
@@ -360,7 +368,7 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
       doInstance.state.activeRound!.endsAt = Date.now() - 1000;
       await doInstance.alarm(); // QUESTION phase
 
-      const ws = new MockWebSocket();
+      const ws = new MockWebSocket(['player:p1', 'generation:1']);
       await doInstance.webSocketMessage(
         ws as any,
         JSON.stringify({

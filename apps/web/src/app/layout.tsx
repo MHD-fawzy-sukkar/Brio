@@ -14,8 +14,24 @@ import { AuthProvider } from '../components/AuthProvider';
 import { AmbientBackground } from '../components/AmbientBackground';
 import { Logo } from '../components/Logo';
 import { isLanMode } from '../services/runtime-mode';
+import { siteDescription } from '../services/document-metadata';
 
 export const metadata: Metadata = {
+  applicationName: 'Brio',
+  openGraph: {
+    type: 'website',
+    siteName: 'Brio',
+    title: 'Brio — مسابقات تفاعلية حية',
+    description: siteDescription.ar,
+    locale: 'ar',
+    alternateLocale: ['en'],
+    images: [{ url: 'https://brio-worker.fawzy-sukkar2005.workers.dev/favicon.png', alt: 'Brio' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Brio — مسابقات تفاعلية حية',
+    description: siteDescription.ar,
+  },
   icons: {
     icon: { url: '/favicon.png', type: 'image/png' },
     shortcut: '/favicon.png',

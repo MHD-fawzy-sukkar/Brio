@@ -88,6 +88,7 @@ export function saveAnswerToDb(sql: SqlStorageLike, answer: AnswerRecord): void 
 }
 
 export function saveRoomMetaToDb(sql: SqlStorageLike, state: GameState): void {
+  sql.exec('INSERT OR REPLACE INTO room_meta (key, value) VALUES (?, ?)', 'roomId', state.roomId);
   sql.exec('INSERT OR REPLACE INTO room_meta (key, value) VALUES (?, ?)', 'phase', state.phase);
   sql.exec(
     'INSERT OR REPLACE INTO room_meta (key, value) VALUES (?, ?)',

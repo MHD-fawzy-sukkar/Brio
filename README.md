@@ -1,5 +1,7 @@
 # Brio
 
+Release preparation: [readiness review](docs/24-Production-Readiness.md), [operations and offline rehearsal](docs/25-Operations-and-Offline.md), [LinkedIn draft](docs/26-LinkedIn-Draft.md).
+
 Arabic live quizzes with a static Next.js frontend, a Cloudflare Worker/Durable Object cloud runtime, and an optional Windows-hosted LAN runtime sharing the same TypeScript game core.
 
 ## LAN rehearsal

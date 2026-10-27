@@ -85,6 +85,22 @@ export async function saveMediaRecord(
     mobileUrl = `/fixtures/images/${req.publicId}_mobile.${req.format}`;
   } else {
     if (!cloudName) throw new Error('خدمة رفع الصور غير مهيأة في بيئة الخادم.');
+    const assetId = req.target === 'cover' ? `cover_${req.quizId}` : `question_${req.questionId!}`;
+    const expectedId = `brio/${creatorId}/${req.quizId}/${assetId}`;
+    if (!env.CLOUDINARY_API_SECRET || !req.version || req.publicId !== expectedId)
+      throw new Error('تعذر التحقق من ملكية الصورة المرفوعة.');
+    const expectedSignature = Array.from(
+      new Uint8Array(
+        await crypto.subtle.digest(
+          'SHA-1',
+          new TextEncoder().encode(
+            `public_id=${req.publicId}&version=${req.version}${env.CLOUDINARY_API_SECRET}`,
+          ),
+        ),
+      ),
+      (byte) => byte.toString(16).padStart(2, '0'),
+    ).join('');
+    if (req.signature !== expectedSignature) throw new Error('تعذر التحقق من توقيع الصورة المرفوعة.');
     // Eager immutable Cloudinary variant URLs with explicit width & crop constraints
     // host: max width 1280 (1280x720)
     // mobile: max width 640 (640x360)

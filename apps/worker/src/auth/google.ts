@@ -106,6 +106,17 @@ export async function verifyGoogleIdToken(
   } catch {
     throw new Error('Failed to parse JWT header or payload');
   }
+  if (header.alg !== 'RS256' || typeof header.kid !== 'string')
+    throw new Error('Invalid token signing algorithm');
+  if (
+    !payload ||
+    typeof payload.sub !== 'string' ||
+    !payload.sub ||
+    typeof payload.email !== 'string' ||
+    typeof payload.exp !== 'number' ||
+    !Number.isFinite(payload.exp)
+  )
+    throw new Error('Invalid token claims');
 
   // 4. Validate Issuer
   const validIssuers = ['accounts.google.com', 'https://accounts.google.com'];

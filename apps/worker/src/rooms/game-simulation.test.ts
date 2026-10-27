@@ -1,3 +1,4 @@
+import { hostTestEnv } from './testing-fixtures';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { GameRoomDO } from '../durable-objects/GameRoomDO';
@@ -11,9 +12,10 @@ describe('Full 3-Client + Host Game Simulation', () => {
       storage: storage,
       getWebSockets: (tag: string) => (tag === 'role:host' && broadcastHost ? [broadcastHost] : []),
       acceptWebSocket: () => {},
+      getTags: (ws: MockWebSocket) => ws.tags,
     };
 
-    const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+    const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
     await doInstance.initQuizSnapshot(mockQuizSnapshot);
 
     // 3 Players join
@@ -87,7 +89,7 @@ describe('Full 3-Client + Host Game Simulation', () => {
     // 3. Players Submit Answers for Q1
     // p1 submits correct (opt_2), p2 submits wrong (opt_1), p3 submits correct (opt_2)
     await doInstance.webSocketMessage(
-      hostWs as any,
+      new MockWebSocket(['player:p1', 'generation:1']) as any,
       JSON.stringify({
         type: 'answer.submit',
         requestId: 'r1_p1',
@@ -95,7 +97,7 @@ describe('Full 3-Client + Host Game Simulation', () => {
       }),
     );
     await doInstance.webSocketMessage(
-      hostWs as any,
+      new MockWebSocket(['player:p2', 'generation:1']) as any,
       JSON.stringify({
         type: 'answer.submit',
         requestId: 'r1_p2',
@@ -103,7 +105,7 @@ describe('Full 3-Client + Host Game Simulation', () => {
       }),
     );
     await doInstance.webSocketMessage(
-      hostWs as any,
+      new MockWebSocket(['player:p3', 'generation:1']) as any,
       JSON.stringify({
         type: 'answer.submit',
         requestId: 'r1_p3',
@@ -126,7 +128,7 @@ describe('Full 3-Client + Host Game Simulation', () => {
     assert.ok(doInstance.state.players.get('p3')!.score > 0);
 
     // Score persistence survives a Durable Object cold wake (prefix sum source of truth).
-    const coldWake = new GameRoomDO(mockCtx as any, {} as any);
+    const coldWake = new GameRoomDO(mockCtx as any, hostTestEnv as any);
     await coldWake.ensureInitialized();
     assert.equal(coldWake.state.players.get('p1')!.score, doInstance.state.players.get('p1')!.score);
     assert.equal(coldWake.state.players.get('p2')!.score, 0);
@@ -146,7 +148,7 @@ describe('Full 3-Client + Host Game Simulation', () => {
 
     // Players Submit Short Answer text for Q2
     await doInstance.webSocketMessage(
-      hostWs as any,
+      new MockWebSocket(['player:p1', 'generation:1']) as any,
       JSON.stringify({
         type: 'answer.submit',
         requestId: 'r2_p1',
@@ -154,7 +156,7 @@ describe('Full 3-Client + Host Game Simulation', () => {
       }),
     );
     await doInstance.webSocketMessage(
-      hostWs as any,
+      new MockWebSocket(['player:p2', 'generation:1']) as any,
       JSON.stringify({
         type: 'answer.submit',
         requestId: 'r2_p2',

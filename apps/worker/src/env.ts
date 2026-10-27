@@ -8,4 +8,7 @@ export interface Env {
   CLOUDINARY_API_SECRET?: string;
   DEV_AUTH_BYPASS?: string;
   DEV_MEDIA_BYPASS?: string;
+  AUTH_LIMITER?: { limit(input: { key: string }): Promise<{ success: boolean }> };
+  ENTRY_LIMITER?: { limit(input: { key: string }): Promise<{ success: boolean }> };
+  UPLOAD_LIMITER?: { limit(input: { key: string }): Promise<{ success: boolean }> };
 }

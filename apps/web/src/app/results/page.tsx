@@ -58,6 +58,11 @@ function ResultsContent() {
     const query = playerId ? `?playerId=${encodeURIComponent(playerId)}` : '';
     requestJson<ResultSnapshot>(`/api/rooms/${encodeURIComponent(roomId)}/snapshot${query}`, {
       signal: controller.signal,
+      headers: playerId
+        ? {
+            Authorization: `Bearer ${sessionStorage.getItem(`brio_player_session:${roomId}:${playerId}`) || ''}`,
+          }
+        : undefined,
     })
       .then((snapshot) => {
         if (!controller.signal.aborted) setState({ key, snapshot });

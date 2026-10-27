@@ -13,6 +13,7 @@ import { saveAnswerToDb, saveRoomMetaToDb } from '../../rooms/room-storage';
 import type { RoomRuntime } from './runtime';
 import type { RoomTelemetry } from './telemetry';
 import { sendSnapshot } from './broadcast';
+import { socketIdentity, verifyHostCommand } from './security';
 
 export async function webSocketMessage(
   room: RoomRuntime,
@@ -61,6 +62,11 @@ export async function webSocketMessage(
     const msgStr = typeof message === 'string' ? message : new TextDecoder().decode(message);
     const data = JSON.parse(msgStr);
     const now = Date.now();
+    const identity = socketIdentity(room, ws);
+    if (!identity.host && !identity.playerId) throw new Error('Session superseded or unauthorized');
+    if (typeof data.type !== 'string') throw new Error('Invalid message type');
+    if (data.type.startsWith('host.') && (!identity.host || !(await verifyHostCommand(room, ws))))
+      throw new Error('Host authentication required');
 
     if (data.type === 'room.sync') {
       const effects = reconcileDeadlines(room.state, room.quizSnapshot, now);
@@ -104,6 +110,12 @@ export async function webSocketMessage(
 
     // 2. Answer Submission (Transactional & Durable ACK with Latency Tracking)
     if (data.type === 'answer.submit') {
+      if (
+        !identity.playerId ||
+        (data.payload?.playerId && data.payload.playerId !== identity.playerId) ||
+        (data.playerId && data.playerId !== identity.playerId)
+      )
+        throw new Error('Cannot submit for another player');
       telemetry.metrics.totalSubmissions++;
 
       // Short Answer payload length guard (max 200 chars)
@@ -125,14 +137,14 @@ export async function webSocketMessage(
         return;
       }
 
-      const answerKey = `${data.payload.roundId}:${data.payload.playerId || data.playerId}`;
+      const answerKey = `${data.payload.roundId}:${identity.playerId}`;
       const isDuplicate = room.state.answers.has(answerKey);
 
       const result = processAnswerSubmission(
         room.state,
         room.quizSnapshot,
         {
-          playerId: data.payload.playerId || data.playerId,
+          playerId: identity.playerId,
           roundId: data.payload.roundId,
           submissionId: data.payload.submissionId,
           optionId: data.payload.optionId,

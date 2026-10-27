@@ -1,3 +1,4 @@
+import { hostTestEnv } from '../rooms/testing-fixtures';
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
@@ -42,6 +43,7 @@ function createMockDoStorage() {
 }
 
 class MockWebSocket {
+  constructor(public tags: string[] = ['role:host', 'host-session:test']) {}
   sentMessages: string[] = [];
   readyState = 1;
 
@@ -143,9 +145,10 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         storage,
         getWebSockets: () => [],
         acceptWebSocket: () => {},
+        getTags: (ws: MockWebSocket) => ws.tags,
       };
 
-      const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+      const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
       await doInstance.initQuizSnapshot(mockQuizWithImages);
 
       // Player 1 (Fast) and Player 2 (Delayed 12s)
@@ -184,7 +187,7 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
       const initialEndsAt = doInstance.state.activeRound!.endsAt;
 
       // Fast player answers at t = 2s
-      const wsFast = new MockWebSocket();
+      const wsFast = new MockWebSocket(['player:p1_fast', 'generation:1']);
       await doInstance.webSocketMessage(
         wsFast as any,
         JSON.stringify({
@@ -204,7 +207,7 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
       assert.equal(doInstance.state.activeRound!.endsAt, initialEndsAt);
 
       // Delayed player submits answer at t = 12s (well before initialEndsAt = 30s)
-      const wsDelayed = new MockWebSocket();
+      const wsDelayed = new MockWebSocket(['player:p2_delayed', 'generation:1']);
       await doInstance.webSocketMessage(
         wsDelayed as any,
         JSON.stringify({
@@ -233,9 +236,10 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         storage,
         getWebSockets: () => [],
         acceptWebSocket: () => {},
+        getTags: (ws: MockWebSocket) => ws.tags,
       };
 
-      const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+      const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
       await doInstance.initQuizSnapshot(mockQuizWithImages);
 
       await doInstance.fetch(
@@ -276,9 +280,10 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         storage,
         getWebSockets: () => [],
         acceptWebSocket: () => {},
+        getTags: (ws: MockWebSocket) => ws.tags,
       };
 
-      const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+      const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
       await doInstance.initQuizSnapshot(mockQuizWithImages);
 
       const ws = new MockWebSocket();
@@ -305,9 +310,10 @@ describe('Phase P5 — Media Pipeline & Resilient Frontend Acceptance Tests', ()
         storage,
         getWebSockets: () => [],
         acceptWebSocket: () => {},
+        getTags: (ws: MockWebSocket) => ws.tags,
       };
 
-      const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+      const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
       await doInstance.initQuizSnapshot(mockQuizWithImages);
 
       await doInstance.fetch(

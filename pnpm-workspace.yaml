@@ -1,6 +1,9 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+overrides:
+  postcss: '^8.5.23'
+  source-map-js: '^1.2.2'
 allowBuilds:
   esbuild: true
   sharp: true

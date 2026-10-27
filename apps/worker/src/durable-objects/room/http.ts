@@ -8,6 +8,8 @@ import {
 } from '../../rooms/room-storage';
 import type { RoomRuntime } from './runtime';
 import type { RoomTelemetry } from './telemetry';
+import { verifyPlayerSession } from './security';
+import { parseCookies } from '../../auth/session';
 
 export async function fetch(
   room: RoomRuntime,
@@ -67,6 +69,7 @@ export async function fetch(
     const { playerId, nickname, avatarId, sessionHash } = body;
     let player = room.state.players.get(playerId);
     if (!player) {
+      if (room.state.players.size >= 200) return Response.json({ detail: 'Room is full' }, { status: 409 });
       if (room.quizSnapshot.identity && !isCompetitionAvatarAllowed(room.quizSnapshot.identity, avatarId)) {
         return new Response(JSON.stringify({ detail: 'اختر صورة متاحة ضمن هذه المسابقة.' }), {
           status: 400,
@@ -167,12 +170,38 @@ export async function fetch(
 
     const role = url.searchParams.get('role') || 'player';
     const playerId = url.searchParams.get('playerId') || '';
+    if (
+      role === 'host'
+        ? request.headers.get('X-Brio-Host') !== 'verified'
+        : role !== 'player' ||
+          !(await verifyPlayerSession(
+            room,
+            playerId,
+            parseCookies(request.headers.get('Cookie'))[`brio_player_${room.state.roomId}`] || '',
+          ))
+    )
+      return Response.json({ detail: 'Authentication required' }, { status: 401 });
+
+    const player = role === 'player' ? room.state.players.get(playerId)! : undefined;
+    if (player) {
+      player.connectionGeneration++;
+      room.ctx.storage.sql.exec(
+        'UPDATE players SET connection_generation = ? WHERE player_id = ?',
+        player.connectionGeneration,
+        playerId,
+      );
+    }
 
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
 
     const tag = role === 'host' ? 'role:host' : `player:${playerId}`;
-    room.ctx.acceptWebSocket(server, [tag]);
+    room.ctx.acceptWebSocket(
+      server,
+      player
+        ? [tag, `generation:${player.connectionGeneration}`]
+        : [tag, `host-session:${request.headers.get('X-Brio-Host-Session') || ''}`],
+    );
 
     // Send immediate snapshot on connect
     if (room.quizSnapshot) {
@@ -210,6 +239,12 @@ export async function fetch(
   // 6. HTTP Snapshot Fallback
   if (url.pathname.endsWith('/snapshot')) {
     const playerId = url.searchParams.get('playerId');
+    if (
+      playerId
+        ? !(await verifyPlayerSession(room, playerId, request.headers.get('X-Brio-Player-Token') || ''))
+        : request.headers.get('X-Brio-Host') !== 'verified'
+    )
+      return Response.json({ detail: 'Authentication required' }, { status: 401 });
     if (playerId && room.state.players.has(playerId) && room.quizSnapshot) {
       const snapshot = toPublicPlayerSnapshot(room.state, playerId, room.quizSnapshot);
       return new Response(JSON.stringify(snapshot), { headers: { 'Content-Type': 'application/json' } });

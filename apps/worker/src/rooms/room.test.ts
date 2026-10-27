@@ -1,3 +1,4 @@
+import { hostTestEnv } from './testing-fixtures';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameRoomDO } from '../durable-objects/GameRoomDO';
@@ -12,7 +13,7 @@ test('frozen custom identity survives a Durable Object wake and only its catalog
     acceptWebSocket: () => {},
     getTags: () => [],
   };
-  const room = new GameRoomDO(ctx, {} as any);
+  const room = new GameRoomDO(ctx, hostTestEnv as any);
   const avatarId = 'identity:00000000-0000-4000-8000-000000000001';
   const src = 'https://res.cloudinary.com/brio/image/upload/v1/team.webp';
   const identity = {
@@ -38,7 +39,7 @@ test('frozen custom identity survives a Durable Object wake and only its catalog
     );
   assert.equal((await join('avatar_1')).status, 400);
   assert.equal((await join(avatarId)).status, 200);
-  const woke = new GameRoomDO(ctx, {} as any);
+  const woke = new GameRoomDO(ctx, hostTestEnv as any);
   await woke.ensureInitialized();
   assert.deepEqual(woke.quizSnapshot?.identity, identity);
   const player = toPublicPlayerSnapshot(woke.state, 'p_identity', woke.quizSnapshot!);
@@ -68,9 +69,10 @@ test('broken sockets cannot block countdown, question alarms, or the finale for 
           : tag === 'player:p1'
             ? [players[1]]
             : [],
-    getTags: (ws: unknown) => (ws === host ? ['role:host'] : ['player:p1']),
+    getTags: (ws: unknown) =>
+      ws === host ? ['role:host', 'host-session:test'] : ['player:p1', 'generation:1'],
   };
-  const room = new GameRoomDO(ctx, {} as any);
+  const room = new GameRoomDO(ctx, hostTestEnv as any);
   await room.initQuizSnapshot({ ...mockQuizSnapshot, questions: [mockQuizSnapshot.questions[0]] });
   for (let i = 0; i < 2; i++) {
     await room.fetch(

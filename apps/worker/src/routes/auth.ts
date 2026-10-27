@@ -71,7 +71,7 @@ app.post('/api/auth/google', async (c) => {
   const session = await createSessionInfo(parsed.data.remember);
   await createSessionRecord(c.env.DB, creator.id, session.sessionHash, session.expiresAt);
 
-  const isProd = (c.env as any).NODE_ENV === 'production';
+  const isProd = new URL(c.req.url).protocol === 'https:';
   const cookieHeader = buildSessionCookie(session.sessionToken, isProd, parsed.data.remember);
 
   c.header('Set-Cookie', cookieHeader);
@@ -113,7 +113,7 @@ app.post('/api/auth/logout', async (c) => {
     await revokeSessionRecord(c.env.DB, sessionHash);
   }
 
-  const isProd = (c.env as any).NODE_ENV === 'production';
+  const isProd = new URL(c.req.url).protocol === 'https:';
   c.header('Set-Cookie', buildLogoutCookie(isProd));
 
   return c.json({ status: 'logged_out' });

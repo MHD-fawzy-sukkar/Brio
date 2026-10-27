@@ -43,7 +43,11 @@ export function parseCookies(cookieHeader: string | null): Record<string, string
     if (idx > 0) {
       const name = pair.substring(0, idx).trim();
       const val = pair.substring(idx + 1).trim();
-      cookies[name] = decodeURIComponent(val);
+      try {
+        cookies[name] = decodeURIComponent(val);
+      } catch {
+        // Ignore malformed cookies instead of turning a public request into a 500.
+      }
     }
   }
   return cookies;
@@ -67,7 +71,8 @@ export function buildLogoutCookie(isProduction: boolean): string {
  */
 export function validateOrigin(request: Request, allowedOrigins?: string[]): boolean {
   const method = request.method.toUpperCase();
-  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+  const websocket = request.headers.get('Upgrade')?.toLowerCase() === 'websocket';
+  if (!websocket && ['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     return true; // Read-only methods don't require CSRF origin check
   }
 
@@ -75,10 +80,12 @@ export function validateOrigin(request: Request, allowedOrigins?: string[]): boo
   if (!origin) {
     // If no Origin header present on mutation, check Referer
     const referer = request.headers.get('Referer');
-    if (!referer) return true; // Local direct request
-    const url = new URL(request.url);
-    const refUrl = new URL(referer);
-    return refUrl.origin === url.origin;
+    if (!referer) return !websocket; // Non-browser API clients do not send Origin.
+    try {
+      return new URL(referer).origin === new URL(request.url).origin;
+    } catch {
+      return false;
+    }
   }
 
   const requestUrl = new URL(request.url);

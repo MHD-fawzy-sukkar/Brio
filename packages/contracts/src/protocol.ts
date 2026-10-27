@@ -12,7 +12,7 @@ export const ErrorResponseSchema = z.object({
   code: z.string(),
   traceId: z.string(),
   detail: z.string(),
-  errors: z.record(z.array(z.string())).optional(),
+  errors: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;

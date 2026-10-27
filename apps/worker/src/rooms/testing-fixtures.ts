@@ -79,6 +79,7 @@ export function createMockDoStorage() {
 }
 
 export class MockWebSocket {
+  constructor(public tags: string[] = ['role:host', 'host-session:test']) {}
   sentMessages: string[] = [];
   readyState = 1;
 
@@ -86,6 +87,15 @@ export class MockWebSocket {
     this.sentMessages.push(data);
   }
 }
+
+/** Isolated auth adapter for tests that exercise room rules after a verified handshake. */
+export const hostTestEnv = {
+  DB: {
+    prepare: () => ({
+      bind: () => ({ first: async () => ({ id: 'test-creator' }), run: async () => ({ success: true }) }),
+    }),
+  },
+};
 
 export const mockQuizSnapshot: PublishedQuizSnapshot = {
   id: 'quiz_v1',

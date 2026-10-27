@@ -46,8 +46,8 @@ app.post('/api/rooms/:roomId/join', async (c) => {
     return rfc7807Error(c, 400, 'bad_request', 'Invalid JSON body');
   }
 
-  const nickname = (body.nickname || '').trim();
-  const avatarId = body.avatarId || 'avatar_1';
+  const nickname = typeof body?.nickname === 'string' ? body.nickname.trim() : '';
+  const avatarId = typeof body?.avatarId === 'string' ? body.avatarId : 'avatar_1';
 
   if (!nickname || nickname.length < 2 || nickname.length > 20) {
     return rfc7807Error(c, 400, 'validation_failed', 'اكتب اسماً مستعاراً بين حرفين و20 حرفاً.');
@@ -80,6 +80,11 @@ app.post('/api/rooms/:roomId/join', async (c) => {
     );
   }
 
+  const secure = new URL(c.req.url).protocol === 'https:' ? '; Secure' : '';
+  c.header(
+    'Set-Cookie',
+    `brio_player_${roomId}=${sessionToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=14400${secure}`,
+  );
   return c.json(
     {
       roomId,

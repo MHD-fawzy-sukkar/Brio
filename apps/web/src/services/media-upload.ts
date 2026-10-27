@@ -127,6 +127,7 @@ async function uploadImage(input: {
       publicId: uploaded.public_id || signature.publicId,
       format: uploaded.format || 'webp',
       version: typeof uploaded.version === 'number' ? uploaded.version : undefined,
+      signature: uploaded.signature,
       width: uploaded.width || 1280,
       height: uploaded.height || 720,
       byteSize: uploaded.bytes || optimizedFile.size,

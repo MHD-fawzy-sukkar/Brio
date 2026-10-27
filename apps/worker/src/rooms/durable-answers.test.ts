@@ -1,3 +1,4 @@
+import { hostTestEnv } from './testing-fixtures';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { GameRoomDO } from '../durable-objects/GameRoomDO';
@@ -10,9 +11,10 @@ describe('Transactional Answer Submissions & Durable ACK', () => {
       storage: storage,
       getWebSockets: () => [],
       acceptWebSocket: () => {},
+      getTags: (ws: MockWebSocket) => ws.tags,
     };
 
-    const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+    const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
     await doInstance.initQuizSnapshot(mockQuizSnapshot);
 
     // Add player and start quiz
@@ -23,8 +25,8 @@ describe('Transactional Answer Submissions & Durable ACK', () => {
       }),
     );
 
-    const ws = new MockWebSocket();
-    await doInstance.webSocketMessage(ws as any, JSON.stringify({ type: 'host.start' }));
+    const ws = new MockWebSocket(['player:p_1', 'generation:1']);
+    await doInstance.webSocketMessage(new MockWebSocket() as any, JSON.stringify({ type: 'host.start' }));
     assert.equal(doInstance.state.phase, 'COUNTDOWN');
 
     // Countdown finishes -> Question round begins
@@ -70,9 +72,10 @@ describe('Transactional Answer Submissions & Durable ACK', () => {
       storage: storage,
       getWebSockets: () => [],
       acceptWebSocket: () => {},
+      getTags: (ws: MockWebSocket) => ws.tags,
     };
 
-    const doInstance = new GameRoomDO(mockCtx as any, {} as any);
+    const doInstance = new GameRoomDO(mockCtx as any, hostTestEnv as any);
     await doInstance.initQuizSnapshot(mockQuizSnapshot);
 
     await doInstance.fetch(
@@ -82,8 +85,8 @@ describe('Transactional Answer Submissions & Durable ACK', () => {
       }),
     );
 
-    const ws = new MockWebSocket();
-    await doInstance.webSocketMessage(ws as any, JSON.stringify({ type: 'host.start' }));
+    const ws = new MockWebSocket(['player:p_1', 'generation:1']);
+    await doInstance.webSocketMessage(new MockWebSocket() as any, JSON.stringify({ type: 'host.start' }));
 
     // Countdown finishes -> Question round begins
     doInstance.state.activeRound!.endsAt = Date.now() - 1000;

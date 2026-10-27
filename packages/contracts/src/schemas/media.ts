@@ -11,7 +11,7 @@ export const UploadSignatureRequestSchema = z
     target: z.enum(['question', 'cover']).default('question'),
     byteSize: z.number().min(1).max(MAX_MEDIA_BYTE_SIZE, 'Image byte size must not exceed 5MB'),
     mimeType: z.enum(ALLOWED_MEDIA_MIME_TYPES, {
-      errorMap: () => ({ message: 'Unsupported image mime type. Allowed: JPEG, PNG, WebP, AVIF' }),
+      error: 'Unsupported image mime type. Allowed: JPEG, PNG, WebP, AVIF',
     }),
     isEssential: z.boolean().default(true),
   })
@@ -27,8 +27,16 @@ export const UploadCompleteRequestSchema = z
     quizId: z.string().uuid(),
     questionId: z.string().uuid().optional(),
     target: z.enum(['question', 'cover']).default('question'),
-    publicId: z.string().min(1),
-    format: z.string().min(1),
+    publicId: z
+      .string()
+      .min(1)
+      .max(300)
+      .regex(/^[a-zA-Z0-9_/-]+$/),
+    format: z.enum(['jpg', 'jpeg', 'png', 'webp', 'avif']),
+    signature: z
+      .string()
+      .regex(/^[a-f0-9]{40}$/)
+      .optional(),
     version: z.number().int().positive().optional(),
     width: z.number().positive(),
     height: z.number().positive(),

@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useSyncExternalStore } from 'react';
+import { usePathname } from 'next/navigation';
+import { pageTitles, siteDescription } from '../services/document-metadata';
 import {
   getLocale,
   initializeLocale,
@@ -15,6 +17,8 @@ export function useLocale() {
 }
 export function LocaleBootstrap() {
   const locale = useLocale();
+  const pathname = usePathname();
+  const titles = pageTitles[pathname?.replace(/\/$/, '') || '/'] || pageTitles['/'];
   useEffect(initializeLocale, []);
   useEffect(() => {
     const storage = (event: StorageEvent) => {
@@ -26,11 +30,8 @@ export function LocaleBootstrap() {
   }, []);
   return (
     <>
-      <title>{t('Brio — مسابقات تفاعلية حية', undefined, locale)}</title>
-      <meta
-        name="description"
-        content={t('أنشئ مسابقات ممتعة وشاركها مباشرة مع جمهورك.', undefined, locale)}
-      />
+      <title>{`Brio — ${titles[locale === 'ar' ? 0 : 1]}`}</title>
+      <meta name="description" content={siteDescription[locale]} />
     </>
   );
 }
