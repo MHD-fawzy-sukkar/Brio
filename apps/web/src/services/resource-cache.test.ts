@@ -122,22 +122,22 @@ test('session snapshots restore only for the same owner; blocked storage leaves 
     setCacheOwner('persist-a');
     setResource('/api/themes', ['saved']);
     setResource('/api/creator/stats', { totalParticipations: 17, pending: false });
-    const snapshot = storage.get('brio_creator_resources_v1')!;
+    const snapshot = storage.get('brio_creator_resources_v2')!;
     setCacheOwner('persist-b');
-    storage.set('brio_creator_resources_v1', snapshot);
+    storage.set('brio_creator_resources_v2', snapshot);
     setCacheOwner('persist-a');
     assert.deepEqual(peekResource('/api/themes'), ['saved']);
     assert.deepEqual(peekResource('/api/creator/stats'), { totalParticipations: 17, pending: false });
     setResource('/api/quizzes', [{ id: 'recent' }]);
     setResource('/api/quizzes/dirty', { id: 'dirty', questions: [] }, { transient: true });
-    const retained = JSON.parse(storage.get('brio_creator_resources_v1')!);
+    const retained = JSON.parse(storage.get('brio_creator_resources_v2')!);
     assert.equal(
       retained.entries.some(([key]: [string, unknown]) => key === '/api/quizzes/dirty'),
       false,
     );
     for (const [key, entry] of retained.entries) if (key === '/api/quizzes') entry.at = Date.now() - 180_000;
     setCacheOwner('persist-b');
-    storage.set('brio_creator_resources_v1', JSON.stringify(retained));
+    storage.set('brio_creator_resources_v2', JSON.stringify(retained));
     setCacheOwner('persist-a');
     assert.deepEqual(peekResource('/api/quizzes'), [{ id: 'recent' }]);
     assert.equal(resourceIsFresh('/api/quizzes'), false);

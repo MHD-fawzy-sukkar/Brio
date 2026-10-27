@@ -3,13 +3,10 @@
 import { useEffect, useState } from 'react';
 import type { ThemeSummaryDto } from '@brio/contracts';
 import Link from 'next/link';
-import { setThemeVisibility } from './api';
 import { useResource } from '../../hooks/use-resource';
-import { setResource } from '../../services/resource-cache';
 import { ThemeCardsSkeleton } from '../../components/Loading';
 import { ThemeArtwork } from './ThemeArtwork';
 import { IdentityPreview } from './IdentityPreview';
-import { PublishThemeDialog } from './PublishThemeDialog';
 
 export function ThemeLibraryPicker({
   selected,
@@ -25,39 +22,15 @@ export function ThemeLibraryPicker({
     error: loadError,
     reload,
   } = useResource<ThemeSummaryDto[]>('/api/themes');
-  const themes = data ?? [];
+  const themes = (data ?? []).filter((theme) => theme.owned);
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState<'mine' | 'public'>('mine');
-  const [error, setError] = useState('');
-  const [publishing, setPublishing] = useState<ThemeSummaryDto | null>(null);
-  const [updating, setUpdating] = useState<string | null>(null);
   useEffect(() => {
     if (!data || !selected) return;
-    const current = data.find((theme) => theme.id === selected.id) ?? null;
+    const current = data.find((theme) => theme.owned && theme.id === selected.id) ?? null;
     if (JSON.stringify(current) !== JSON.stringify(selected)) onSelect(current);
   }, [data, selected, onSelect]);
-  const changeVisibility = async (theme: ThemeSummaryDto, visibility: 'private' | 'public') => {
-    setUpdating(theme.id);
-    setError('');
-    try {
-      await setThemeVisibility(theme.id, visibility, visibility === 'public');
-      setResource(
-        '/api/themes',
-        themes.map((item) => (item.id === theme.id ? { ...item, visibility } : item)),
-      );
-      if (selected?.id === theme.id) onSelect({ ...theme, visibility });
-      setPublishing(null);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذّر تغيير الإتاحة.');
-      setPublishing(null);
-    } finally {
-      setUpdating(null);
-    }
-  };
-  const visible = themes.filter(
-    (theme) =>
-      (tab === 'mine' ? theme.owned : theme.visibility === 'public') &&
-      theme.name.toLocaleLowerCase('ar').includes(query.trim().toLocaleLowerCase('ar')),
+  const visible = themes.filter((theme) =>
+    theme.name.toLocaleLowerCase('ar').includes(query.trim().toLocaleLowerCase('ar')),
   );
   const isLoading = !loadError && (loading || !data || (refreshing && themes.length === 0));
   return (
@@ -67,22 +40,11 @@ export function ThemeLibraryPicker({
       aria-busy={isLoading}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="group"
-          aria-label="مصدر الهوية"
-          className="inline-flex max-w-full rounded-xl bg-slate-100 p-1"
-        >
-          {(['mine', 'public'] as const).map((value) => (
-            <button
-              type="button"
-              key={value}
-              aria-pressed={tab === value}
-              onClick={() => setTab(value)}
-              className={`rounded-lg px-3 py-2.5 text-xs font-black transition sm:px-4 sm:text-sm ${tab === value ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-            >
-              {value === 'mine' ? 'هوياتي البصرية' : 'المكتبة العامة'}
-            </button>
-          ))}
+        <div>
+          <h3 className="text-sm font-black">هوياتي البصرية</h3>
+          <p className="mt-1 text-xs leading-6 text-slate-500">
+            اختر من هوياتك المحفوظة لإعادة استخدامها في هذه المسابقة.
+          </p>
         </div>
         <Link
           href="/identities/"
@@ -134,14 +96,13 @@ export function ThemeLibraryPicker({
           جاري تحديث الهويات البصرية…
         </p>
       )}
-      {(error || loadError) && (
+      {loadError && (
         <div role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
-          {error || loadError}
+          {loadError}
           <button
             type="button"
             className="ms-3 font-bold underline"
             onClick={() => {
-              setError('');
               reload();
             }}
           >
@@ -149,13 +110,11 @@ export function ThemeLibraryPicker({
           </button>
         </div>
       )}
-      {!isLoading && !error && !loadError && !visible.length && (
+      {!isLoading && !loadError && !visible.length && (
         <p className="rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-500">
           {query.trim()
             ? 'لا توجد هويات بصرية تطابق بحثك.'
-            : tab === 'mine'
-              ? 'لا توجد هويات بصرية محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.'
-              : 'لا توجد هويات بصرية عامة بعد.'}
+            : 'لا توجد هويات بصرية محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.'}
         </p>
       )}
       {!isLoading && (
@@ -185,46 +144,20 @@ export function ThemeLibraryPicker({
                   <ThemeArtwork src={cover} className="mx-auto h-24 w-full rounded-xl bg-slate-50 p-2" />
                   <p className="mt-2 truncate text-sm font-black">{theme.name}</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {theme.owned ? 'هويتك' : 'هوية عامة'} · {theme.identity.avatars.length} صورة للاعبين ·{' '}
+                    {theme.identity.avatars.length} صورة للاعبين ·{' '}
                     {selected?.id === theme.id ? 'محددة ✓' : 'اضغط للاختيار'}
                   </p>
                 </button>
-                {theme.owned && tab === 'mine' && (
-                  <button
-                    type="button"
-                    disabled={updating !== null}
-                    className="mt-3 border-t border-slate-100 pt-2 text-xs font-bold text-brand-700"
-                    onClick={() => {
-                      if (theme.visibility === 'private') setPublishing(theme);
-                      else void changeVisibility(theme, 'private');
-                    }}
-                  >
-                    {updating === theme.id
-                      ? 'جاري الحفظ…'
-                      : theme.visibility === 'public'
-                        ? 'جعلها خاصة'
-                        : 'نشرها للعامة'}
-                  </button>
-                )}
               </article>
             );
           })}
         </div>
       )}
-      <PublishThemeDialog
-        open={publishing !== null}
-        busy={updating !== null}
-        onCancel={() => setPublishing(null)}
-        onConfirm={() => {
-          if (publishing) void changeVisibility(publishing, 'public');
-        }}
-      />
       {selected && (
         <>
           <p className="text-xs leading-6 text-slate-500">
-            {selected.owned
-              ? 'ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي البصرية» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها لبولت.'
-              : 'هذه الهوية العامة للاستخدام فقط: لا يمكنك تعديل شخصيتها أو شعارها أو نشرها باسمك. تحتفظ المسابقة بنسخة ثابتة لا تتأثر بتعديلات صاحبها.'}
+            ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي البصرية» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها
+            لبولت.
           </p>
           <details className="rounded-2xl border border-slate-200 bg-white">
             <summary className="cursor-pointer px-4 py-3 text-sm font-black text-brand-700">

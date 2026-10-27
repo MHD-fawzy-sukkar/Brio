@@ -97,7 +97,7 @@ export function QuizIdentitySettings({
             onBusyChange(true);
           }}
         >
-          اختيار هوية محفوظة أو عامة
+          اختيار من هوياتي
         </button>
       )}
       {choosing && (
@@ -151,8 +151,7 @@ export function QuizIdentitySettings({
       {panel.mode === 'locked' && panel.record && (
         <>
           <p className="rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-600">
-            هذه الهوية العامة للاستخدام فقط. لا يمكنك تعديل شخصيتها أو شعارها أو إتاحتها؛ يمكنك استخدامها كما
-            هي أو العودة إلى بولت.
+            هذه نسخة محفوظة من هوية سابقة. يمكنك الاحتفاظ بها لهذه المسابقة أو اختيار هوية من هوياتك.
           </p>
           <IdentityPreview identity={panel.record.identity} />
         </>

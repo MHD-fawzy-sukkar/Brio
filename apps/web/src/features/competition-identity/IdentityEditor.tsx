@@ -7,7 +7,6 @@ import { useIdentityUploads } from './use-identity-uploads';
 import { ThemeImageGallery, type DraftThemeImage, type ThemeGalleryItem } from './ThemeImageGallery';
 import { assignSpecialImage } from './image-roles';
 import { ThemeColorPicker } from './ThemeColorPicker';
-import { PublishThemeDialog } from './PublishThemeDialog';
 
 type DraftImage = DraftThemeImage;
 export type IdentityDraft = SaveIdentityRequest & {
@@ -47,10 +46,6 @@ export function IdentityEditor({
 }: EditorProps) {
   const [name, setName] = useState(record?.name ?? defaultName);
   const [accent, setAccent] = useState<SaveIdentityRequest['accent']>(record?.accent ?? 'brio');
-  const [visibility, setVisibility] = useState<SaveIdentityRequest['visibility']>(
-    record?.visibility ?? 'private',
-  );
-  const [publishOpen, setPublishOpen] = useState(false);
   const [images, setImages] = useState<DraftImage[]>(() => initialImages(record));
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
@@ -79,12 +74,12 @@ export function IdentityEditor({
         name,
         images,
         accent,
-        visibility: quizId ? 'private' : visibility,
-        publishConfirmed: !quizId && visibility === 'public',
+        visibility: 'private',
+        publishConfirmed: false,
         avatarMode: 'auto',
         motion: 'float',
       }),
-    [name, images, accent, visibility, quizId],
+    [name, images, accent],
   );
   const blocked = uploads.uploading;
   useEffect(() => {
@@ -215,7 +210,7 @@ export function IdentityEditor({
           الصور تظهر بهذا الشكل عند الانضمام. من ⋯ عيّن الرئيسية أو الشعار أو احذف الصورة. الشعار لا يظهر ضمن
           أفاتارات اللاعبين. عند وجود أقل من 5 أفاتارات تُضاف صور بولت؛ من 5 وفوق تظهر صورك فقط.
         </p>
-        <div className="identity-editor-options grid gap-5 md:grid-cols-2">
+        <div className="identity-editor-options space-y-3">
           <div>
             <span className="label">لون التفاصيل داخل المسابقة</span>
             <ThemeColorPicker value={accent} onChange={setAccent} />
@@ -224,42 +219,13 @@ export function IdentityEditor({
               ثابتة.
             </p>
           </div>
-          {!quizId && (
-            <label className="block">
-              <span className="label">إتاحة الهوية</span>
-              <select
-                className="field"
-                value={visibility}
-                onChange={(event) => {
-                  if (event.target.value === 'public') setPublishOpen(true);
-                  else setVisibility('private');
-                }}
-              >
-                <option value="private">خاصة — لمسابقاتي فقط</option>
-                <option value="public">عامة — متاحة للجميع</option>
-              </select>
-              <span className="mt-2 block text-xs leading-6 text-slate-500">
-                {visibility === 'public'
-                  ? 'عند الحفظ سيظهر اسم الهوية وصورها في المكتبة العامة، ويمكن للآخرين حفظ نسخة منها.'
-                  : 'تُحفظ في مكتبتك لإعادة استخدامها. لا تظهر في المكتبة العامة؛ تظهر للمشاركين داخل مسابقاتك.'}
-              </span>
-            </label>
-          )}
         </div>
       </fieldset>
       {quizId && (
         <p className="rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-600">
-          التعديل يخص هذه المسابقة فقط. لا يغيّر الهوية الأصلية أو مسابقات أخرى، ولا ينشر التعديل للعامة.
+          التعديل يخص هذه المسابقة فقط. لا يغيّر الهوية الأصلية أو مسابقات أخرى.
         </p>
       )}
-      <PublishThemeDialog
-        open={publishOpen}
-        onCancel={() => setPublishOpen(false)}
-        onConfirm={() => {
-          setVisibility('public');
-          setPublishOpen(false);
-        }}
-      />
       <p role="status" className="text-sm text-slate-500">
         {status ||
           (uploads.uploading

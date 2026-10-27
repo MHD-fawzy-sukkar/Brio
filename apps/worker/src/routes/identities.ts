@@ -5,7 +5,6 @@ import {
   IdentityUploadCompleteSchema,
   IdentityIdSchema,
   IdentityAssignmentSchema,
-  ThemeVisibilitySchema,
 } from '@brio/contracts';
 import type { Env } from '../env';
 import { getAuthCreator } from '../http/creator';
@@ -20,7 +19,7 @@ import {
 } from '../repositories/identity.repository';
 import { signIdentityUpload, completeIdentityUpload } from '../media/identity-upload';
 import { getQuizIdentity, saveQuizIdentity } from '../repositories/quiz-identity.repository';
-import { listThemes, setThemeVisibility } from '../repositories/theme-library.repository';
+import { listThemes } from '../repositories/theme-library.repository';
 
 type IdentityEnv = { Bindings: Env; Variables: { creatorId: string } };
 export const identityRoutes = new Hono<IdentityEnv>();
@@ -73,18 +72,6 @@ identityRoutes.onError((error, c) => {
   );
 });
 identityRoutes.get('/themes', async (c) => c.json(await listThemes(c.env.DB, c.get('creatorId'))));
-identityRoutes.patch('/themes/:id/visibility', async (c) => {
-  const body = await c.req.json();
-  const visibility = ThemeVisibilitySchema.parse(body.visibility);
-  await setThemeVisibility(
-    c.env.DB,
-    IdentityIdSchema.parse(c.req.param('id')),
-    c.get('creatorId'),
-    visibility,
-    body.confirmed === true,
-  );
-  return c.json({ visibility });
-});
 identityRoutes.get('/identities', async (c) => c.json(await listIdentities(c.env.DB, c.get('creatorId'))));
 identityRoutes.post('/identities', async (c) => {
   const input = SaveIdentityRequestSchema.parse(await c.req.json());

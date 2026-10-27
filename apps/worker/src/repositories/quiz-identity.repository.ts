@@ -28,7 +28,10 @@ export async function saveQuizIdentity(
   input: SaveIdentityRequest,
 ): Promise<IdentityRecordDto> {
   if ((await getQuizIdentity(db, quizId, creatorId))?.designLocked)
-    throw new IdentityError('الهوية العامة للاستخدام فقط. يمكنك اختيار هوية أخرى دون تعديل تصميمها.', 403);
+    throw new IdentityError(
+      'هذه النسخة محفوظة للاستخدام فقط. يمكنك اختيار هوية من هوياتك دون تعديل هذه النسخة.',
+      403,
+    );
   // Competition edits always produce a private revision, never a library publication.
   input = { ...input, visibility: 'private', publishConfirmed: false };
   const identity = await resolveOwnedIdentity(db, creatorId, input);

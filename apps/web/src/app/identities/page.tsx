@@ -137,9 +137,7 @@ function ThemeLibrary() {
                   className="h-28 w-full"
                 />
                 <h2 className="mt-3 break-words font-black">{theme.name}</h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  {theme.visibility === 'public' ? 'عامة' : 'خاصة'} · {theme.identity.avatars.length} أفاتار
-                </p>
+                <p className="mt-1 text-xs text-slate-500">{theme.identity.avatars.length} صورة للاعبين</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button type="button" className="secondary-btn flex-1" onClick={() => setEditing(theme)}>
                     تعديل

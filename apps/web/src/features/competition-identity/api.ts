@@ -21,12 +21,6 @@ export const assignIdentity = (quizId: string, identityId: string | null) =>
 export const getThemes = () =>
   loadResource('/api/themes', () => requestJson<ThemeSummaryDto[]>('/api/themes'));
 export const prefetchThemeLibrary = () => Promise.allSettled([getThemes()]);
-export const setThemeVisibility = (id: string, visibility: 'private' | 'public', confirmed = false) =>
-  requestJson(
-    `/api/themes/${encodeURIComponent(id)}/visibility`,
-    jsonBody('PATCH', { visibility, confirmed }),
-  );
-
 export type IdentityAsset = { mediaId: string; src: string };
 export async function uploadIdentityImage(file: File, signal?: AbortSignal): Promise<IdentityAsset> {
   validateImage(file);

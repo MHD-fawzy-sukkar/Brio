@@ -4,7 +4,7 @@ export type ThemeMode = 'default' | 'new' | 'saved';
 const modes = [
   { id: 'default', title: 'بولت الافتراضي', description: 'هوية Brio وشخصية بولت الأصلية', icon: '⚡' },
   { id: 'new', title: 'هوية جديدة', description: 'شعارك وشخصيتك وصورك وألوانك', icon: '✦' },
-  { id: 'saved', title: 'هوية محفوظة', description: 'من هوياتك البصرية أو من المكتبة العامة', icon: '▦' },
+  { id: 'saved', title: 'هوية محفوظة', description: 'اختر من هوياتك البصرية المحفوظة', icon: '▦' },
 ] as const;
 
 export function ThemeModePicker({

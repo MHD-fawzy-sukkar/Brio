@@ -5,33 +5,31 @@ import { createQuizForCreator } from '../repositories/quiz.repository';
 import { getIdentity } from '../repositories/identity.repository';
 import { saveQuizIdentity } from '../repositories/quiz-identity.repository';
 import { source, setup } from './testing-fixtures';
-test('studio can apply public or owned themes as independent copies and reset to Bolt', async () => {
+test('studio applies owned themes as linked copies and resets to Bolt', async () => {
   const { db, sqlite, call, input } = await setup();
   try {
-    const original = (await (
-      await call('/identities', 'POST', { ...input, visibility: 'public', publishConfirmed: true })
-    ).json()) as IdentityRecordDto;
-    const quiz = await createQuizForCreator(db, 'other', 'Studio');
+    const original = (await (await call('/identities', 'POST', input)).json()) as IdentityRecordDto;
+    const quiz = await createQuizForCreator(db, 'owner', 'Studio');
     assert.equal(
-      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: original.id }, 'other')).status,
+      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: original.id }, 'owner')).status,
       200,
     );
     const { record } = (await (
-      await call(`/quizzes/${quiz.id}/identity`, 'GET', undefined, 'other')
+      await call(`/quizzes/${quiz.id}/identity`, 'GET', undefined, 'owner')
     ).json()) as { record: IdentityRecordDto };
     assert.notEqual(record.id, original.id);
-    assert.equal(record.designLocked, true);
-    await call(`/identities/${original.id}`, 'DELETE');
-    assert.equal((await getIdentity(db, record.id, 'other'))?.identity.logo?.src, source);
+    assert.equal(record.designLocked, false);
+    assert.equal((await getIdentity(db, record.id, 'owner'))?.identity.logo?.src, source);
     assert.equal(
-      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: null }, 'other')).status,
+      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: null }, 'owner')).status,
       200,
     );
-    assert.deepEqual(await (await call(`/quizzes/${quiz.id}/identity`, 'GET', undefined, 'other')).json(), {
+    assert.deepEqual(await (await call(`/quizzes/${quiz.id}/identity`, 'GET', undefined, 'owner')).json(), {
       record: null,
     });
+    await call(`/identities/${original.id}`, 'DELETE');
     assert.equal(
-      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: original.id }, 'other')).status,
+      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: original.id }, 'owner')).status,
       404,
     );
   } finally {
@@ -60,10 +58,8 @@ test('deleting a library theme resets attached quizzes to Bolt without returning
 test('studio theme replacement rolls back copied assets when assignment fails', async () => {
   const { sqlite, call, input } = await setup();
   try {
-    const theme = (await (
-      await call('/identities', 'POST', { ...input, visibility: 'public', publishConfirmed: true })
-    ).json()) as IdentityRecordDto;
-    const quiz = (await (await call('/quizzes', 'POST', { title: 'Rollback' }, 'other')).json()) as {
+    const theme = (await (await call('/identities', 'POST', input)).json()) as IdentityRecordDto;
+    const quiz = (await (await call('/quizzes', 'POST', { title: 'Rollback' }, 'owner')).json()) as {
       id: string;
     };
     const count = sqlite.prepare('SELECT COUNT(*) AS n FROM identity_assets').get()!.n;
@@ -71,7 +67,7 @@ test('studio theme replacement rolls back copied assets when assignment fails', 
       "CREATE TRIGGER fail_studio_assignment BEFORE UPDATE OF identity_id ON quizzes BEGIN SELECT RAISE(ABORT, 'forced failure'); END",
     );
     assert.equal(
-      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: theme.id }, 'other')).status,
+      (await call(`/quizzes/${quiz.id}/identity`, 'PUT', { identityId: theme.id }, 'owner')).status,
       500,
     );
     assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM identity_assets').get()!.n, count);

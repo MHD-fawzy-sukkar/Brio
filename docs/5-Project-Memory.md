@@ -2,6 +2,14 @@
 
 Updated: 2026-10-27. Read this on every engineering iteration; update only with observed work/evidence.
 
+## 2026-10-27 — Personal identity library only
+
+- User removed public identity sharing entirely. Removed publication dialog, visibility selector, public library tab, publication actions and public-source copy from creation/studio/library screens. The picker now has a plain personal-library heading, search and management link; the editor uses the available width after removing visibility controls.
+- Removed the visibility mutation endpoint and repository operation. Library reads and quiz creation/assignment now require the same creator even for legacy public rows. Public save requests are rejected regardless of prior confirmation. Legacy stored metadata remains readable; DTOs expose private visibility, and existing competition snapshots/design locks remain intact. No schema/data migration is needed.
+- Account-scoped session resource cache moved to v2 so old public cards cannot be restored; the picker also filters unowned cards defensively.
+- Evidence: 148 tests, workspace type checks, architecture/format checks and cloud/LAN builds pass. Tests cover legacy public rows, blocked publication/cross-account reuse, linked own-theme edits/deletion, rollback and existing snapshots. Production-asset browser checks covered creation, saved picker and library/editor at 390px; document width equals viewport width. Screenshot: `private-identities-mobile.png`. UI fixtures stayed local.
+- Published release `a230b15b-fee2-47dd-b5b4-a381f81037b5`. Four live page HTML documents and 22 linked JS/CSS assets match the tested cloud build; health returned 200 and both personal-library endpoints returned 401 without a session.
+
 ## 2026-10-27 — Architecture refactor, bounded caches and verified release
 
 - Split frontend screens into feature components/hooks, Worker routes/repositories and Durable Object adapters into focused modules, and LAN transports from server composition. Pure game transitions and serializers remain shared across runtimes. CSS extraction preserves cascade order.

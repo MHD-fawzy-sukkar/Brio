@@ -1,4 +1,4 @@
-import { resolveOwnedIdentity, requirePublicationConfirmation } from '../identity.repository';
+import { resolveOwnedIdentity, requirePrivateIdentity } from '../identity.repository';
 import { prepareThemeCopy } from '../theme-library.repository';
 import type { AuthoringQuestion } from '@brio/contracts';
 import type { SaveIdentityRequest } from '@brio/contracts';
@@ -26,7 +26,7 @@ export async function createQuizForCreator(
       avatarMode: 'auto' as const,
       motion: 'float' as const,
     };
-    requirePublicationConfirmation(input);
+    requirePrivateIdentity(input);
     const identity = copy?.identity ?? (await resolveOwnedIdentity(db, creatorId, input));
     const identityId = crypto.randomUUID();
     // D1 rolls back both inserts if either fails; no half-created quiz or identity.

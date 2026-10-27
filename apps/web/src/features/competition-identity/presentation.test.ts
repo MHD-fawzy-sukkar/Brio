@@ -11,7 +11,6 @@ import type { CompetitionIdentity } from './model';
 import { IdentityEditor } from './IdentityEditor';
 import { QuizIdentitySettings } from './QuizIdentitySettings';
 import { ThemeModePicker } from './ThemeModePicker';
-import { PublishThemeDialog } from './PublishThemeDialog';
 import { ThemeLibraryPicker } from './ThemeLibraryPicker';
 import { invalidateResources, setCacheOwner, setResource } from '../../services/resource-cache';
 
@@ -58,14 +57,29 @@ test('theme selection uses accessible cards and quiz edits offer no global publi
   assert.match(editor, /التعديل يخص هذه المسابقة فقط/);
 });
 
-test('publishing asks for explicit consent to reuse the identity and provides a private cancel action', () => {
-  const html = renderToStaticMarkup(
-    createElement(PublishThemeDialog, { open: true, onCancel: () => {}, onConfirm: () => {} }),
-  );
-  assert.match(html, /role="dialog" aria-modal="true"/);
-  assert.match(html, /يستطيع أي شخص استخدام هويتك/);
-  assert.match(html, /إبقاء الهوية خاصة/);
-  assert.match(html, /نعم، أوافق على إتاحتها للجميع/);
+test('library and creation expose only owned identities, including when old cached public cards exist', () => {
+  for (const props of [{ defaultName: 'New', libraryId: '' }, { defaultName: 'New' }]) {
+    const editor = renderToStaticMarkup(createElement(IdentityEditor, props));
+    assert.doesNotMatch(editor, /إتاحة الهوية|value="public"|نشر|المكتبة العامة/);
+    assert.doesNotMatch(editor, /md:grid-cols-2/);
+  }
+  const modes = renderToStaticMarkup(createElement(ThemeModePicker, { value: 'saved', onChange: () => {} }));
+  assert.doesNotMatch(modes, /العامة/);
+  setCacheOwner('owned-library-only');
+  try {
+    setResource('/api/themes', [
+      { id: 'own', name: 'My artwork', owned: true, visibility: 'private', identity },
+      { id: 'foreign', name: 'Foreign artwork', owned: false, visibility: 'public', identity },
+    ]);
+    const picker = renderToStaticMarkup(
+      createElement(ThemeLibraryPicker, { selected: null, onSelect: () => {} }),
+    );
+    assert.match(picker, /My artwork/);
+    assert.doesNotMatch(picker, /Foreign artwork|المكتبة العامة|نشرها|جعلها خاصة|مصدر الهوية/);
+    assert.match(picker, /إدارة الهويات/);
+  } finally {
+    setCacheOwner(null);
+  }
 });
 
 test('quiz identity starts quietly inside the builder and the editor asks for images before metadata', () => {

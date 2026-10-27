@@ -12,7 +12,7 @@ const MAX_ENTRIES = 40;
 const freshness = (key: string) =>
   /^\/api\/(themes|identities)(\/|$)/.test(key) ? 5 * RESOURCE_TTL : RESOURCE_TTL;
 export const cacheScope = () => generation;
-const STORAGE_KEY = 'brio_creator_resources_v1';
+const STORAGE_KEY = 'brio_creator_resources_v2';
 function persist() {
   if (typeof window === 'undefined') return;
   try {

@@ -19,7 +19,8 @@ interface IdentityRow {
 function toDto(row: IdentityRow): IdentityRecordDto {
   return {
     ...SaveIdentityRequestSchema.parse(JSON.parse(row.input_json)),
-    visibility: row.visibility,
+    visibility: 'private',
+    publishConfirmed: false,
     designLocked: Boolean(row.design_locked),
     id: row.id,
     identity: CompetitionIdentitySchema.parse(JSON.parse(row.identity_json)),
@@ -76,7 +77,7 @@ export async function saveIdentity(
   const previous = await getIdentity(db, id, creatorId);
   if (previous?.designLocked)
     throw new IdentityError('هذه الهوية للاستخدام فقط؛ لا يمكنك تعديل تصميمها.', 403);
-  requirePublicationConfirmation(input);
+  requirePrivateIdentity(input);
   const identity = await resolveOwnedIdentity(db, creatorId, input);
   // Updates cannot transfer ownership or revive an archived identity.
   const statements: D1PreparedStatement[] = [];
@@ -122,9 +123,8 @@ export async function saveIdentity(
   return { ...input, id, identity };
 }
 
-export function requirePublicationConfirmation(input: SaveIdentityRequest) {
-  if (input.visibility === 'public' && input.publishConfirmed !== true)
-    throw new IdentityError('أكد نشر الهوية وإتاحة صورها للجميع أولاً.');
+export function requirePrivateIdentity(input: SaveIdentityRequest) {
+  if (input.visibility !== 'private') throw new IdentityError('الهويات متاحة لمسابقات صاحبها فقط.');
 }
 
 export async function assignQuizIdentity(
