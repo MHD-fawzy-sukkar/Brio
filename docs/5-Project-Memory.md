@@ -1,6 +1,17 @@
 # Brio — Project Memory and Current Decisions
 
-Updated: 2026-10-27. Read this on every engineering iteration; update only with observed work/evidence.
+Updated: 2026-10-28. Read this on every engineering iteration; update only with observed work/evidence.
+
+## 2026-10-28 — Production hardening and Windows presenter installer
+
+- Work is consolidated on user-named `production`. Hardened cloud WebSocket origin/session/role checks, player identity/generation, owner-only room reads and metrics, upload completion signatures, HTTPS cookies, request limits and deployment bypass guard. Updated runtime dependencies; production audit reported zero known advisories at verification time.
+- Added bilingual document titles/descriptions, security headers and share metadata. Corrected Referrer-Policy to Google's recommended strict-origin-when-cross-origin after live testing exposed that no-referrer breaks the GIS button.
+- Shipped a Windows x64 per-user EXE installer with an Arabic WinForms controller, bundled Node/game server, shortcuts and uninstall registration. No CMD or Node/pnpm setup for recipients. Data lives separately at LocalAppData/Brio/data. A signed release is still pending; the site explicitly identifies this as an unsigned pilot.
+- Public download page: `/local/`; one-file installer endpoint: `/api/downloads/windows`. Static asset parts stream as one attachment. Live browser downloaded 35,066,368 bytes and verified SHA-256 `d4887099f156cb8c1885bd137388648dec2e14362e8adadae2c586fdfacb2fe1` against the built installer. Verified Arabic/English mobile download UX without overflow or page errors.
+- Verified actual payload extraction, its bundled runtime, graceful stdin shutdown and restart/data retention in an isolated folder. Native controller window/buttons inspected; the launched server returned LAN health. No full installation/uninstallation on the user's account or clean Windows VM was performed.
+- Quality passed: 161 tests (contracts 6, core 10, Worker 63, web 73, local 9), architecture, format, type checks, cloud/LAN builds and performance projection. Three mobile-size Chromium contexts completed an image question with accepted answers, WAN requests blocked, reconnect/reload and final results. This remains browser emulation, not physical Android/iOS Safari/Wi-Fi capacity evidence.
+- Backed up D1 locally outside Git, compared 14 table column sets and 12 index definitions with migrations 0001–0010, and registered only missing migration history records. Wrangler now reports no pending migrations. No user application records were rewritten.
+- Final published Worker: `4c26a0cf-403f-40d7-b17e-7cbaf1fed60c`. Repeated stable Google button page checks passed, but real credential submission, Cloudinary upload and physical phone rehearsal remain pending. See docs/29-Windows-Presenter-App.md for builds, release integrity, limitations and evidence.
 
 ## 2026-10-27 — Language merge and smoother authoring/game transitions
 

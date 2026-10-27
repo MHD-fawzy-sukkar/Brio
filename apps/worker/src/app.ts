@@ -15,6 +15,7 @@ import roomSocketRoutes from './routes/room-sockets';
 import { validateOrigin } from './auth/session';
 import { bodyLimit } from 'hono/body-limit';
 import { enforceRequestLimit } from './http/rate-limit';
+import { downloadRoutes } from './routes/downloads';
 
 export const app = new Hono<{ Bindings: Env }>();
 app.use('*', async (c, next) => {
@@ -30,6 +31,7 @@ app.use('*', async (c, next) => {
 });
 app.use('/api/*', bodyLimit({ maxSize: 2 * 1024 * 1024 }));
 app.route('/api', identityRoutes);
+app.route('/', downloadRoutes);
 app.route('/', systemRoutes);
 app.route('/', quizPublicationRoutes);
 app.route('/', authRoutes);

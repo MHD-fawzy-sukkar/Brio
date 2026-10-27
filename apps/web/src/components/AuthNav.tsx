@@ -11,7 +11,7 @@ import { JOIN_GAME_HREF } from '../services/home-routing';
 import { isLanMode } from '../services/runtime-mode';
 
 export function NavbarLinks() {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const pathname = usePathname() || '';
   const isJoinActive = pathname.startsWith('/join');
   const isPlayerPage = isJoinActive || pathname.startsWith('/play');
@@ -45,6 +45,14 @@ export function NavbarLinks() {
       >
         {isLanMode ? t('لوحة المقدّم') : t('مسابقاتي')}
       </Link>
+      {!isLanMode && !isPlayerPage && (
+        <Link
+          href="/local/"
+          className="rounded-xl px-2 py-2 text-xs font-bold text-brand-700 hover:bg-brand-50 sm:text-sm"
+        >
+          {locale === 'ar' ? 'اللعب المحلي' : 'Local play'}
+        </Link>
+      )}
     </nav>
   );
 }

@@ -8,26 +8,14 @@ import { LocalGuide, LocalHistory } from '../../components/local/LocalDashboardC
 import { useLocalDashboard } from '../../hooks/use-local-dashboard';
 import { localRoomHref } from '../../services/local-dashboard';
 import { isLanMode } from '../../services/runtime-mode';
+import { LocalDownload } from '../../components/local/LocalDownload';
 
 export default function LocalPage() {
   const { t, translateMessage } = useTranslations();
   const dashboard = useLocalDashboard();
   const { info, activeRoom, pastRooms, loading, busy, error, message } = dashboard;
 
-  if (!isLanMode)
-    return (
-      <section className="card mx-auto max-w-2xl space-y-4 p-6 sm:p-8">
-        <h1 className="text-2xl font-black">{t('اللعب على الشبكة المحلية')}</h1>
-        <p className="leading-8 text-slate-600">
-          {t(
-            'افتح نسخة اللعب المحلي على جهاز المقدّم، ثم أضف ملف المسابقة لتبدأ جلسة دون الحاجة إلى الإنترنت.',
-          )}
-        </p>
-        <a className="primary-btn inline-flex" href="/dashboard/">
-          {t('مسابقاتي')}
-        </a>
-      </section>
-    );
+  if (!isLanMode) return <LocalDownload />;
 
   return (
     <div data-mascot-drag-root className="mx-auto w-full max-w-5xl space-y-6">

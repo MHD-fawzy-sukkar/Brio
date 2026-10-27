@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 releases/
+apps/web/public/downloads/windows/
 .brio-lan/
 apps/web/out-lan/
 apps/web/.next-lan/

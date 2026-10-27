@@ -4,12 +4,12 @@
   "iterations": 100,
   "workload": "Host + 150 player DTOs per broadcast; ranking/projection only, excludes network and JSON transport",
   "independent": {
-    "p50Ms": 2.567,
-    "p95Ms": 4.283
+    "p50Ms": 2.575,
+    "p95Ms": 3.468
   },
   "shared": {
-    "p50Ms": 0.038,
-    "p95Ms": 0.065
+    "p50Ms": 0.039,
+    "p95Ms": 0.067
   },
   "reductionP50Percent": 98.5,
   "identicalSnapshots": true

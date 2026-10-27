@@ -1,5 +1,7 @@
 # Brio LAN — first working slice
 
+Current Windows presenter installer and its verification are documented in [Windows Presenter App](29-Windows-Presenter-App.md). The checkout/CMD instructions and portable-installer limitations below describe the earlier developer rehearsal, not the current EXE download.
+
 Updated: 2026-10-25. LAN runtime is local; cloud download support is deployed. Physical multi-phone venue acceptance remains pending.
 
 ## Run on Windows

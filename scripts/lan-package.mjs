@@ -29,7 +29,10 @@ const result = await build({
   legalComments: 'eof',
 });
 fs.copyFileSync(process.execPath, path.join(destination, 'runtime/node.exe'));
-fs.cpSync(web, path.join(destination, 'apps/web/out-lan'), { recursive: true });
+fs.cpSync(web, path.join(destination, 'apps/web/out-lan'), {
+  recursive: true,
+  filter: (source) => source !== path.join(web, 'downloads'),
+});
 fs.mkdirSync(path.join(destination, 'apps/web/public'), { recursive: true });
 fs.copyFileSync(
   'apps/web/public/bolt-original.png',

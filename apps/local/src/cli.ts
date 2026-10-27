@@ -84,6 +84,20 @@ try {
   };
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
+  if (process.env.BRIO_LAN_DESKTOP === '1') {
+    process.stdin.setEncoding('utf8');
+    let input = '';
+    process.stdin.on('data', (chunk) => {
+      input += chunk;
+      if (input.includes('\n')) {
+        if (input.trim() === 'stop') void stop();
+        input = '';
+      }
+    });
+    // A terminated controller must not leave an invisible server running.
+    process.stdin.once('end', () => void stop());
+    process.stdin.resume();
+  }
 } catch (error) {
   if (error instanceof Error && 'code' in error && error.code === 'EADDRINUSE') {
     console.error(
