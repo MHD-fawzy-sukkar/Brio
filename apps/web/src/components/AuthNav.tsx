@@ -15,18 +15,20 @@ export function NavbarLinks() {
   const pathname = usePathname() || '';
   const isJoinActive = pathname.startsWith('/join');
   const isPlayerPage = isJoinActive || pathname.startsWith('/play');
+  const isLocalActive = pathname === '/local' || pathname.startsWith('/local/');
   const isCreatorActive =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/builder') ||
     pathname.startsWith('/questions') ||
     pathname.startsWith('/quizzes') ||
-    pathname.startsWith('/local') ||
+    (isLanMode && isLocalActive) ||
     pathname.startsWith('/identities');
 
   return (
     <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label={t('التنقل الرئيسي')}>
       <Link
         href={JOIN_GAME_HREF}
+        aria-current={isJoinActive ? 'page' : undefined}
         className={`relative whitespace-nowrap rounded-xl px-2 py-2 text-xs font-bold transition-colors sm:px-3.5 sm:text-sm ${
           isJoinActive
             ? 'text-brand-700 after:absolute after:inset-x-3.5 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-brand-600'
@@ -37,6 +39,7 @@ export function NavbarLinks() {
       </Link>
       <Link
         href={isLanMode ? '/local/' : '/dashboard/'}
+        aria-current={isCreatorActive ? 'page' : undefined}
         className={`${isPlayerPage ? 'hidden sm:block' : ''} relative whitespace-nowrap rounded-xl px-2 py-2 text-xs font-bold transition-colors sm:px-3.5 sm:text-sm ${
           isCreatorActive
             ? 'text-brand-700 after:absolute after:inset-x-3.5 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-brand-600'
@@ -48,7 +51,8 @@ export function NavbarLinks() {
       {!isLanMode && !isPlayerPage && (
         <Link
           href="/local/"
-          className="rounded-xl px-2 py-2 text-xs font-bold text-brand-700 hover:bg-brand-50 sm:text-sm"
+          aria-current={isLocalActive ? 'page' : undefined}
+          className={`relative whitespace-nowrap rounded-xl px-2 py-2 text-xs font-bold transition-colors sm:px-3.5 sm:text-sm ${isLocalActive ? 'text-brand-700 after:absolute after:inset-x-3.5 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-brand-600' : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'}`}
         >
           {locale === 'ar' ? 'اللعب المحلي' : 'Local play'}
         </Link>

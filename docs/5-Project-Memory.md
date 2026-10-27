@@ -4,6 +4,10 @@ Updated: 2026-10-28. Read this on every engineering iteration; update only with 
 
 ## 2026-10-28 — Production hardening and Windows presenter installer
 
+- Follow-up download UI polish: replaced the dense single card with a responsive introduction/download layout and three numbered preparation steps. Kept platform/size outside the primary action; removed the raw SHA-256/manifest link from the normal user flow. Arabic/English copy is separated in local-download-copy.ts. Fixed local-page navigation to activate Local play rather than My quizzes, and added aria-current. Native LAN presenter navigation keeps its prior behavior.
+- Verified Arabic RTL and English LTR at 1440, 390 and 320px: exactly one active Local play nav item, no horizontal overflow, no page errors. Inspected desktop/mobile screenshots. Architecture checks, formatting, 73 web tests and production web build pass. Presentation-only changes; no runtime/download API or desktop installer change.
+- Published the UI follow-up as `ce9aa367-7afd-48f1-8aaf-d330875f816c` and repeated all six browser layout/navigation checks on the live site successfully.
+
 - Work is consolidated on user-named `production`. Hardened cloud WebSocket origin/session/role checks, player identity/generation, owner-only room reads and metrics, upload completion signatures, HTTPS cookies, request limits and deployment bypass guard. Updated runtime dependencies; production audit reported zero known advisories at verification time.
 - Added bilingual document titles/descriptions, security headers and share metadata. Corrected Referrer-Policy to Google's recommended strict-origin-when-cross-origin after live testing exposed that no-referrer breaks the GIS button.
 - Shipped a Windows x64 per-user EXE installer with an Arabic WinForms controller, bundled Node/game server, shortcuts and uninstall registration. No CMD or Node/pnpm setup for recipients. Data lives separately at LocalAppData/Brio/data. A signed release is still pending; the site explicitly identifies this as an unsigned pilot.
