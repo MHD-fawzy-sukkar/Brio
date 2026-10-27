@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+releases/
 .brio-lan/
 apps/web/out-lan/
 apps/web/.next-lan/

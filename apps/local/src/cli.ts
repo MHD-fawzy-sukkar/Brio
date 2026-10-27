@@ -5,7 +5,9 @@ import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { createLanServer } from './server';
 
-const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const repo = resolve(
+  process.env.BRIO_LAN_ROOT || resolve(dirname(fileURLToPath(import.meta.url)), '../../..'),
+);
 const data = resolve(process.env.BRIO_LAN_DATA || resolve(repo, '.brio-lan'));
 mkdirSync(data, { recursive: true });
 const database = resolve(data, 'brio.sqlite');

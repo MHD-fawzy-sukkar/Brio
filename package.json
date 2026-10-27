@@ -2,6 +2,7 @@
   "name": "brio-monorepo",
   "private": true,
   "scripts": {
+    "lan:package": "node scripts/lan-package.mjs",
     "lan:build": "node scripts/lan-build.mjs",
     "lan:start": "pnpm --filter @brio/local start",
     "dev": "pnpm --parallel --filter @brio/web --filter @brio/worker dev",

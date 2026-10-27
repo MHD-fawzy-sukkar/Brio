@@ -6,6 +6,8 @@ Arabic live quizzes with a static Next.js frontend, a Cloudflare Worker/Durable 
 
 ## LAN rehearsal
 
+Windows x64 presenters can use the prepared portable ZIP: extract the entire archive, then double-click `Start-Brio.cmd` inside the extracted folder. Node and pnpm are included/not needed on the receiving PC. Players join by QR on the same Wi-Fi and download nothing. This unsigned package is for trusted private networks. Developers can create it with `pnpm lan:package` after `pnpm lan:build`, using Node 24.11.1 (its redistribution license is included). See [portable package and mobile rehearsal](docs/27-Portable-LAN-and-Mobile.md).
+
 Requires Node.js 24.11+ and pnpm. Prepare once while online:
 
 ```powershell
