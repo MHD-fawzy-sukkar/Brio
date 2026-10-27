@@ -1,3 +1,4 @@
+import { t } from '../i18n/locale';
 export interface LocalQuiz {
   id: string;
   title: string;
@@ -22,6 +23,6 @@ export const localRoomHref = (room: Pick<LocalRoom, 'roomId' | 'code'>) =>
 export async function localRequest<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, options);
   const data = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.detail || 'تعذّر إتمام الطلب. يرجى المحاولة مجدداً.');
+  if (!response.ok) throw new Error(data?.detail || t('تعذّر إتمام الطلب. يرجى المحاولة مجدداً.'));
   return data as T;
 }

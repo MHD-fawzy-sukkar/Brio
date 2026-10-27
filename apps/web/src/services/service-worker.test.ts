@@ -70,3 +70,28 @@ test('client navigation and prefetch never revive cached HTML or RSC from an old
   assert.equal(sw.counts().cacheReads, 1);
   assert.deepEqual(await sw.activate(), ['brio-static-v5']);
 });
+
+test('offline fallback restores the chosen language and offers a working language switch without network', () => {
+  const script = /<script>([\s\S]*?)<\/script>/.exec(source)?.[1];
+  assert.ok(script);
+  const nodes: Record<string, { textContent: string; onclick?: () => void }> = {
+    title: { textContent: '' },
+    detail: { textContent: '' },
+    language: { textContent: '' },
+  };
+  const html = { lang: '', dir: '' };
+  const saved = new Map([['brio_language_v1', 'en']]);
+  runInNewContext(script, {
+    document: { documentElement: html, getElementById: (id: string) => nodes[id] },
+    localStorage: {
+      getItem: (key: string) => saved.get(key),
+      setItem: (key: string, value: string) => saved.set(key, value),
+    },
+  });
+  assert.equal(html.dir, 'ltr');
+  assert.equal(nodes.title.textContent, 'You are offline');
+  nodes.language.onclick!();
+  assert.equal(html.dir, 'rtl');
+  assert.equal(nodes.title.textContent, 'أنت غير متصل بالإنترنت');
+  assert.equal(saved.get('brio_language_v1'), 'ar');
+});

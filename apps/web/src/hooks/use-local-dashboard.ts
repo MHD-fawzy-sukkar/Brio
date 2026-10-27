@@ -1,4 +1,5 @@
 'use client';
+import { t } from '../i18n/locale';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthProvider';
@@ -34,7 +35,7 @@ export function useLocalDashboard() {
       await refresh();
       await load();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذّر فتح لوحة المقدّم.');
+      setError(cause instanceof Error ? cause.message : t('تعذّر فتح لوحة المقدّم.'));
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ export function useLocalDashboard() {
       await action();
     } catch (cause) {
       setPending(null);
-      const detail = cause instanceof Error ? cause.message : 'تعذّر إتمام العملية. يرجى المحاولة مجدداً.';
+      const detail = cause instanceof Error ? cause.message : t('تعذّر إتمام العملية. يرجى المحاولة مجدداً.');
       if (onError) onError(detail);
       else setError(detail);
     } finally {
@@ -82,14 +83,14 @@ export function useLocalDashboard() {
     if (!file) return;
     void perform(async () => {
       if (file.size > 48 * 1024 * 1024)
-        throw new Error('حجم الملف يتجاوز 48 ميغابايت. يرجى تقليل أحجام الصور وإعادة تنزيل المسابقة.');
+        throw new Error(t('حجم الملف يتجاوز 48 ميغابايت. يرجى تقليل أحجام الصور وإعادة تنزيل المسابقة.'));
       await localRequest('/api/local/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: file,
       });
       await load();
-      setMessage('أُضيفت المسابقة وصورها بنجاح. اختر «فتح غرفة» لبدء جلسة جديدة.');
+      setMessage(t('أُضيفت المسابقة وصورها بنجاح. اختر «فتح غرفة» لبدء جلسة جديدة.'));
     });
   };
   const confirm = () => {
@@ -107,7 +108,7 @@ export function useLocalDashboard() {
           await load();
           setPending(null);
           if (pending.quizId) await openRoom(pending.quizId);
-          else setMessage('انتهت الغرفة وحُفظت نتائج الجلسة.');
+          else setMessage(t('انتهت الغرفة وحُفظت نتائج الجلسة.'));
         } else {
           const path =
             pending.type === 'quiz'
@@ -118,8 +119,8 @@ export function useLocalDashboard() {
           setPending(null);
           setMessage(
             pending.type === 'quiz'
-              ? 'حُذفت المسابقة من هذا الجهاز. نتائج الجلسات السابقة محفوظة.'
-              : 'حُذفت نتائج الجلسة.',
+              ? t('حُذفت المسابقة من هذا الجهاز. نتائج الجلسات السابقة محفوظة.')
+              : t('حُذفت نتائج الجلسة.'),
           );
         }
       },
@@ -131,22 +132,31 @@ export function useLocalDashboard() {
   const confirmation =
     pending?.type === 'quiz'
       ? {
-          title: 'حذف المسابقة من هذا الجهاز؟',
-          description: `ستُحذف «${pending.quiz.title}» من المسابقات الجاهزة. ستبقى نتائج جلساتها السابقة، ويمكنك إضافة ملف المسابقة مجدداً في أي وقت.`,
-          confirmLabel: 'حذف المسابقة',
+          title: t('حذف المسابقة من هذا الجهاز؟'),
+          description: t(
+            'ستُحذف «{0}» من المسابقات الجاهزة. ستبقى نتائج جلساتها السابقة، ويمكنك إضافة ملف المسابقة مجدداً في أي وقت.',
+            { 0: pending.quiz.title },
+          ),
+          confirmLabel: t('حذف المسابقة'),
           icon: '🗑️',
         }
       : pending?.type === 'session'
         ? {
-            title: 'حذف نتائج الجلسة؟',
-            description: `ستُحذف نتائج «${pending.room.title}» ذات الرمز ${pending.room.code} نهائياً من هذا الجهاز. لن تُحذف المسابقة نفسها.`,
-            confirmLabel: 'حذف النتائج',
+            title: t('حذف نتائج الجلسة؟'),
+            description: t(
+              'ستُحذف نتائج «{0}» ذات الرمز {1} نهائياً من هذا الجهاز. لن تُحذف المسابقة نفسها.',
+              { 0: pending.room.title, 1: pending.room.code },
+            ),
+            confirmLabel: t('حذف النتائج'),
             icon: '🗑️',
           }
         : {
-            title: pending?.quizId ? 'إنهاء الغرفة وفتح غرفة جديدة؟' : 'إنهاء الغرفة الحالية؟',
-            description: `ستنتهي جلسة «${activeRoom?.title || ''}» لجميع اللاعبين، وستُحفظ نتائجها.${pending?.quizId ? ' ستُفتح بعدها غرفة للمسابقة التي اخترتها.' : ''}`,
-            confirmLabel: pending?.quizId ? 'إنهاء وفتح غرفة جديدة' : 'إنهاء الغرفة',
+            title: pending?.quizId ? t('إنهاء الغرفة وفتح غرفة جديدة؟') : t('إنهاء الغرفة الحالية؟'),
+            description: t('ستنتهي جلسة «{0}» لجميع اللاعبين، وستُحفظ نتائجها.{1}', {
+              0: activeRoom?.title || '',
+              1: pending?.quizId ? t(' ستُفتح بعدها غرفة للمسابقة التي اخترتها.') : '',
+            }),
+            confirmLabel: pending?.quizId ? t('إنهاء وفتح غرفة جديدة') : t('إنهاء الغرفة'),
             icon: '🏁',
           };
   return {
@@ -173,7 +183,10 @@ export function useLocalDashboard() {
       if (activeRoom?.quizId === quiz.id) {
         setQuizDeleteError({
           quizId: quiz.id,
-          message: `لا يمكن حذف المسابقة لأنها مستخدمة في الغرفة الحالية (${activeRoom.code}). أنهِ الغرفة أولاً، ثم احذف المسابقة.`,
+          message: t(
+            'لا يمكن حذف المسابقة لأنها مستخدمة في الغرفة الحالية ({0}). أنهِ الغرفة أولاً، ثم احذف المسابقة.',
+            { 0: activeRoom.code },
+          ),
         });
       } else setPending({ type: 'quiz', quiz });
     },

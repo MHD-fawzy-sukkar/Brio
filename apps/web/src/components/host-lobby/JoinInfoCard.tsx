@@ -1,7 +1,11 @@
+'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
 import { JoinQrCode } from '../JoinQrCode';
 import { AmbientBackground } from '../AmbientBackground';
 
 export function JoinInfoCard({ code }: { code: string }) {
+  const { t } = useTranslations();
   return (
     <section
       aria-labelledby="join-info-title"
@@ -12,10 +16,10 @@ export function JoinInfoCard({ code }: { code: string }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <span className="inline-flex rounded-full bg-brand-100 px-3 py-1 text-[11px] font-black text-brand-700">
-              الدخول السريع
+              {t('الدخول السريع')}
             </span>
             <h2 id="join-info-title" className="mt-3 text-xl font-black text-slate-950">
-              انضم إلى المسابقة
+              {t('انضم إلى المسابقة')}
             </h2>
           </div>
         </div>
@@ -25,16 +29,16 @@ export function JoinInfoCard({ code }: { code: string }) {
         </div>
 
         <div className="mt-5 text-center">
-          <p className="text-xs font-bold text-slate-500">امسح الرمز، أو أدخل رقم اللعبة</p>
+          <p className="text-xs font-bold text-slate-500">{t('امسح الرمز، أو أدخل رقم اللعبة')}</p>
           <div
             dir="ltr"
-            aria-label={`رمز اللعبة ${code}`}
+            aria-label={t('رمز اللعبة {0}', { 0: code })}
             className="mt-2 rounded-2xl border border-brand-200 bg-white px-4 py-3 font-mono text-3xl font-black tracking-[.24em] text-brand-800 shadow-sm sm:text-4xl"
           >
             {code || '------'}
           </div>
           <p className="mt-3 text-xs font-bold leading-6 text-slate-500">
-            سيُفتح نموذج الانضمام والرمز مُعبّأ تلقائياً.
+            {t('سيُفتح نموذج الانضمام والرمز مُعبّأ تلقائياً.')}
           </p>
         </div>
       </div>

@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { useEffect } from 'react';
 
 import { invalidateQuizResources } from '../../services/resource-cache';
@@ -95,13 +97,13 @@ export function useStudioTitle(
         const body = await response.json().catch(() => null);
         if (response.ok) invalidateQuizResources(quizId);
         if (!response.ok) {
-          throw new Error(body?.detail || 'تعذر حفظ عنوان المسابقة.');
+          throw new Error(body?.detail || t('تعذر حفظ عنوان المسابقة.'));
         }
       } catch (cause) {
         setQuiz((current) => (current ? { ...current, title: previousTitle } : current));
         setTitle(previousTitle);
         setTitleSaved(false);
-        setError(cause instanceof Error ? cause.message : 'تعذر حفظ عنوان المسابقة.');
+        setError(cause instanceof Error ? cause.message : t('تعذر حفظ عنوان المسابقة.'));
       } finally {
         pendingTitleSaveRef.current = null;
       }

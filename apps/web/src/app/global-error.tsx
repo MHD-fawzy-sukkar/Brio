@@ -1,8 +1,13 @@
 'use client';
 
+import { LocaleBootstrap, useTranslations } from '../i18n/use-locale';
+import { LanguageSwitch } from '../i18n/LanguageSwitch';
+
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const { locale, t } = useTranslations();
   return (
-    <html lang="ar" dir="rtl">
+    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      <LocaleBootstrap />
       <body
         style={{
           margin: 0,
@@ -23,9 +28,10 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
             }}
           >
             <div style={{ fontSize: 48 }}>🛟</div>
-            <h1>حدث خطأ غير متوقع</h1>
+            <LanguageSwitch />
+            <h1>{t('حدث خطأ غير متوقع')}</h1>
             <p style={{ color: '#68748a' }}>
-              يمكنك إعادة تشغيل الواجهة بأمان. إذا انتهت جلستك فسيتم تحويلك إلى تسجيل الدخول.
+              {t('يمكنك إعادة تشغيل الواجهة بأمان. إذا انتهت جلستك فسيتم تحويلك إلى تسجيل الدخول.')}
             </p>
             <button
               onClick={reset}
@@ -39,7 +45,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
                 cursor: 'pointer',
               }}
             >
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           </section>
         </main>

@@ -1,3 +1,4 @@
+import { t } from '../../i18n/locale';
 import type { SaveIdentityRequest } from '@brio/contracts';
 import type { IdentityAsset } from './api';
 import { runUploadBatch } from './upload-batch';
@@ -53,10 +54,10 @@ export class DeferredIdentityUploads {
         } else {
           item.status = 'failed';
           item.error = signal.aborted
-            ? 'تم إلغاء الحفظ.'
+            ? t('تم إلغاء الحفظ.')
             : result.error instanceof Error
               ? result.error.message
-              : 'تعذّر رفع الصورة. أعد الحفظ للمحاولة.';
+              : t('تعذّر رفع الصورة. أعد الحفظ للمحاولة.');
         }
         progress?.(done, used.length);
         this.changed();
@@ -64,7 +65,7 @@ export class DeferredIdentityUploads {
     );
     signal.throwIfAborted();
     if (used.some((item) => !item.asset))
-      throw new Error('تعذّر رفع بعض الصور. أعد الحفظ للمحاولة؛ الصور الناجحة لن تُرفع مرة أخرى.');
+      throw new Error(t('تعذّر رفع بعض الصور. أعد الحفظ للمحاولة؛ الصور الناجحة لن تُرفع مرة أخرى.'));
     return {
       ...input,
       images: input.images.map((image) => ({

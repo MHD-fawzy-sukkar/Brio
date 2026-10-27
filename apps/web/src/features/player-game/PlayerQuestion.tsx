@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
 import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { Spinner } from '../../components/Loading';
 import { SubmittedAnswer } from './SubmittedAnswer';
@@ -35,6 +38,7 @@ export function PlayerQuestion({
     question: NonNullable<PlayerGameController['question']>;
   };
 }) {
+  const { t } = useTranslations();
   const {
     snapshot,
     selectedOption,
@@ -56,7 +60,7 @@ export function PlayerQuestion({
     <section className="card space-y-4 p-4 sm:space-y-5 sm:p-7">
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">
-          السؤال {(snapshot.questionIndex ?? 0) + 1}
+          {t('السؤال')} {(snapshot.questionIndex ?? 0) + 1}
         </span>
         <span className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-1 text-lg font-black text-amber-700">
           {countdown.seconds}
@@ -67,12 +71,12 @@ export function PlayerQuestion({
         <div className="relative grid min-h-36 place-items-center overflow-hidden rounded-2xl bg-slate-50 sm:min-h-44">
           {!imageLoaded && !imageError && (
             <p className="absolute inset-x-0 px-4 text-center text-sm font-bold text-slate-500">
-              نجهّز صورة السؤال… يمكنك متابعة قراءة النص.
+              {t('نجهّز صورة السؤال… يمكنك متابعة قراءة النص.')}
             </p>
           )}
           <img
             src={resolvedQuestionImage}
-            alt="صورة السؤال"
+            alt={t('صورة السؤال')}
             fetchPriority="high"
             decoding="sync"
             onLoad={() => {
@@ -87,7 +91,7 @@ export function PlayerQuestion({
 
       {imageError && question.essentialImage && (
         <div role="alert" className="rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-800">
-          تعذّر تحميل الصورة، ووقت السؤال مستمر.
+          {t('تعذّر تحميل الصورة، ووقت السؤال مستمر.')}
           <button
             className="mr-3 underline"
             onClick={() => {
@@ -96,7 +100,7 @@ export function PlayerQuestion({
                 globalMediaPrefetchEngine.prioritizeUpcoming(question.essentialImage, true);
             }}
           >
-            إعادة المحاولة
+            {t('إعادة المحاولة')}
           </button>
         </div>
       )}
@@ -115,7 +119,7 @@ export function PlayerQuestion({
                 key={option.id}
                 disabled={imageBlocking || locked}
                 onClick={() => submit(option.id)}
-                className={`relative flex min-h-18 cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border-2 px-4 py-3.5 text-right font-black transition-all duration-200 active:scale-[.98] ${
+                className={`relative flex min-h-18 cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border-2 px-4 py-3.5 text-start font-black transition-all duration-200 active:scale-[.98] ${
                   selected
                     ? submission === 'accepted'
                       ? 'answer-locked border-indigo-600 bg-gradient-to-l from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-200/80 ring-4 ring-indigo-500/20'
@@ -142,7 +146,7 @@ export function PlayerQuestion({
                 {selected && submission === 'accepted' && (
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-black text-white backdrop-blur-xs">
                     <span>🔒</span>
-                    <span>اختيارك</span>
+                    <span>{t('اختيارك')}</span>
                   </span>
                 )}
               </button>
@@ -162,7 +166,7 @@ export function PlayerQuestion({
             value={textAnswer}
             onChange={(e) => setTextAnswer(e.target.value)}
             disabled={imageBlocking || submission === 'submitting' || submission === 'accepted'}
-            placeholder="اكتب إجابتك هنا…"
+            placeholder={t('اكتب إجابتك هنا…')}
           />
           <button
             className="primary-btn w-full py-3.5"
@@ -171,7 +175,7 @@ export function PlayerQuestion({
               !textAnswer.trim() || imageBlocking || submission === 'submitting' || submission === 'accepted'
             }
           >
-            تسجيل الإجابة
+            {t('تسجيل الإجابة')}
           </button>
         </div>
       )}
@@ -179,7 +183,7 @@ export function PlayerQuestion({
       {submission === 'submitting' && (
         <div className="answer-confirmation mx-auto flex w-fit items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-black text-indigo-800">
           <Spinner className="h-4 w-4" />
-          نثبّت اختيارك…
+          {t('نثبّت اختيارك…')}
         </div>
       )}
       {submission === 'accepted' && <SubmittedAnswer />}

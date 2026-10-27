@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { useEffect, useState } from 'react';
 import type { ThemeSummaryDto } from '@brio/contracts';
 import Link from 'next/link';
@@ -15,6 +17,7 @@ export function ThemeLibraryPicker({
   selected: ThemeSummaryDto | null;
   onSelect: (theme: ThemeSummaryDto | null) => void;
 }) {
+  const { t, translateMessage, countNoun } = useTranslations();
   const {
     data,
     loading,
@@ -36,14 +39,14 @@ export function ThemeLibraryPicker({
   return (
     <section
       className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4"
-      aria-label="مكتبة الهويات البصرية"
+      aria-label={t('مكتبة الهويات البصرية')}
       aria-busy={isLoading}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-black">هوياتي البصرية</h3>
+          <h3 className="text-sm font-black">{t('هوياتي البصرية')}</h3>
           <p className="mt-1 text-xs leading-6 text-slate-500">
-            اختر من هوياتك المحفوظة لإعادة استخدامها في هذه المسابقة.
+            {t('اختر من هوياتك المحفوظة لإعادة استخدامها في هذه المسابقة.')}
           </p>
         </div>
         <Link
@@ -61,11 +64,11 @@ export function ThemeLibraryPicker({
           >
             <path d="M4 7h16M4 17h16M8 4v6M16 14v6" />
           </svg>
-          إدارة الهويات
+          {t('إدارة الهويات')}
         </Link>
       </div>
       <label className="relative block">
-        <span className="sr-only">البحث عن هوية</span>
+        <span className="sr-only">{t('البحث عن هوية')}</span>
         <svg
           aria-hidden="true"
           className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -82,7 +85,7 @@ export function ThemeLibraryPicker({
         <input
           type="search"
           className="field !min-h-11 !bg-white !pe-11 !text-sm"
-          placeholder="ابحث باسم الهوية…"
+          placeholder={t('ابحث باسم الهوية…')}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.preventDefault();
           }}
@@ -93,12 +96,12 @@ export function ThemeLibraryPicker({
       {isLoading && <ThemeCardsSkeleton compact />}
       {!isLoading && refreshing && (
         <p role="status" className="text-xs text-slate-500">
-          جاري تحديث الهويات البصرية…
+          {t('جاري تحديث الهويات البصرية…')}
         </p>
       )}
       {loadError && (
         <div role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
-          {loadError}
+          {translateMessage(loadError ?? '')}
           <button
             type="button"
             className="ms-3 font-bold underline"
@@ -106,15 +109,15 @@ export function ThemeLibraryPicker({
               reload();
             }}
           >
-            إعادة المحاولة
+            {t('إعادة المحاولة')}
           </button>
         </div>
       )}
       {!isLoading && !loadError && !visible.length && (
         <p className="rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-500">
           {query.trim()
-            ? 'لا توجد هويات بصرية تطابق بحثك.'
-            : 'لا توجد هويات بصرية محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.'}
+            ? t('لا توجد هويات بصرية تطابق بحثك.')
+            : t('لا توجد هويات بصرية محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.')}
         </p>
       )}
       {!isLoading && (
@@ -144,8 +147,9 @@ export function ThemeLibraryPicker({
                   <ThemeArtwork src={cover} className="mx-auto h-24 w-full rounded-xl bg-slate-50 p-2" />
                   <p className="mt-2 truncate text-sm font-black">{theme.name}</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {theme.identity.avatars.length} صورة للاعبين ·{' '}
-                    {selected?.id === theme.id ? 'محددة ✓' : 'اضغط للاختيار'}
+                    {theme.identity.avatars.length}{' '}
+                    {countNoun('صورة للاعبين ·', theme.identity.avatars.length)}{' '}
+                    {selected?.id === theme.id ? t('محددة ✓') : t('اضغط للاختيار')}
                   </p>
                 </button>
               </article>
@@ -156,12 +160,13 @@ export function ThemeLibraryPicker({
       {selected && (
         <>
           <p className="text-xs leading-6 text-slate-500">
-            ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي البصرية» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها
-            لبولت.
+            {t(
+              'ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي البصرية» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها لبولت.',
+            )}
           </p>
           <details className="rounded-2xl border border-slate-200 bg-white">
             <summary className="cursor-pointer px-4 py-3 text-sm font-black text-brand-700">
-              معاينة الهوية المحددة
+              {t('معاينة الهوية المحددة')}
             </summary>
             <div className="p-3">
               <IdentityPreview key={selected.id} identity={{ ...selected.identity, avatarMode: 'auto' }} />

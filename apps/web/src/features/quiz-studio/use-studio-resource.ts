@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { useEffect } from 'react';
 import { backgroundUploads } from '../../services/background-upload';
 import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
@@ -46,7 +48,7 @@ export function useStudioResource(
     orderQueue,
   } = options;
   const load = async () => {
-    if (!quizId) throw new Error('معرّف المسابقة مفقود.');
+    if (!quizId) throw new Error(t('معرّف المسابقة مفقود.'));
     const requestVersion = ++loadVersion.current;
     let data = await loadResource<QuizDetail>(`/api/quizzes/${quizId}`, () =>
       requestJson<QuizDetail>(`/api/quizzes/${quizId}`),
@@ -90,9 +92,9 @@ export function useStudioResource(
     setCover('');
     const notice = params.get('notice');
     if (notice === 'cover-upload-failed')
-      setWarning('تم إنشاء المسابقة بنجاح، لكن تعذر رفع الغلاف. يمكنك المحاولة مجدداً من هنا.');
+      setWarning(t('تم إنشاء المسابقة بنجاح، لكن تعذر رفع الغلاف. يمكنك المحاولة مجدداً من هنا.'));
     if (notice === 'question-image-failed')
-      setWarning('تم حفظ السؤال بنجاح، لكن تعذر رفع صورته. يمكنك تعديل السؤال والمحاولة مجدداً.');
+      setWarning(t('تم حفظ السؤال بنجاح، لكن تعذر رفع صورته. يمكنك تعديل السؤال والمحاولة مجدداً.'));
     setError(null);
     let active = true;
     void prefetchThemeLibrary();

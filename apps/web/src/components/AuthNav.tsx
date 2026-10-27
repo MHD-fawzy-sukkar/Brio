@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../i18n/use-locale';
+
 import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -9,6 +11,7 @@ import { JOIN_GAME_HREF } from '../services/home-routing';
 import { isLanMode } from '../services/runtime-mode';
 
 export function NavbarLinks() {
+  const { t } = useTranslations();
   const pathname = usePathname() || '';
   const isJoinActive = pathname.startsWith('/join');
   const isPlayerPage = isJoinActive || pathname.startsWith('/play');
@@ -21,7 +24,7 @@ export function NavbarLinks() {
     pathname.startsWith('/identities');
 
   return (
-    <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label="التنقل الرئيسي">
+    <nav className="flex shrink-0 items-center gap-1 sm:gap-2" aria-label={t('التنقل الرئيسي')}>
       <Link
         href={JOIN_GAME_HREF}
         className={`relative whitespace-nowrap rounded-xl px-2 py-2 text-xs font-bold transition-colors sm:px-3.5 sm:text-sm ${
@@ -30,7 +33,7 @@ export function NavbarLinks() {
             : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
         }`}
       >
-        انضم للعبة
+        {t('انضم للعبة')}
       </Link>
       <Link
         href={isLanMode ? '/local/' : '/dashboard/'}
@@ -40,13 +43,14 @@ export function NavbarLinks() {
             : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
         }`}
       >
-        {isLanMode ? 'لوحة المقدّم' : 'مسابقاتي'}
+        {isLanMode ? t('لوحة المقدّم') : t('مسابقاتي')}
       </Link>
     </nav>
   );
 }
 
 export function AuthNav() {
+  const { t } = useTranslations();
   const { user, logout } = useAuth();
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -69,7 +73,7 @@ export function AuthNav() {
       {user ? (
         <div className="flex items-center gap-3">
           <span className="hidden text-sm font-bold text-slate-600 sm:inline">
-            مرحباً، {user.displayName}
+            {t('مرحباً،')} {user.displayName}
           </span>
           <span className="hidden h-4 w-px bg-slate-200 sm:inline" aria-hidden="true" />
           <button
@@ -77,17 +81,19 @@ export function AuthNav() {
             onClick={() => setConfirmOpen(true)}
             className="secondary-btn cursor-pointer !px-3.5 !py-2 text-sm font-bold text-slate-700 transition hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-700"
           >
-            تسجيل الخروج
+            {t('تسجيل الخروج')}
           </button>
 
           <ConfirmDialog
             open={confirmOpen}
             icon="👋"
-            title="تأكيد تسجيل الخروج"
-            description="هل أنت متأكد من رغبتك في تسجيل الخروج من حسابك؟ ستحتاج إلى تسجيل الدخول مجدداً لإدارة مسابقاتك."
-            confirmLabel="نعم، تسجيل الخروج"
-            busyLabel="جاري الخروج…"
-            cancelLabel="البقاء في الحساب"
+            title={t('تأكيد تسجيل الخروج')}
+            description={t(
+              'هل أنت متأكد من رغبتك في تسجيل الخروج من حسابك؟ ستحتاج إلى تسجيل الدخول مجدداً لإدارة مسابقاتك.',
+            )}
+            confirmLabel={t('نعم، تسجيل الخروج')}
+            busyLabel={t('جاري الخروج…')}
+            cancelLabel={t('البقاء في الحساب')}
             busy={loggingOut}
             onCancel={() => setConfirmOpen(false)}
             onConfirm={handleConfirmLogout}
@@ -95,7 +101,7 @@ export function AuthNav() {
         </div>
       ) : (
         <Link href={isLanMode ? '/local/' : '/login/'} className="primary-btn !px-4 !py-2 text-sm">
-          دخول المنشئ
+          {t('دخول المنشئ')}
         </Link>
       )}
     </div>

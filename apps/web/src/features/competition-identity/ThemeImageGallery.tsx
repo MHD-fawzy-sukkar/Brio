@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import type { SaveIdentityRequest } from '@brio/contracts';
 import { Avatar } from '../../components/Avatar';
@@ -36,6 +38,7 @@ export function ThemeImageGallery({
   onRetry,
   onRemovePending,
 }: Props) {
+  const { t, translateMessage } = useTranslations();
   const [menu, setMenu] = useState<{ id: string; left: number; top: number } | null>(null);
   const menuId = useId();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -96,7 +99,7 @@ export function ThemeImageGallery({
         } as CSSProperties
       }
     >
-      <ul className="identity-image-gallery grid grid-cols-3 gap-3" aria-label="صور الهوية">
+      <ul className="identity-image-gallery grid grid-cols-3 gap-3" aria-label={t('صور الهوية')}>
         {items.map(({ key, image, pending }) => {
           const src = image?.src ?? pending?.preview;
           const role = image?.roles.includes('logo')
@@ -113,14 +116,16 @@ export function ThemeImageGallery({
                   <span className="grid aspect-square place-items-center text-2xl text-slate-300">▧</span>
                 )}
                 {role && !pending && (
-                  <span className="theme-avatar-tile__role">{role === 'logo' ? '◇ شعار' : '★ رئيسية'}</span>
+                  <span className="theme-avatar-tile__role">
+                    {role === 'logo' ? t('◇ شعار') : t('★ رئيسية')}
+                  </span>
                 )}
                 {image && (
                   <button
                     type="button"
                     disabled={uploading}
                     className="theme-avatar-tile__more"
-                    aria-label={`خيارات ${image.label}`}
+                    aria-label={t('خيارات {0}', { 0: image.label })}
                     aria-expanded={menu?.id === image.mediaId}
                     aria-controls={menu?.id === image.mediaId ? menuId : undefined}
                     onClick={(event) => {
@@ -138,17 +143,17 @@ export function ThemeImageGallery({
                 {pending && (
                   <span role="status" className="theme-avatar-tile__progress">
                     {pending?.status === 'failed'
-                      ? 'تعذّر الرفع'
+                      ? t('تعذّر الرفع')
                       : pending?.status === 'staged'
-                        ? 'على جهازك فقط'
-                        : 'جاري الرفع…'}
+                        ? t('على جهازك فقط')
+                        : t('جاري الرفع…')}
                   </span>
                 )}
               </div>
               {pending?.status === 'failed' && (
                 <div className="mt-2 space-y-1">
                   <p role="alert" className="text-xs leading-5 text-rose-700">
-                    {pending.error}
+                    {translateMessage(pending.error ?? '')}
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs">
                     <button
@@ -157,7 +162,7 @@ export function ThemeImageGallery({
                       className="font-bold text-brand-700"
                       onClick={() => onRetry(pending.id)}
                     >
-                      المحاولة مع الحفظ
+                      {t('المحاولة مع الحفظ')}
                     </button>
                     <button
                       type="button"
@@ -165,7 +170,7 @@ export function ThemeImageGallery({
                       onClick={() => onRemovePending(pending.id)}
                       className="text-rose-700"
                     >
-                      إزالة
+                      {t('إزالة')}
                     </button>
                   </div>
                 </div>
@@ -179,7 +184,7 @@ export function ThemeImageGallery({
           ref={menuRef}
           id={menuId}
           role="group"
-          aria-label={`خيارات ${selected.label}`}
+          aria-label={t('خيارات {0}', { 0: selected.label })}
           className="theme-image-menu"
           style={{ left: menu.left, top: menu.top }}
         >
@@ -190,7 +195,7 @@ export function ThemeImageGallery({
               close();
             }}
           >
-            {selected.roles.includes('character') ? 'إلغاء تعيين الرئيسية' : 'تعيين كشخصية رئيسية'}
+            {selected.roles.includes('character') ? t('إلغاء تعيين الرئيسية') : t('تعيين كشخصية رئيسية')}
           </button>
           <button
             type="button"
@@ -199,7 +204,7 @@ export function ThemeImageGallery({
               close();
             }}
           >
-            {selected.roles.includes('logo') ? 'إلغاء تعيين الشعار' : 'تعيين كشعار'}
+            {selected.roles.includes('logo') ? t('إلغاء تعيين الشعار') : t('تعيين كشعار')}
           </button>
           <button
             type="button"
@@ -209,7 +214,7 @@ export function ThemeImageGallery({
               setMenu(null);
             }}
           >
-            حذف الصورة
+            {t('حذف الصورة')}
           </button>
         </div>
       )}

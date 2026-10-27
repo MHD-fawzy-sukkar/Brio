@@ -1,3 +1,4 @@
+import { t } from '../i18n/locale';
 export type OrderSaveState = { order: string[] | null; saving: boolean; error: string };
 
 /** Serialize writes, coalescing intermediate positions while one request is in flight. */
@@ -41,7 +42,7 @@ export class LatestOrderQueue {
         this.publish({
           order: task.ids,
           saving: false,
-          error: cause instanceof Error ? cause.message : 'تعذّر حفظ الترتيب.',
+          error: cause instanceof Error ? cause.message : t('تعذّر حفظ الترتيب.'),
         });
         return;
       }

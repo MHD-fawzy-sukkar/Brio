@@ -1,3 +1,4 @@
+import { t } from '../../i18n/locale';
 import { fitIdentityImage, visibleBounds } from './image-layout';
 
 const normalizedImages = new WeakMap<File, Promise<File>>();
@@ -20,7 +21,7 @@ async function normalizeImage(file: File): Promise<File> {
   try {
     bitmap = await createImageBitmap(file);
   } catch {
-    throw new Error('تعذّر قراءة الصورة. جرّب ملف PNG أو JPG آخر.');
+    throw new Error(t('تعذّر قراءة الصورة. جرّب ملف PNG أو JPG آخر.'));
   }
   try {
     const sample = document.createElement('canvas');
@@ -35,7 +36,7 @@ async function normalizeImage(file: File): Promise<File> {
       sample.width,
       sample.height,
     );
-    if (!bounds) throw new Error('الصورة شفافة بالكامل. اختر صورة تحتوي رسماً ظاهراً.');
+    if (!bounds) throw new Error(t('الصورة شفافة بالكامل. اختر صورة تحتوي رسماً ظاهراً.'));
     const sx = bitmap.width / sample.width,
       sy = bitmap.height / sample.height;
     const crop = { x: bounds.x * sx, y: bounds.y * sy, width: bounds.width * sx, height: bounds.height * sy };
@@ -57,7 +58,7 @@ async function normalizeImage(file: File): Promise<File> {
       target.height,
     );
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.9));
-    if (!blob) throw new Error('تعذّر تجهيز الصورة للرفع. حاول مجدداً.');
+    if (!blob) throw new Error(t('تعذّر تجهيز الصورة للرفع. حاول مجدداً.'));
     return new File(
       [blob],
       `${file.name.replace(/\.[^.]+$/, '')}.${blob.type === 'image/webp' ? 'webp' : 'png'}`,

@@ -1,10 +1,15 @@
 'use client';
+
+import { QuestionSettings } from './QuestionSettings';
+import { useTranslations } from '../../i18n/use-locale';
+
 import Link from 'next/link';
-import type { PointsMultiplier, QuestionType } from '@brio/contracts';
+import type { QuestionType } from '@brio/contracts';
 import { ButtonContent, PageSkeleton } from '../../components/Loading';
 import { typeLabels } from './model';
 import { useQuestionEditor } from './use-question-editor';
 export function QuestionEditor() {
+  const { t, translateMessage } = useTranslations();
   const {
     quizId,
     questionId,
@@ -32,7 +37,7 @@ export function QuestionEditor() {
     return (
       <div className="card mx-auto max-w-5xl space-y-4 p-6">
         <p role="alert" className="text-sm text-rose-700">
-          {error}
+          {translateMessage(error ?? '')}
         </p>
         <div className="flex flex-wrap gap-3">
           <button
@@ -43,10 +48,10 @@ export function QuestionEditor() {
               setLoadRevision((value) => value + 1);
             }}
           >
-            إعادة المحاولة
+            {t('إعادة المحاولة')}
           </button>
           <Link className="secondary-btn" href={`/builder/?quizId=${quizId ?? ''}`}>
-            العودة إلى المسابقة
+            {t('العودة إلى المسابقة')}
           </Link>
         </div>
       </div>
@@ -61,24 +66,24 @@ export function QuestionEditor() {
     >
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-3xl font-black">{questionId ? 'تعديل السؤال' : 'سؤال جديد'}</h1>
+          <h1 className="text-3xl font-black">{questionId ? t('تعديل السؤال') : t('سؤال جديد')}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            ركّز على سؤال واحد؛ سيُحفظ فوراً وتُرفع الصورة في الخلفية.
+            {t('ركّز على سؤال واحد؛ سيُحفظ فوراً وتُرفع الصورة في الخلفية.')}
           </p>
         </div>
         <Link href={`/builder/?quizId=${quizId || ''}`} className="secondary-btn">
-          → العودة إلى المسابقة
+          {t('→ العودة إلى المسابقة')}
         </Link>
       </header>
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700">
-          {error}
+          {translateMessage(error ?? '')}
         </div>
       )}
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <section className="card space-y-6 p-6">
           <div>
-            <label className="label">نوع السؤال</label>
+            <label className="label">{t('نوع السؤال')}</label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {(Object.keys(typeLabels) as QuestionType[]).map((type) => (
                 <button
@@ -87,20 +92,20 @@ export function QuestionEditor() {
                   onClick={() => changeType(type)}
                   className={`rounded-xl border p-3 text-sm font-black ${question.type === type ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-200 bg-white text-slate-500'}`}
                 >
-                  {typeLabels[type]}
+                  {translateMessage(typeLabels[type])}
                 </button>
               ))}
             </div>
           </div>
           <div>
             <label className="label">
-              صورة السؤال <span className="font-normal text-slate-400">(اختيارية)</span>
+              {t('صورة السؤال')} <span className="font-normal text-slate-400">{t('(اختيارية)')}</span>
             </label>
             <label className="group relative grid min-h-52 cursor-pointer place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-brand-400 hover:bg-brand-50/50">
               {visibleImageUrl ? (
                 <img
                   src={visibleImageUrl}
-                  alt="معاينة صورة السؤال"
+                  alt={t('معاينة صورة السؤال')}
                   className="max-h-72 w-full object-contain p-3"
                 />
               ) : (
@@ -108,12 +113,12 @@ export function QuestionEditor() {
                   <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-2xl shadow-sm">
                     🖼️
                   </span>
-                  <b className="mt-3 block text-sm text-slate-700">أضف صورة توضيحية</b>
-                  <small className="mt-1 block text-slate-400">تظهر كاملة دون قص</small>
+                  <b className="mt-3 block text-sm text-slate-700">{t('أضف صورة توضيحية')}</b>
+                  <small className="mt-1 block text-slate-400">{t('تظهر كاملة دون قص')}</small>
                 </div>
               )}
-              <span className="absolute bottom-3 left-3 rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-brand-700 shadow-md">
-                {imageFile ? 'تغيير الصورة' : 'رفع صورة'}
+              <span className="absolute bottom-3 end-3 rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-brand-700 shadow-md">
+                {imageFile ? t('تغيير الصورة') : t('رفع صورة')}
               </span>
               <input
                 type="file"
@@ -124,26 +129,28 @@ export function QuestionEditor() {
             </label>
             {activeUpload?.state === 'uploading' && (
               <p role="status" className="mt-2 text-xs font-bold text-brand-600">
-                جاري رفع الصورة في الخلفية… تظهر المعاينة الآن وسيُحدّث الرابط تلقائياً.
+                {t('جاري رفع الصورة في الخلفية… تظهر المعاينة الآن وسيُحدّث الرابط تلقائياً.')}
               </p>
             )}
             {activeUpload?.state === 'failed' && (
               <p role="alert" className="mt-2 text-xs font-bold text-rose-600">
-                تعذر رفع الصورة. اخترها مجدداً ثم احفظ السؤال لإعادة المحاولة.
+                {t('تعذر رفع الصورة. اخترها مجدداً ثم احفظ السؤال لإعادة المحاولة.')}
               </p>
             )}
             {!activeUpload && (
-              <p className="mt-2 text-xs text-slate-400">حتى 5MB. يبدأ الرفع في الخلفية فور حفظ السؤال.</p>
+              <p className="mt-2 text-xs text-slate-400">
+                {t('حتى 5MB. يبدأ الرفع في الخلفية فور حفظ السؤال.')}
+              </p>
             )}
           </div>
           <div>
-            <label className="label">نص السؤال</label>
+            <label className="label">{t('نص السؤال')}</label>
             <textarea
               className="field min-h-28 resize-y text-lg font-bold"
               maxLength={1000}
               value={question.text}
               onChange={(e) => setQuestion({ ...question, text: e.target.value })}
-              placeholder="اكتب السؤال بوضوح…"
+              placeholder={t('اكتب السؤال بوضوح…')}
               required
             />
           </div>
@@ -153,14 +160,14 @@ export function QuestionEditor() {
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <label className="label !mb-0">
-                  الإجابات{' '}
+                  {t('الإجابات')}{' '}
                   {question.type !== 'Poll' && (
-                    <span className="font-normal text-slate-400">— اختر الصحيحة</span>
+                    <span className="font-normal text-slate-400">{t('— اختر الصحيحة')}</span>
                   )}
                 </label>
                 {question.type !== 'TrueFalse' && (
                   <button type="button" onClick={addOption} className="text-sm font-black text-brand-600">
-                    ＋ إضافة خيار
+                    {t('＋ إضافة خيار')}
                   </button>
                 )}
               </div>
@@ -170,7 +177,7 @@ export function QuestionEditor() {
                     <button
                       tabIndex={-1}
                       type="button"
-                      aria-label="تعيين كإجابة صحيحة"
+                      aria-label={t('تعيين كإجابة صحيحة')}
                       disabled={question.type === 'Poll'}
                       onClick={() => markCorrect(index)}
                       className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 font-black ${option.isCorrect ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300 text-transparent'} disabled:border-slate-200`}
@@ -181,7 +188,7 @@ export function QuestionEditor() {
                       className="field"
                       value={option.text}
                       onChange={(e) => updateOption(index, e.target.value)}
-                      placeholder={`الإجابة ${index + 1}`}
+                      placeholder={t('الإجابة {0}', { 0: index + 1 })}
                       maxLength={200}
                       required
                     />
@@ -191,7 +198,7 @@ export function QuestionEditor() {
                         type="button"
                         onClick={() => removeOption(index)}
                         disabled={question.options.length <= 2}
-                        aria-label="حذف الخيار"
+                        aria-label={t('حذف الخيار')}
                         className="rounded-xl px-2 py-2 font-black text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-30"
                       >
                         ×
@@ -205,7 +212,7 @@ export function QuestionEditor() {
           {question.type === 'ShortAnswer' && (
             <div>
               <div className="mb-3 flex justify-between">
-                <label className="label !mb-0">الإجابات المقبولة</label>
+                <label className="label !mb-0">{t('الإجابات المقبولة')}</label>
                 <button
                   type="button"
                   onClick={() =>
@@ -213,7 +220,7 @@ export function QuestionEditor() {
                   }
                   className="text-sm font-black text-brand-600"
                 >
-                  ＋ إضافة صيغة
+                  {t('＋ إضافة صيغة')}
                 </button>
               </div>
               <div className="space-y-3">
@@ -230,7 +237,7 @@ export function QuestionEditor() {
                         ),
                       })
                     }
-                    placeholder="مثال: الرياض"
+                    placeholder={t('مثال: الرياض')}
                     required={index === 0}
                   />
                 ))}
@@ -244,54 +251,20 @@ export function QuestionEditor() {
               href={`/builder/?quizId=${quizId || ''}`}
               className="text-sm font-bold text-slate-500 hover:text-slate-800"
             >
-              إلغاء والعودة
+              {t('إلغاء والعودة')}
             </Link>
             <button
               type="submit"
               disabled={busy}
               className="primary-btn py-3 px-8 text-base shadow-md shadow-brand-100"
             >
-              <ButtonContent busy={busy} busyText="جاري الحفظ…">
-                حفظ السؤال
+              <ButtonContent busy={busy} busyText={t('جاري الحفظ…')}>
+                {t('حفظ السؤال')}
               </ButtonContent>
             </button>
           </div>
         </section>
-        <aside className="card h-fit space-y-5 p-6">
-          <h2 className="font-black">إعدادات اللعب</h2>
-          <div>
-            <label className="label">وقت الإجابة</label>
-            <select
-              className="field"
-              value={question.durationMs}
-              onChange={(e) => setQuestion({ ...question, durationMs: Number(e.target.value) })}
-            >
-              {[10, 15, 20, 30, 45, 60, 90, 120].map((seconds) => (
-                <option key={seconds} value={seconds * 1000}>
-                  {seconds} ثانية
-                </option>
-              ))}
-            </select>
-          </div>
-          {question.type !== 'Poll' && (
-            <div>
-              <label className="label">قيمة السؤال</label>
-              <select
-                className="field"
-                value={question.multiplier}
-                onChange={(e) => setQuestion({ ...question, multiplier: e.target.value as PointsMultiplier })}
-              >
-                <option value="Standard">قياسي — حتى 1000</option>
-                <option value="Double">مضاعف — حتى 2000</option>
-                <option value="Zero">بدون نقاط</option>
-              </select>
-            </div>
-          )}
-          <div className="rounded-2xl bg-brand-50 p-4 text-xs leading-6 text-brand-800">
-            <b className="block text-sm">نقاط أذكى</b>الإجابة الصحيحة تحصل على 50% من القيمة على الأقل، وتزداد
-            حتى 100% كلما كانت أسرع.
-          </div>
-        </aside>
+        <QuestionSettings question={question} setQuestion={setQuestion} />
       </div>
     </form>
   );

@@ -1,4 +1,7 @@
 'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
+
 import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { PageSkeleton } from '../../components/Loading';
@@ -22,6 +25,7 @@ const optionColors = [
   'bg-orange-500',
 ];
 export function HostGame() {
+  const { t, translateMessage, numberLocale } = useTranslations();
   const game = useHostGame();
   const {
     quizId,
@@ -53,7 +57,7 @@ export function HostGame() {
             role="alert"
             className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700"
           >
-            {error}
+            {translateMessage(error ?? '')}
           </div>
         )}
 
@@ -87,23 +91,23 @@ export function HostGame() {
               <div className="mx-auto grid h-36 w-36 place-items-center rounded-full border-4 border-brand-100 bg-brand-50 text-7xl font-black text-brand-700 shadow-xl shadow-brand-100">
                 {countdown.seconds}
               </div>
-              <h2 className="mt-7 text-4xl font-black">استعدوا للانطلاق!</h2>
+              <h2 className="mt-7 text-4xl font-black">{t('استعدوا للانطلاق!')}</h2>
             </div>
           </section>
         )}
 
         {isLanMode && phase === 'RECOVERY_PAUSED' && (
           <section className="card space-y-4 p-6 text-center">
-            <h2 className="text-2xl font-black">توقفت الجولة بعد انقطاع تشغيل المقدّم</h2>
+            <h2 className="text-2xl font-black">{t('توقفت الجولة بعد انقطاع تشغيل المقدّم')}</h2>
             <p className="text-slate-600">
-              اختر إعادة السؤال المتأثر أو تجاوزه. نقاطه السابقة تُلغى وفق قواعد الاستعادة.
+              {t('اختر إعادة السؤال المتأثر أو تجاوزه. نقاطه السابقة تُلغى وفق قواعد الاستعادة.')}
             </p>
             <div className="flex justify-center gap-3">
               <button className="primary-btn" onClick={() => socket?.recoverQuiz('void_and_replay')}>
-                إعادة السؤال
+                {t('إعادة السؤال')}
               </button>
               <button className="secondary-btn" onClick={() => socket?.recoverQuiz('void_and_skip')}>
-                تجاوز السؤال
+                {t('تجاوز السؤال')}
               </button>
             </div>
           </section>
@@ -120,7 +124,7 @@ export function HostGame() {
             <div className="p-4 sm:p-8">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700">
-                  السؤال {(snapshot.questionIndex ?? 0) + 1}
+                  {t('السؤال')} {(snapshot.questionIndex ?? 0) + 1}
                 </span>
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-2 text-2xl font-black text-amber-700">
                   {countdown.seconds}
@@ -130,7 +134,7 @@ export function HostGame() {
                 <div className="mx-auto mt-6 grid max-h-72 min-h-40 place-items-center rounded-2xl bg-slate-50">
                   <img
                     src={globalMediaPrefetchEngine.resolveUrl(question.essentialImage)}
-                    alt="صورة السؤال"
+                    alt={t('صورة السؤال')}
                     fetchPriority="high"
                     decoding="sync"
                     className="max-h-72 w-full object-contain p-3"
@@ -162,9 +166,11 @@ export function HostGame() {
                 className="mx-auto mt-7 max-w-sm rounded-2xl border border-brand-100 bg-brand-50 p-4 text-center"
               >
                 <b className="text-2xl text-brand-800">{snapshot.acceptedAnswersCount ?? 0}</b>
-                <span className="mx-2 text-sm font-bold text-brand-500">من</span>
+                <span className="mx-2 text-sm font-bold text-brand-500">{t('من')}</span>
                 <b className="text-2xl text-brand-800">{snapshot.playerCount ?? players.length}</b>
-                <span className="mt-1 block text-xs font-bold text-slate-500">إجابة وصلت حتى الآن</span>
+                <span className="mt-1 block text-xs font-bold text-slate-500">
+                  {t('إجابة وصلت حتى الآن')}
+                </span>
               </div>
             </div>
           </section>
@@ -174,12 +180,12 @@ export function HostGame() {
           <section className="card p-6 sm:p-9">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-brand-600">انتهى الوقت</p>
-                <h2 className="mt-1 text-3xl font-black">توزيع الإجابات</h2>
+                <p className="text-sm font-black text-brand-600">{t('انتهى الوقت')}</p>
+                <h2 className="mt-1 text-3xl font-black">{t('توزيع الإجابات')}</h2>
               </div>
               <div className="rounded-2xl bg-brand-50 px-5 py-3 text-center">
                 <b className="text-2xl text-brand-700">{countdown.seconds}</b>
-                <span className="block text-[10px] font-bold text-slate-400">للترتيب</span>
+                <span className="block text-[10px] font-bold text-slate-400">{t('للترتيب')}</span>
               </div>
             </div>
             <div className="mt-8 space-y-4">
@@ -187,7 +193,9 @@ export function HostGame() {
                 <div key={`${stat.optionId}-${index}`}>
                   <div className="mb-2 flex justify-between text-sm font-bold">
                     <span>
-                      {stat.label}
+                      {question?.type === 'ShortAnswer' && stat.optionId === null
+                        ? t(stat.label)
+                        : stat.label}
                       {stat.isCorrect === true ? ' ✓' : ''}
                     </span>
                     <span>
@@ -215,9 +223,9 @@ export function HostGame() {
             <CompetitionMascot presentation="roaming" scope="page" celebration />
             <div className="text-center">
               <div className="text-5xl">🏅</div>
-              <h2 className="mt-3 text-3xl font-black">الترتيب الحالي</h2>
+              <h2 className="mt-3 text-3xl font-black">{t('الترتيب الحالي')}</h2>
               <p className="mt-1 text-sm text-slate-500">
-                هذه النقاط تراكمية، وكل سؤال جديد قد يغيّر الترتيب.
+                {t('هذه النقاط تراكمية، وكل سؤال جديد قد يغيّر الترتيب.')}
               </p>
             </div>
             <div data-mascot-flight-boundary className="mx-auto mt-8 max-w-2xl space-y-3">
@@ -231,7 +239,7 @@ export function HostGame() {
                   </b>
                   <Avatar src={player.avatarId} label={player.nickname} className="h-11 w-11 rounded-xl" />
                   <span className="flex-1 font-black">{player.nickname}</span>
-                  <strong className="text-brand-700">{player.score.toLocaleString('ar')}</strong>
+                  <strong className="text-brand-700">{player.score.toLocaleString(numberLocale())}</strong>
                 </div>
               ))}
             </div>
@@ -243,7 +251,7 @@ export function HostGame() {
             <Podium players={finalLeaderboard} />
             {finalLeaderboard.length > 0 && (
               <section className="card mx-auto max-w-3xl p-6 sm:p-8">
-                <h3 className="text-center text-xl font-black text-slate-900">جدول الترتيب النهائي</h3>
+                <h3 className="text-center text-xl font-black text-slate-900">{t('جدول الترتيب النهائي')}</h3>
                 <div className="mt-5 space-y-3">
                   {finalLeaderboard.map((player) => (
                     <div
@@ -260,7 +268,7 @@ export function HostGame() {
                       />
                       <span className="flex-1 font-black text-slate-900">{player.nickname}</span>
                       <strong className="text-brand-700">
-                        {(player.score ?? 0).toLocaleString('ar')} نقطة
+                        {(player.score ?? 0).toLocaleString(numberLocale())} {t('نقطة')}
                       </strong>
                     </div>
                   ))}
@@ -273,11 +281,11 @@ export function HostGame() {
         <ConfirmDialog
           open={confirmEndOpen}
           icon="🏁"
-          title="هل أنت متأكد من إنهاء اللعبة؟"
-          description="سيتم إيقاف المسابقة الحالية وإظهار منصة الأبطال والنتائج النهائية مباشرةً."
-          confirmLabel="نعم، إنهاء وعرض الأبطال"
-          busyLabel="جاري إنهاء اللعبة…"
-          cancelLabel="مواصلة المسابقة"
+          title={t('هل أنت متأكد من إنهاء اللعبة؟')}
+          description={t('سيتم إيقاف المسابقة الحالية وإظهار منصة الأبطال والنتائج النهائية مباشرةً.')}
+          confirmLabel={t('نعم، إنهاء وعرض الأبطال')}
+          busyLabel={t('جاري إنهاء اللعبة…')}
+          cancelLabel={t('مواصلة المسابقة')}
           busy={ending}
           onCancel={() => setConfirmEndOpen(false)}
           onConfirm={confirmEndRoom}

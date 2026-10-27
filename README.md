@@ -28,6 +28,8 @@ See [LAN setup, architecture, tests and pending acceptance](docs/14-LAN.md). Phy
 
 Canonical documents start at [Project Structure](docs/Project-Structure.md) and [Project Memory](docs/5-Project-Memory.md).
 
+The header language button switches Arabic/English and RTL/LTR without reloading or resetting a game or draft. The preference is local to each browser/origin. See [language support and translation checks](docs/23-Languages.md).
+
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`. LAN integration tests bind local HTTP/WebSocket ports.
 
 ## Maintainability and verification

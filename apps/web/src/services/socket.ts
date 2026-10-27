@@ -1,3 +1,4 @@
+import { t } from '../i18n/locale';
 import { friendlyGameError } from './game-copy';
 import { isLanMode } from './runtime-mode';
 
@@ -201,7 +202,7 @@ export class BrioRoomSocket {
       const timeout = setTimeout(() => {
         this.receiptListeners.delete(requestId);
         this.rejectedListeners.delete(requestId);
-        reject(new Error('لم يصل تأكيد الإجابة. حاول إرسالها مجدداً.'));
+        reject(new Error(t('لم يصل تأكيد الإجابة. حاول إرسالها مجدداً.')));
       }, 10000);
       this.receiptListeners.set(requestId, (receipt) => {
         clearTimeout(timeout);

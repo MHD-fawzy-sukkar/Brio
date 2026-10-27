@@ -1,11 +1,14 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { hexToHsv, hsvToHex, type HsvColor } from './color-space';
 
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
 export function ColorSpectrum({ color, onChange }: { color: string; onChange: (hex: string) => void }) {
+  const { t } = useTranslations();
   const [hsv, setHsv] = useState(() => hexToHsv(color));
   const current = useRef(hsv);
   const source = useRef(color);
@@ -37,11 +40,14 @@ export function ColorSpectrum({ color, onChange }: { color: string; onChange: (h
       <div
         role="slider"
         tabIndex={0}
-        aria-label="درجة اللون وإضاءته"
+        aria-label={t('درجة اللون وإضاءته')}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(hsv.s * 100)}
-        aria-valuetext={`تشبّع ${Math.round(hsv.s * 100)}%، إضاءة ${Math.round(hsv.v * 100)}%`}
+        aria-valuetext={t('تشبّع {0}%، إضاءة {1}%', {
+          0: Math.round(hsv.s * 100),
+          1: Math.round(hsv.v * 100),
+        })}
         className="theme-color-spectrum__plane"
         style={{ backgroundColor: `hsl(${hsv.h} 100% 50%)` }}
         onPointerDown={(event) => {
@@ -85,7 +91,7 @@ export function ColorSpectrum({ color, onChange }: { color: string; onChange: (h
         step={1}
         value={hsv.h}
         dir="ltr"
-        aria-label="طيف اللون"
+        aria-label={t('طيف اللون')}
         className="theme-color-spectrum__hue"
         onChange={(event) => change({ ...current.current, h: Number(event.target.value) })}
       />

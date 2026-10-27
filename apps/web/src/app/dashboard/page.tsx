@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import Link from 'next/link';
 import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -15,6 +17,7 @@ import { requestJson, jsonBody } from '../../services/http-json';
 import { prefetchThemeLibrary } from '../../features/competition-identity/api';
 
 function DashboardContent() {
+  const { t, translateMessage, numberLocale, countNoun } = useTranslations();
   const { data, loading, error: loadError, reload } = useResource<QuizSummaryDto[]>('/api/quizzes');
   const quizzes = data ?? [];
   const participation = useResource<CreatorParticipationStats>('/api/creator/stats');
@@ -71,7 +74,7 @@ function DashboardContent() {
         `/host/?roomId=${encodeURIComponent(body.roomId)}&code=${encodeURIComponent(body.code)}&quizId=${encodeURIComponent(quizId)}`,
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذر بدء المسابقة.');
+      setError(cause instanceof Error ? cause.message : t('تعذر بدء المسابقة.'));
       setStartingId(null);
     }
   };
@@ -88,7 +91,7 @@ function DashboardContent() {
       );
       setDeleting(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذّر حذف المسابقة.');
+      setError(cause instanceof Error ? cause.message : t('تعذّر حذف المسابقة.'));
       setDeleting(null);
     } finally {
       setDeleteBusy(false);
@@ -101,16 +104,16 @@ function DashboardContent() {
       <RoamingBolt scope="page" />
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-black text-brand-600">لوحة المنشئ</p>
-          <h1 className="mt-1 text-3xl font-black text-slate-900">مرحباً بك في Brio</h1>
-          <p className="mt-2 text-slate-500">تابع مسابقاتك الأخيرة أو ابدأ تجربة جديدة.</p>
+          <p className="text-sm font-black text-brand-600">{t('لوحة المنشئ')}</p>
+          <h1 className="mt-1 text-3xl font-black text-slate-900">{t('مرحباً بك في Brio')}</h1>
+          <p className="mt-2 text-slate-500">{t('تابع مسابقاتك الأخيرة أو ابدأ تجربة جديدة.')}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/identities/" className="secondary-btn text-center">
-            هوياتي البصرية
+            {t('هوياتي البصرية')}
           </Link>
           <Link href="/quizzes/new/" className="primary-btn text-center">
-            ＋ إنشاء مسابقة
+            {t('＋ إنشاء مسابقة')}
           </Link>
         </div>
       </header>
@@ -119,56 +122,58 @@ function DashboardContent() {
           role="alert"
           className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700"
         >
-          {error || loadError}
+          {translateMessage((error || loadError) ?? '')}
           {loadError && (
             <button className="ms-3 underline" onClick={reload}>
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           )}
         </div>
       )}
       <section data-mascot-flight-boundary className="grid gap-4 sm:grid-cols-3">
         <div className="card p-5">
-          <p className="text-xs font-bold text-slate-400">المسابقات</p>
+          <p className="text-xs font-bold text-slate-400">{t('المسابقات')}</p>
           <b className="mt-2 block text-3xl text-slate-900">{stats.quizCount}</b>
         </div>
         <div className="card p-5">
-          <p className="text-xs font-bold text-slate-400">إجمالي الأسئلة</p>
+          <p className="text-xs font-bold text-slate-400">{t('إجمالي الأسئلة')}</p>
           <b className="mt-2 block text-3xl text-brand-700">{stats.questionCount}</b>
         </div>
         <div className="card p-5" aria-busy={participation.loading || participation.data?.pending}>
-          <p className="text-xs font-bold text-slate-400">إجمالي المشاركات</p>
+          <p className="text-xs font-bold text-slate-400">{t('إجمالي المشاركات')}</p>
           {participation.error ? (
             <div role="alert" className="mt-3 text-xs leading-6 text-rose-700">
-              تعذّر تحميل العدد.
+              {t('تعذّر تحميل العدد.')}
               <button type="button" className="ms-2 font-bold underline" onClick={participation.reload}>
-                إعادة المحاولة
+                {t('إعادة المحاولة')}
               </button>
             </div>
           ) : !participation.data ? (
             <div
               role="status"
-              aria-label="جاري تحميل إجمالي المشاركات"
+              aria-label={t('جاري تحميل إجمالي المشاركات')}
               className="skeleton-shimmer mt-2 h-9 w-20 rounded-xl bg-slate-100"
             />
           ) : (
             <b className="mt-2 block text-3xl text-brand-700">
-              {participation.data.totalParticipations.toLocaleString('ar')}
+              {participation.data.totalParticipations.toLocaleString(numberLocale())}
             </b>
           )}
           <p className="mt-2 text-xs text-slate-500">
-            {participation.data?.pending ? 'جار تحديث العدد…' : 'مشاركات اللاعبين في جولاتك على الموقع'}
+            {participation.data?.pending ? t('جار تحديث العدد…') : t('مشاركات اللاعبين في جولاتك على الموقع')}
           </p>
         </div>
       </section>
       <section>
         <div className="mb-4 flex items-end justify-between">
           <div>
-            <h2 className="text-xl font-black text-slate-900">مسابقاتي الأخيرة</h2>
-            <p className="mt-1 text-sm text-slate-500">المسودات والمنشورات في مكان واحد.</p>
+            <h2 className="text-xl font-black text-slate-900">{t('مسابقاتي الأخيرة')}</h2>
+            <p className="mt-1 text-sm text-slate-500">{t('المسودات والمنشورات في مكان واحد.')}</p>
           </div>
           {quizzes.length > 0 && (
-            <span className="text-xs font-bold text-slate-400">{quizzes.length} مسابقة</span>
+            <span className="text-xs font-bold text-slate-400">
+              {quizzes.length} {countNoun('مسابقة', quizzes.length)}
+            </span>
           )}
         </div>
         {loading ? (
@@ -176,10 +181,12 @@ function DashboardContent() {
         ) : quizzes.length === 0 ? (
           <div className="card py-20 text-center">
             <div className="text-5xl">✨</div>
-            <h3 className="mt-4 text-xl font-black">لا توجد مسابقات بعد</h3>
-            <p className="mt-2 text-sm text-slate-500">أنشئ مسابقتك الأولى، ثم أضف الأسئلة في الاستوديو.</p>
+            <h3 className="mt-4 text-xl font-black">{t('لا توجد مسابقات بعد')}</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              {t('أنشئ مسابقتك الأولى، ثم أضف الأسئلة في الاستوديو.')}
+            </p>
             <Link href="/quizzes/new/" className="primary-btn mt-6 inline-block">
-              إنشاء أول مسابقة
+              {t('إنشاء أول مسابقة')}
             </Link>
           </div>
         ) : (
@@ -200,7 +207,7 @@ function DashboardContent() {
                         loading="lazy"
                         decoding="async"
                         src={coverUrl}
-                        alt={`غلاف ${quiz.title}`}
+                        alt={t('غلاف {0}', { 0: quiz.title })}
                         className="h-full w-full object-contain bg-slate-50"
                       />
                     ) : (
@@ -211,31 +218,31 @@ function DashboardContent() {
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="line-clamp-2 font-black text-slate-900">{quiz.title}</h3>
                       <span className="shrink-0 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-black text-brand-700">
-                        {quiz.questionCount} سؤال
+                        {quiz.questionCount} {countNoun('سؤال', quiz.questionCount)}
                       </span>
                     </div>
                     <p className="mt-2 text-xs text-slate-400">
-                      آخر تعديل {new Date(quiz.updatedAt).toLocaleDateString('ar')}
+                      {t('آخر تعديل')} {new Date(quiz.updatedAt).toLocaleDateString(numberLocale())}
                     </p>
                     <div className="mt-5 grid grid-cols-[1fr_1fr_auto] gap-2">
                       <Link
                         href={`/builder/?quizId=${quiz.id}`}
                         className="secondary-btn text-center text-sm"
                       >
-                        تعديل
+                        {t('تعديل')}
                       </Link>
                       <button
                         onClick={() => startRoom(quiz.id)}
                         disabled={startingId !== null || quiz.questionCount === 0}
                         className="primary-btn text-sm"
                       >
-                        <ButtonContent busy={startingId === quiz.id} busyText="تجهيز…">
-                          ابدأ
+                        <ButtonContent busy={startingId === quiz.id} busyText={t('تجهيز…')}>
+                          {t('ابدأ')}
                         </ButtonContent>
                       </button>
                       <button
                         onClick={() => setDeleting(quiz)}
-                        aria-label={`حذف ${quiz.title}`}
+                        aria-label={t('حذف {0}', { 0: quiz.title })}
                         className="rounded-xl border border-rose-100 px-3 text-rose-600 hover:bg-rose-50"
                       >
                         🗑️
@@ -250,8 +257,10 @@ function DashboardContent() {
       </section>
       <ConfirmDialog
         open={Boolean(deleting)}
-        title="حذف المسابقة؟"
-        description={`سيتم حذف «${deleting?.title || ''}» من قائمة مسابقاتك. لا يمكن التراجع عن هذا الإجراء.`}
+        title={t('حذف المسابقة؟')}
+        description={t('سيتم حذف «{0}» من قائمة مسابقاتك. لا يمكن التراجع عن هذا الإجراء.', {
+          0: deleting?.title || '',
+        })}
         busy={deleteBusy}
         onCancel={() => setDeleting(null)}
         onConfirm={deleteQuiz}

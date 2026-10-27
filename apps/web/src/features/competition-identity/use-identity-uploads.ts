@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SaveIdentityRequest } from '@brio/contracts';
 import { createSubmissionId } from '../../services/submission-id';
@@ -37,7 +39,7 @@ export function useIdentityUploads(onStaged: (asset: IdentityAsset, file: File, 
   }, []);
   const prepare = useCallback(
     async (input: SaveIdentityRequest, progress?: (done: number, total: number) => void) => {
-      if (controller.current) throw new Error('انتظر اكتمال الحفظ الحالي.');
+      if (controller.current) throw new Error(t('انتظر اكتمال الحفظ الحالي.'));
       const batch = new AbortController();
       controller.current = batch;
       setUploading(true);
@@ -60,7 +62,7 @@ export function useIdentityUploads(onStaged: (asset: IdentityAsset, file: File, 
       const selected = files.slice(0, Math.max(0, capacity));
       const messages: string[] = [];
       if (selected.length < files.length)
-        messages.push(`تم اختيار ${selected.length} صورة. الحد الأقصى 20 صورة.`);
+        messages.push(t('تم اختيار {0} صورة. الحد الأقصى 20 صورة.', { 0: selected.length }));
       for (const file of selected) {
         try {
           validateImage(file);
@@ -70,7 +72,7 @@ export function useIdentityUploads(onStaged: (asset: IdentityAsset, file: File, 
           queue.current!.stage({ id, file, preview, status: 'staged' });
           callback.current({ mediaId: id, src: preview }, file, id);
         } catch (cause) {
-          messages.push(cause instanceof Error ? cause.message : 'الصورة غير صالحة.');
+          messages.push(cause instanceof Error ? cause.message : t('الصورة غير صالحة.'));
         }
       }
       setNotice(messages.join(' '));

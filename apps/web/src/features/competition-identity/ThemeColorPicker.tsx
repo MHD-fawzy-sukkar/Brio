@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { accentPalette, THEME_PALETTES } from './theme-palette';
@@ -9,6 +11,7 @@ const presets = Object.entries(THEME_PALETTES);
 const quickPresets = presets.slice(0, 5);
 
 export function ThemeColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  const { t, translateMessage } = useTranslations();
   const [open, setOpen] = useState(false);
   const [hex, setHex] = useState('');
   const [invalid, setInvalid] = useState(false);
@@ -74,8 +77,8 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
     <button
       key={key}
       type="button"
-      aria-label={preset.label}
-      title={preset.label}
+      aria-label={translateMessage(preset.label)}
+      title={translateMessage(preset.label)}
       aria-pressed={value === key}
       onClick={() => choose(key)}
       className="theme-color-swatch"
@@ -101,8 +104,8 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
         ref={trigger}
         type="button"
         className="theme-color-swatch theme-color-more"
-        aria-label="ألوان إضافية ولون مخصّص"
-        title="ألوان إضافية ولون مخصّص"
+        aria-label={t('ألوان إضافية ولون مخصّص')}
+        title={t('ألوان إضافية ولون مخصّص')}
         aria-expanded={open}
         aria-controls={panelId}
         style={extra ? { color: palette.color } : undefined}
@@ -118,7 +121,7 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
           {extra ? '✓' : '+'}
         </span>
       </button>
-      <span className="theme-color-control__name">{palette.label}</span>
+      <span className="theme-color-control__name">{translateMessage(palette.label)}</span>
       {open &&
         createPortal(
           <div
@@ -127,15 +130,15 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
             style={position}
             className="theme-color-panel"
             role="group"
-            aria-label="لوحة ألوان الهوية"
+            aria-label={t('لوحة ألوان الهوية')}
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs font-black text-slate-700">ألوان إضافية</p>
+              <p className="text-xs font-black text-slate-700">{t('ألوان إضافية')}</p>
               <button
                 type="button"
                 onClick={close}
                 className="grid h-7 w-7 place-items-center rounded-lg text-slate-500 hover:bg-slate-50"
-                aria-label="إغلاق لوحة الألوان"
+                aria-label={t('إغلاق لوحة الألوان')}
               >
                 ×
               </button>
@@ -145,7 +148,7 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
               <button
                 type="button"
                 className="theme-custom-color"
-                aria-label="اختيار لون مخصّص"
+                aria-label={t('اختيار لون مخصّص')}
                 aria-expanded={showSpectrum}
                 aria-controls={`${panelId}-spectrum`}
                 onClick={() => setShowSpectrum((current) => !current)}
@@ -158,8 +161,8 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
                   <span>✎</span>
                 </span>
                 <span>
-                  <span className="block text-xs font-black text-slate-700">لون مخصّص</span>
-                  <span className="mt-1 block text-[11px] text-slate-500">اضغط لاختيار لونك</span>
+                  <span className="block text-xs font-black text-slate-700">{t('لون مخصّص')}</span>
+                  <span className="mt-1 block text-[11px] text-slate-500">{t('اضغط لاختيار لونك')}</span>
                 </span>
                 <span className="mr-auto text-slate-400" aria-hidden="true">
                   ‹
@@ -172,7 +175,7 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
               )}
               <div className="mt-3 flex items-center gap-2">
                 <input
-                  aria-label="رمز اللون HEX"
+                  aria-label={t('رمز اللون HEX')}
                   value={hex}
                   maxLength={7}
                   spellCheck={false}
@@ -192,12 +195,12 @@ export function ThemeColorPicker({ value, onChange }: { value: string; onChange:
                   className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 font-mono text-xs text-slate-700"
                 />
                 <button type="button" onClick={applyHex} className="theme-color-apply">
-                  <span aria-hidden="true">✓</span> تطبيق
+                  <span aria-hidden="true">✓</span> {t('تطبيق')}
                 </button>
               </div>
               {invalid && (
                 <p role="alert" className="mt-2 text-xs text-rose-700">
-                  أدخل رمزاً من 6 خانات، مثل #2563eb.
+                  {t('أدخل رمزاً من 6 خانات، مثل #2563eb.')}
                 </p>
               )}
             </div>

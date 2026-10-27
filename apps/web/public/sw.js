@@ -62,7 +62,21 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => new Response(
-        '<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Brio</title><body style="font-family:system-ui;text-align:center;padding:3rem"><h1>أنت غير متصل بالإنترنت</h1><p>تحقق من الاتصال ثم أعد تحميل الصفحة.</p></body></html>',
+        `<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Brio</title><body style="font-family:system-ui;text-align:center;padding:3rem"><h1 id="title">أنت غير متصل بالإنترنت</h1><p id="detail">تحقق من الاتصال ثم أعد تحميل الصفحة.</p><button id="language" type="button">English</button><script>
+        (function(){
+          var language='ar';
+          try{if(localStorage.getItem('brio_language_v1')==='en')language='en';}catch(e){}
+          function render(){
+            document.documentElement.lang=language;
+            document.documentElement.dir=language==='en'?'ltr':'rtl';
+            document.getElementById('title').textContent=language==='en'?'You are offline':'أنت غير متصل بالإنترنت';
+            document.getElementById('detail').textContent=language==='en'?'Check your connection, then reload the page.':'تحقق من الاتصال ثم أعد تحميل الصفحة.';
+            document.getElementById('language').textContent=language==='en'?'العربية':'English';
+          }
+          document.getElementById('language').onclick=function(){language=language==='en'?'ar':'en';try{localStorage.setItem('brio_language_v1',language);}catch(e){}render();};
+          render();
+        })();
+        </script></body></html>`,
         { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
       ))
     );

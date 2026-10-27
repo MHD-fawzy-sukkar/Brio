@@ -1,3 +1,4 @@
+import { t } from '../i18n/locale';
 import { LatestOrderQueue } from './latest-order-queue';
 import { cacheScope, peekResource, setResource } from './resource-cache';
 import { requestJson, jsonBody } from './http-json';
@@ -11,7 +12,7 @@ export function questionOrderSync(quizId: string) {
   let queue = queues.get(key);
   if (!queue) {
     queue = new LatestOrderQueue(async (ids) => {
-      if (cacheScope() !== scope) throw new Error('تغيّرت جلسة الحساب. أعد فتح المسابقة.');
+      if (cacheScope() !== scope) throw new Error(t('تغيّرت جلسة الحساب. أعد فتح المسابقة.'));
       await requestJson(
         `/api/quizzes/${encodeURIComponent(quizId)}/question-order`,
         jsonBody('PUT', { questionIds: ids }),

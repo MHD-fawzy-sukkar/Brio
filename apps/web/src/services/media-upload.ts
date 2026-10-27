@@ -1,3 +1,4 @@
+import { t } from '../i18n/locale';
 import type { MediaVariantsDto } from '@brio/contracts';
 import { globalMediaPrefetchEngine } from './media-prefetch';
 
@@ -12,8 +13,8 @@ async function readProblem(response: Response, fallback: string): Promise<never>
 }
 
 export function validateImage(file: File): void {
-  if (!ALLOWED_TYPES.has(file.type)) throw new Error('استخدم صورة JPG أو PNG أو WebP أو AVIF.');
-  if (file.size > MAX_BYTES) throw new Error('حجم الصورة يجب ألا يتجاوز 5MB.');
+  if (!ALLOWED_TYPES.has(file.type)) throw new Error(t('استخدم صورة JPG أو PNG أو WebP أو AVIF.'));
+  if (file.size > MAX_BYTES) throw new Error(t('حجم الصورة يجب ألا يتجاوز 5MB.'));
 }
 
 export async function optimizeImageForUpload(file: File): Promise<File> {
@@ -95,7 +96,7 @@ async function uploadImage(input: {
       isEssential,
     }),
   });
-  if (!signatureResponse.ok) return readProblem(signatureResponse, 'تعذر تجهيز رفع الصورة.');
+  if (!signatureResponse.ok) return readProblem(signatureResponse, t('تعذر تجهيز رفع الصورة.'));
   const signature = await signatureResponse.json();
 
   const form = new FormData();
@@ -111,7 +112,7 @@ async function uploadImage(input: {
     body: form,
     signal: AbortSignal.timeout(60000),
   });
-  if (!uploadResponse.ok) return readProblem(uploadResponse, 'تعذر رفع الصورة إلى Cloudinary.');
+  if (!uploadResponse.ok) return readProblem(uploadResponse, t('تعذر رفع الصورة إلى Cloudinary.'));
   const uploaded = await uploadResponse.json();
 
   const completeResponse = await fetch('/api/media/complete', {
@@ -132,7 +133,8 @@ async function uploadImage(input: {
       isEssential,
     }),
   });
-  if (!completeResponse.ok) return readProblem(completeResponse, 'رُفعت الصورة ولكن تعذر ربطها بالمسابقة.');
+  if (!completeResponse.ok)
+    return readProblem(completeResponse, t('رُفعت الصورة ولكن تعذر ربطها بالمسابقة.'));
   const media = (await completeResponse.json()) as MediaVariantsDto;
 
   // Immediately warm-up Cloudinary edge transformations and local cache at upload time

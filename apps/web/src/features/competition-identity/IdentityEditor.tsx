@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { useEffect, useMemo, useState } from 'react';
 import { SaveIdentityRequestSchema, type SaveIdentityRequest, type IdentityRecordDto } from '@brio/contracts';
 import { createLibraryTheme, saveLibraryTheme, saveQuizIdentity } from './api';
@@ -44,6 +46,7 @@ export function IdentityEditor({
   onCancel,
   onDraftChange,
 }: EditorProps) {
+  const { t, translateMessage } = useTranslations();
   const [name, setName] = useState(record?.name ?? defaultName);
   const [accent, setAccent] = useState<SaveIdentityRequest['accent']>(record?.accent ?? 'brio');
   const [images, setImages] = useState<DraftImage[]>(() => initialImages(record));
@@ -60,7 +63,7 @@ export function IdentityEditor({
           file.name
             .replace(/\.[^.]+$/, '')
             .trim()
-            .slice(0, 80) || 'صورة',
+            .slice(0, 80) || t('صورة'),
         roles: current.some((image) => image.roles.includes('character'))
           ? ['avatar']
           : ['avatar', 'character'],
@@ -105,17 +108,17 @@ export function IdentityEditor({
         event.preventDefault();
         if (busy || blocked) return;
         if (!input.success) {
-          setError('اكتب اسم الهوية وأضف صورة واحدة على الأقل.');
+          setError(t('اكتب اسم الهوية وأضف صورة واحدة على الأقل.'));
           return;
         }
         setBusy(true);
         setError('');
-        setStatus('جاري حفظ الهوية…');
+        setStatus(t('جاري حفظ الهوية…'));
         try {
           const prepared = await uploads.prepare(input.data, (done, total) => {
-            if (total) setStatus(`جاري رفع الصور ${done} / ${total}…`);
+            if (total) setStatus(t('جاري رفع الصور {0} / {1}…', { 0: done, 1: total }));
           });
-          setStatus('جاري حفظ الهوية…');
+          setStatus(t('جاري حفظ الهوية…'));
           onSaved?.(
             await (quizId
               ? saveQuizIdentity(quizId, prepared)
@@ -124,30 +127,30 @@ export function IdentityEditor({
                 : createLibraryTheme(prepared)),
           );
         } catch (cause) {
-          setError(cause instanceof Error ? cause.message : 'تعذّر حفظ الهوية.');
+          setError(cause instanceof Error ? cause.message : t('تعذّر حفظ الهوية.'));
         } finally {
           setBusy(false);
           setStatus('');
         }
       }}
     >
-      <h2 className="text-xl font-black">{record ? 'تعديل الهوية' : 'إنشاء هوية جديدة'}</h2>
+      <h2 className="text-xl font-black">{record ? t('تعديل الهوية') : t('إنشاء هوية جديدة')}</h2>
       {error && (
         <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700">
-          {error}
+          {translateMessage(error ?? '')}
         </p>
       )}
       <fieldset disabled={busy} className="space-y-5 disabled:opacity-70">
         <div className="identity-editor-intro">
           <label className="block">
-            <span className="label">اسم الهوية</span>
+            <span className="label">{t('اسم الهوية')}</span>
             <input
               required
               maxLength={80}
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="field"
-              placeholder="مثال: فريق أثر"
+              placeholder={t('مثال: فريق أثر')}
             />
           </label>
           <div
@@ -158,17 +161,17 @@ export function IdentityEditor({
             }
           >
             <div>
-              <p className="font-black">{gallery.length ? 'صور الهوية' : 'ابدأ برفع صور جهتك'}</p>
+              <p className="font-black">{gallery.length ? t('صور الهوية') : t('ابدأ برفع صور جهتك')}</p>
               <p className="mt-1 text-xs leading-6 text-slate-500">
                 {gallery.length
-                  ? `${images.length} صورة مختارة · حتى 20 صورة`
-                  : 'اختر الصور معاً. سنوحّد مقاساتها تلقائياً. حتى 20 صورة، و5MB لكل صورة.'}
+                  ? t('{0} صورة مختارة · حتى 20 صورة', { 0: images.length })
+                  : t('اختر الصور معاً. سنوحّد مقاساتها تلقائياً. حتى 20 صورة، و5MB لكل صورة.')}
               </p>
             </div>
             <label
               className={`secondary-btn inline-block ${gallery.length ? '' : 'mt-3'} ${uploads.uploading || !remaining ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
             >
-              ＋ إضافة صور
+              {t('＋ إضافة صور')}
               <input
                 type="file"
                 multiple
@@ -183,7 +186,7 @@ export function IdentityEditor({
             </label>
             {uploads.notice && (
               <p role="status" className="mt-2 text-sm text-slate-600">
-                {uploads.notice}
+                {translateMessage(uploads.notice ?? '')}
               </p>
             )}
           </div>
@@ -207,44 +210,46 @@ export function IdentityEditor({
           />
         )}
         <p className="text-xs leading-6 text-slate-500">
-          الصور تظهر بهذا الشكل عند الانضمام. من ⋯ عيّن الرئيسية أو الشعار أو احذف الصورة. الشعار لا يظهر ضمن
-          أفاتارات اللاعبين. عند وجود أقل من 5 أفاتارات تُضاف صور بولت؛ من 5 وفوق تظهر صورك فقط.
+          {t(
+            'الصور تظهر بهذا الشكل عند الانضمام. من ⋯ عيّن الرئيسية أو الشعار أو احذف الصورة. الشعار لا يظهر ضمن أفاتارات اللاعبين. عند وجود أقل من 5 أفاتارات تُضاف صور بولت؛ من 5 وفوق تظهر صورك فقط.',
+          )}
         </p>
         <div className="identity-editor-options space-y-3">
           <div>
-            <span className="label">لون التفاصيل داخل المسابقة</span>
+            <span className="label">{t('لون التفاصيل داخل المسابقة')}</span>
             <ThemeColorPicker value={accent} onChange={setAccent} />
             <p className="mt-2 text-xs text-slate-500">
-              لون الترويسة والأزرار وبطاقات المسابقة وإطارات الأفاتارات. ألوان الإجابات وخلفية Brio تبقى
-              ثابتة.
+              {t(
+                'لون الترويسة والأزرار وبطاقات المسابقة وإطارات الأفاتارات. ألوان الإجابات وخلفية Brio تبقى ثابتة.',
+              )}
             </p>
           </div>
         </div>
       </fieldset>
       {quizId && (
         <p className="rounded-xl bg-slate-50 p-3 text-xs leading-6 text-slate-600">
-          التعديل يخص هذه المسابقة فقط. لا يغيّر الهوية الأصلية أو مسابقات أخرى.
+          {t('التعديل يخص هذه المسابقة فقط. لا يغيّر الهوية الأصلية أو مسابقات أخرى.')}
         </p>
       )}
       <p role="status" className="text-sm text-slate-500">
-        {status ||
+        {translateMessage(status) ||
           (uploads.uploading
-            ? 'جاري رفع الصور…'
+            ? t('جاري رفع الصور…')
             : uploads.pending.some((item) => item.status === 'failed')
-              ? 'أعد الحفظ لمحاولة الصور المتعثرة أو أزلها.'
+              ? t('أعد الحفظ لمحاولة الصور المتعثرة أو أزلها.')
               : libraryId !== undefined
                 ? record
-                  ? 'تعديل الهوية يحدّث مسابقاتك المرتبطة بها.'
-                  : 'الصور محلية حتى تضغط «حفظ الهوية».'
-                : 'الصور للمعاينة على جهازك فقط؛ يبدأ رفعها عند حفظ الهوية أو إنشاء المسابقة.')}
+                  ? t('تعديل الهوية يحدّث مسابقاتك المرتبطة بها.')
+                  : t('الصور محلية حتى تضغط «حفظ الهوية».')
+                : t('الصور للمعاينة على جهازك فقط؛ يبدأ رفعها عند حفظ الهوية أو إنشاء المسابقة.'))}
       </p>
       {saving && (
         <div className="flex flex-wrap gap-3">
           <button disabled={busy || blocked || !input.success} type="submit" className="primary-btn">
-            حفظ الهوية
+            {t('حفظ الهوية')}
           </button>
           <button disabled={busy} type="button" onClick={onCancel} className="secondary-btn">
-            إلغاء
+            {t('إلغاء')}
           </button>
         </div>
       )}

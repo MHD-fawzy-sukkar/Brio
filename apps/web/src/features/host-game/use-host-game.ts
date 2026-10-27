@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { requestJson } from '../../services/http-json';
 
 import type { HostLiveSnapshot } from '../game-session/model';
@@ -80,8 +82,8 @@ export function useHostGame() {
   }, [roomId]);
 
   const start = () => {
-    if (!socket || connection !== 'connected') return setError('الاتصال بالغرفة غير جاهز بعد.');
-    if (players.length === 0) return setError('انتظر انضمام لاعب واحد على الأقل.');
+    if (!socket || connection !== 'connected') return setError(t('الاتصال بالغرفة غير جاهز بعد.'));
+    if (players.length === 0) return setError(t('انتظر انضمام لاعب واحد على الأقل.'));
     setError(null);
     socket.startQuiz();
   };
@@ -116,7 +118,7 @@ export function useHostGame() {
         };
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذر إنهاء اللعبة.');
+      setError(cause instanceof Error ? cause.message : t('تعذر إنهاء اللعبة.'));
     } finally {
       setEnding(false);
       setConfirmEndOpen(false);

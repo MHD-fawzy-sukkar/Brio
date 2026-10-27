@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import type { PlayerLiveSnapshot } from '../game-session/model';
 import { createSubmissionId } from '../../services/submission-id';
 import { useEffect, useRef, useState } from 'react';
@@ -157,7 +159,7 @@ export function usePlayerGame() {
     } catch (cause) {
       setSubmission('rejected');
       setRejection(
-        cause instanceof Error ? cause.message : 'لم نتمكن من إرسال الإجابة. تحقق من اتصالك وحاول مجدداً.',
+        cause instanceof Error ? cause.message : t('لم نتمكن من إرسال الإجابة. تحقق من اتصالك وحاول مجدداً.'),
       );
     }
   };

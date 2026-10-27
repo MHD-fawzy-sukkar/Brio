@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../i18n/use-locale';
+
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ButtonContent } from './Loading';
@@ -9,6 +11,7 @@ import { normalizePin } from '../services/home-routing';
 import { isLanMode } from '../services/runtime-mode';
 
 export function JoinGame() {
+  const { t, translateMessage } = useTranslations();
   const [code, setCode] = useState('');
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +28,7 @@ export function JoinGame() {
   const continueToLobby = async (event: React.FormEvent) => {
     event.preventDefault();
     const pin = normalizePin(code);
-    if (pin.length !== 6) return setError('أدخل رمز اللعبة المكوّن من 6 أرقام.');
+    if (pin.length !== 6) return setError(t('أدخل رمز اللعبة المكوّن من 6 أرقام.'));
 
     requestRef.current?.abort();
     const controller = new AbortController();
@@ -38,17 +41,17 @@ export function JoinGame() {
         signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]),
       });
       const room = await response.json().catch(() => null);
-      if (response.status === 404) throw new Error('اللعبة غير موجودة. تحقق من الرمز وحاول مرة أخرى.');
-      if (!response.ok || !room?.roomId) throw new Error(room?.detail || 'تعذر التحقق من رمز اللعبة.');
+      if (response.status === 404) throw new Error(t('اللعبة غير موجودة. تحقق من الرمز وحاول مرة أخرى.'));
+      if (!response.ok || !room?.roomId) throw new Error(room?.detail || t('تعذر التحقق من رمز اللعبة.'));
       window.location.assign(`/join/?${new URLSearchParams({ roomId: room.roomId, code: pin })}`);
     } catch (cause) {
       if ((cause as Error)?.name !== 'AbortError')
         setError(
           (cause as Error)?.name === 'TimeoutError'
-            ? 'استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.'
+            ? t('استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.')
             : cause instanceof Error
               ? cause.message
-              : 'تعذر العثور على اللعبة.',
+              : t('تعذر العثور على اللعبة.'),
         );
     } finally {
       if (requestRef.current === controller) {
@@ -71,10 +74,10 @@ export function JoinGame() {
               <div className="mx-auto grid h-16 w-16 -rotate-3 place-items-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-400 text-3xl text-white shadow-lg shadow-brand-200">
                 🎮
               </div>
-              <p className="mt-5 text-xs font-black text-brand-600">انضم فوراً</p>
-              <h1 className="mt-1 text-3xl font-black text-slate-950 sm:text-4xl">ادخل ساحة اللعب</h1>
+              <p className="mt-5 text-xs font-black text-brand-600">{t('انضم فوراً')}</p>
+              <h1 className="mt-1 text-3xl font-black text-slate-950 sm:text-4xl">{t('ادخل ساحة اللعب')}</h1>
               <p className="mt-2 text-sm font-bold text-slate-500">
-                اكتب الرمز الذي شاركه المضيف، وسنتحقق منه مباشرة.
+                {t('اكتب الرمز الذي شاركه المضيف، وسنتحقق منه مباشرة.')}
               </p>
             </div>
 
@@ -83,13 +86,13 @@ export function JoinGame() {
                 role="alert"
                 className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700"
               >
-                {error}
+                {translateMessage(error ?? '')}
               </div>
             )}
 
             <div>
               <label htmlFor="game-pin" className="label">
-                رمز اللعبة
+                {t('رمز اللعبة')}
               </label>
               <input
                 id="game-pin"
@@ -108,18 +111,18 @@ export function JoinGame() {
               disabled={checking || code.length !== 6}
               className="primary-btn w-full py-4 text-base"
             >
-              <ButtonContent busy={checking} busyText="جاري التحقق…">
-                متابعة إلى شخصيتك
+              <ButtonContent busy={checking} busyText={t('جاري التحقق…')}>
+                {t('متابعة إلى شخصيتك')}
               </ButtonContent>
             </button>
             {isLanMode ? (
               <p className="text-center text-xs leading-6 text-slate-500">
-                وصّل هاتفك بشبكة المقدّم نفسها. تُحمّل الصور تلقائياً، دون الحاجة إلى تثبيت تطبيق.
+                {t('وصّل هاتفك بشبكة المقدّم نفسها. تُحمّل الصور تلقائياً، دون الحاجة إلى تثبيت تطبيق.')}
               </p>
             ) : (
               <p className="text-center text-xs text-slate-400">
                 <Link href="/login/" className="font-black text-brand-600 hover:underline">
-                  دخول المنشئين
+                  {t('دخول المنشئين')}
                 </Link>
               </p>
             )}

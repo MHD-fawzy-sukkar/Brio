@@ -1,7 +1,11 @@
+'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
 import { Avatar } from '../Avatar';
 import { LobbyPlayer, playerCountLabel } from './lobby-model';
 
 export function PlayerList({ players }: { players: LobbyPlayer[] }) {
+  const { t, translateMessage } = useTranslations();
   return (
     <section
       data-mascot-flight-boundary
@@ -10,16 +14,16 @@ export function PlayerList({ players }: { players: LobbyPlayer[] }) {
     >
       <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>
-          <p className="text-xs font-black text-brand-600">مباشر الآن</p>
+          <p className="text-xs font-black text-brand-600">{t('مباشر الآن')}</p>
           <h2 id="players-title" className="mt-1 text-xl font-black sm:text-2xl">
-            اللاعبون في الغرفة
+            {t('اللاعبون في الغرفة')}
           </h2>
         </div>
         <span
           aria-live="polite"
           className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-black text-brand-700"
         >
-          {playerCountLabel(players.length)}
+          {translateMessage(playerCountLabel(players.length))}
         </span>
       </div>
 
@@ -29,9 +33,9 @@ export function PlayerList({ players }: { players: LobbyPlayer[] }) {
             <div aria-hidden="true" className="text-5xl">
               👋
             </div>
-            <h3 className="mt-4 text-xl font-black">بانتظار أول لاعب</h3>
+            <h3 className="mt-4 text-xl font-black">{t('بانتظار أول لاعب')}</h3>
             <p className="mt-2 text-sm font-bold text-slate-500">
-              شارك بطاقة الانضمام، وستظهر الأسماء هنا فوراً.
+              {t('شارك بطاقة الانضمام، وستظهر الأسماء هنا فوراً.')}
             </p>
           </div>
         </div>

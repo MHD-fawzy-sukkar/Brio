@@ -1,3 +1,4 @@
+import { t } from '../../i18n/locale';
 import { BOLT_AVATARS, resolveAvatarIndex } from '../avatars/catalog';
 import type { CompetitionIdentity as IdentityDto } from '@brio/contracts';
 import { includesBoltAvatars } from '@brio/contracts';
@@ -16,7 +17,13 @@ export type CompetitionIdentity = Readonly<
 export const DEFAULT_COMPETITION_IDENTITY: CompetitionIdentity = {
   name: 'Brio',
   character: { kind: 'bolt' },
-  avatars: BOLT_AVATARS.map((id, index) => ({ id, src: id, label: `الصورة ${index + 1}` })),
+  avatars: BOLT_AVATARS.map((id, index) => ({
+    id,
+    src: id,
+    get label() {
+      return t('الصورة {0}', { 0: index + 1 });
+    },
+  })),
 };
 
 /** Empty or removed selections always resolve to a playable default. */

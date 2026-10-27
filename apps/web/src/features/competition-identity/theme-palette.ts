@@ -1,18 +1,85 @@
+import { t } from '../../i18n/locale';
 import type { CompetitionIdentity } from './model';
 
 export const THEME_PALETTES = {
   brio: { label: 'Brio', color: '#9f3043', soft: '#fff1f3' },
-  ocean: { label: 'أزرق', color: '#0369a1', soft: '#f0f9ff' },
-  forest: { label: 'أخضر', color: '#047857', soft: '#ecfdf5' },
-  violet: { label: 'بنفسجي', color: '#6d28d9', soft: '#f5f3ff' },
-  amber: { label: 'كهرماني', color: '#92400e', soft: '#fffbeb' },
-  rose: { label: 'وردي', color: '#be185d', soft: '#fdf2f8' },
-  teal: { label: 'فيروزي', color: '#0f766e', soft: '#f0fdfa' },
-  cyan: { label: 'سماوي', color: '#0e7490', soft: '#ecfeff' },
-  indigo: { label: 'نيلي', color: '#4338ca', soft: '#eef2ff' },
-  orange: { label: 'برتقالي', color: '#c2410c', soft: '#fff7ed' },
-  slate: { label: 'رمادي', color: '#475569', soft: '#f8fafc' },
-  red: { label: 'أحمر', color: '#b91c1c', soft: '#fef2f2' },
+  ocean: {
+    get label() {
+      return t('أزرق');
+    },
+    color: '#0369a1',
+    soft: '#f0f9ff',
+  },
+  forest: {
+    get label() {
+      return t('أخضر');
+    },
+    color: '#047857',
+    soft: '#ecfdf5',
+  },
+  violet: {
+    get label() {
+      return t('بنفسجي');
+    },
+    color: '#6d28d9',
+    soft: '#f5f3ff',
+  },
+  amber: {
+    get label() {
+      return t('كهرماني');
+    },
+    color: '#92400e',
+    soft: '#fffbeb',
+  },
+  rose: {
+    get label() {
+      return t('وردي');
+    },
+    color: '#be185d',
+    soft: '#fdf2f8',
+  },
+  teal: {
+    get label() {
+      return t('فيروزي');
+    },
+    color: '#0f766e',
+    soft: '#f0fdfa',
+  },
+  cyan: {
+    get label() {
+      return t('سماوي');
+    },
+    color: '#0e7490',
+    soft: '#ecfeff',
+  },
+  indigo: {
+    get label() {
+      return t('نيلي');
+    },
+    color: '#4338ca',
+    soft: '#eef2ff',
+  },
+  orange: {
+    get label() {
+      return t('برتقالي');
+    },
+    color: '#c2410c',
+    soft: '#fff7ed',
+  },
+  slate: {
+    get label() {
+      return t('رمادي');
+    },
+    color: '#475569',
+    soft: '#f8fafc',
+  },
+  red: {
+    get label() {
+      return t('أحمر');
+    },
+    color: '#b91c1c',
+    soft: '#fef2f2',
+  },
 } as const;
 
 function luminance(channels: number[]) {
@@ -41,7 +108,7 @@ export function accentPalette(accent = 'brio') {
   while (luminance(ink) > 0.18) ink = ink.map((value) => value * 0.9);
   const light = luminance(channels) > 0.179;
   return {
-    label: 'مخصّص',
+    label: t('مخصّص'),
     color,
     soft: hex(channels.map((value) => value * 0.08 + 255 * 0.92)),
     text: hex(ink),

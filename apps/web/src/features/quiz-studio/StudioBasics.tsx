@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
 import { Spinner } from '../../components/Loading';
 import type { StudioController } from './use-quiz-studio';
 import type { QuizDetail } from './model';
@@ -23,6 +26,7 @@ export function StudioBasics({
     | 'commitTitle'
   > & { quiz: QuizDetail };
 }) {
+  const { t } = useTranslations();
   const {
     quiz,
     title,
@@ -54,9 +58,9 @@ export function StudioBasics({
               e.stopPropagation();
               void removeCover();
             }}
-            aria-label="حذف صورة الغلاف"
-            title="حذف صورة الغلاف"
-            className=" absolute top-2.5 right-2.5 z-10 grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-slate-200/90 bg-white/95 text-slate-600 shadow-md backdrop-blur-xs transition-all duration-200 hover:scale-110 hover:border-rose-600 hover:bg-rose-600 hover:text-white active:scale-95"
+            aria-label={t('حذف صورة الغلاف')}
+            title={t('حذف صورة الغلاف')}
+            className=" absolute top-2.5 start-2.5 z-10 grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-slate-200/90 bg-white/95 text-slate-600 shadow-md backdrop-blur-xs transition-all duration-200 hover:scale-110 hover:border-rose-600 hover:bg-rose-600 hover:text-white active:scale-95"
           >
             <svg
               viewBox="0 0 20 20"
@@ -74,7 +78,7 @@ export function StudioBasics({
           {displayCover ? (
             <img
               src={displayCover}
-              alt="غلاف المسابقة"
+              alt={t('غلاف المسابقة')}
               className="h-full w-full bg-slate-50/90 object-contain p-2"
             />
           ) : (
@@ -82,15 +86,15 @@ export function StudioBasics({
               <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white text-2xl shadow-xs">
                 🖼️
               </span>
-              <b className="mt-2.5 block text-slate-600">غلاف المسابقة</b>
-              <small className="mt-1 block text-xs text-slate-400">اضغط لإضافة صورة</small>
+              <b className="mt-2.5 block text-slate-600">{t('غلاف المسابقة')}</b>
+              <small className="mt-1 block text-xs text-slate-400">{t('اضغط لإضافة صورة')}</small>
             </div>
           )}
-          <span className="absolute bottom-2.5 left-2.5 rounded-xl bg-white/95 px-3 py-1.5 text-xs font-black text-brand-700 shadow-sm transition group-hover:bg-brand-600 group-hover:text-white">
-            {hasCover ? 'تغيير الغلاف' : 'رفع غلاف'}
+          <span className="absolute bottom-2.5 end-2.5 rounded-xl bg-white/95 px-3 py-1.5 text-xs font-black text-brand-700 shadow-sm transition group-hover:bg-brand-600 group-hover:text-white">
+            {hasCover ? t('تغيير الغلاف') : t('رفع غلاف')}
           </span>
           {coverUploading && (
-            <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-600/95 px-3 py-1 text-[11px] font-black text-white shadow-sm">
+            <span className="absolute bottom-2.5 start-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-600/95 px-3 py-1 text-[11px] font-black text-white shadow-sm">
               <Spinner className="h-3 w-3" />
             </span>
           )}
@@ -110,14 +114,16 @@ export function StudioBasics({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-black text-brand-700 ring-1 ring-brand-200/60">
             <span>🎯</span>
-            <span>عنوان المسابقة</span>
+            <span>{t('عنوان المسابقة')}</span>
           </span>
           {titleSaved ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-200/70">
-              ✓ تم حفظ العنوان
+              {t('✓ تم حفظ العنوان')}
             </span>
           ) : (
-            <span className="text-xs font-bold text-slate-400">اضغط على العنوان أو أيقونة القلم للتعديل</span>
+            <span className="text-xs font-bold text-slate-400">
+              {t('اضغط على العنوان أو أيقونة القلم للتعديل')}
+            </span>
           )}
         </div>
 
@@ -153,26 +159,26 @@ export function StudioBasics({
             className={`w-full bg-transparent px-5 py-4 pl-20 text-2xl font-black text-slate-900 outline-none sm:text-3xl ${
               isEditingTitle ? 'cursor-text' : 'cursor-pointer'
             }`}
-            placeholder="اكتب عنوان المسابقة…"
+            placeholder={t('اكتب عنوان المسابقة…')}
           />
           {isEditingTitle ? (
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => void commitTitle()}
-              aria-label="حفظ عنوان المسابقة"
-              title="حفظ العنوان"
-              className="absolute left-3 inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-brand-700"
+              aria-label={t('حفظ عنوان المسابقة')}
+              title={t('حفظ العنوان')}
+              className="absolute end-3 inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-brand-700"
             >
-              ✓ حفظ
+              {t('✓ حفظ')}
             </button>
           ) : (
             <button
               type="button"
               onClick={startEditingTitle}
-              aria-label="تعديل عنوان المسابقة"
-              title="تعديل العنوان"
-              className="absolute left-3 grid h-11 w-11 cursor-pointer place-items-center rounded-xl border border-slate-200/90 bg-slate-50 text-base text-slate-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+              aria-label={t('تعديل عنوان المسابقة')}
+              title={t('تعديل العنوان')}
+              className="absolute end-3 grid h-11 w-11 cursor-pointer place-items-center rounded-xl border border-slate-200/90 bg-slate-50 text-base text-slate-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
             >
               ✏️
             </button>
@@ -183,7 +189,9 @@ export function StudioBasics({
           <span className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 ring-1 ring-slate-200/80">
             <span>📋</span>
             <span>
-              {quiz.questions.length ? `${quiz.questions.length} أسئلة في المسابقة` : 'لا توجد أسئلة بعد'}
+              {quiz.questions.length
+                ? t('{0} أسئلة في المسابقة', { 0: quiz.questions.length })
+                : t('لا توجد أسئلة بعد')}
             </span>
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 ring-1 ring-slate-200/80">
@@ -192,7 +200,7 @@ export function StudioBasics({
               {Math.round(
                 quiz.questions.reduce((sum, q) => sum + (q.duration_ms || q.durationMs || 20000), 0) / 1000,
               )}{' '}
-              ثانية إجمالاً
+              {t('ثانية إجمالاً')}
             </span>
           </span>
         </div>

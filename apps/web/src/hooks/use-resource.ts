@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../i18n/locale';
+
 import { useCallback, useEffect, useState } from 'react';
 import {
   invalidateResources,
@@ -42,7 +44,7 @@ export function useResource<T>(key: string) {
               ...current,
               loading: false,
               refreshing: false,
-              error: cause instanceof Error ? cause.message : 'تعذّر التحميل. حاول مجدداً.',
+              error: cause instanceof Error ? cause.message : t('تعذّر التحميل. حاول مجدداً.'),
             }));
         });
     };

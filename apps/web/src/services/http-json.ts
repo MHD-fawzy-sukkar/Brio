@@ -1,3 +1,4 @@
+import { t, translateMessage } from '../i18n/locale';
 import { invalidateResources, invalidateQuizResources } from './resource-cache';
 /** Same-origin JSON requests with consistent server error handling. */
 export async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -7,15 +8,15 @@ export async function requestJson<T>(url: string, init?: RequestInit): Promise<T
   try {
     response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...init, signal });
   } catch (cause) {
-    if (timeout.aborted) throw new Error('استغرق التحميل وقتاً أطول من المتوقع. حاول مجدداً.');
+    if (timeout.aborted) throw new Error(t('استغرق التحميل وقتاً أطول من المتوقع. حاول مجدداً.'));
     throw cause;
   }
   const isJson = response.headers.get('content-type')?.includes('json');
-  if (!isJson) throw new Error('تعذّر الاتصال بخدمة الموقع. حدّث الصفحة وحاول مجدداً.');
+  if (!isJson) throw new Error(t('تعذّر الاتصال بخدمة الموقع. حدّث الصفحة وحاول مجدداً.'));
   const body = await response.json().catch(() => {
-    throw new Error('وصل رد غير مكتمل من الخادم. حاول مجدداً.');
+    throw new Error(t('وصل رد غير مكتمل من الخادم. حاول مجدداً.'));
   });
-  if (!response.ok) throw new Error(body?.detail || 'تعذّر إتمام الطلب. حاول مجدداً.');
+  if (!response.ok) throw new Error(translateMessage(body?.detail) || t('تعذّر إتمام الطلب. حاول مجدداً.'));
   if (init?.method && init.method.toUpperCase() !== 'GET') {
     if (/\/question-order$/.test(url)) {
       /* The order queue owns its optimistic cache. */

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import Link from 'next/link';
 import { useState } from 'react';
 import type { IdentityRecordDto } from '@brio/contracts';
@@ -13,6 +15,7 @@ import { useResource } from '../../hooks/use-resource';
 import { setResource } from '../../services/resource-cache';
 
 function ThemeLibrary() {
+  const { t, translateMessage, countNoun } = useTranslations();
   const {
     data,
     loading,
@@ -33,18 +36,19 @@ function ThemeLibrary() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black">هوياتي البصرية</h1>
+          <h1 className="text-3xl font-black">{t('هوياتي البصرية')}</h1>
           <p className="mt-2 text-sm leading-7 text-slate-500">
-            أنشئ هوية بصرية أو عدّل هوياتك المحفوظة. التعديل يحدّث مسابقاتك المرتبطة، والحذف يعيدها لهوية
-            بولت.
+            {t(
+              'أنشئ هوية بصرية أو عدّل هوياتك المحفوظة. التعديل يحدّث مسابقاتك المرتبطة، والحذف يعيدها لهوية بولت.',
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/dashboard/" className="secondary-btn inline-flex items-center justify-center">
-            → مسابقاتي
+            {t('→ مسابقاتي')}
           </Link>
           <Link href="/" className="secondary-btn inline-flex items-center justify-center">
-            الرئيسية
+            {t('الرئيسية')}
           </Link>
           <button
             type="button"
@@ -55,13 +59,13 @@ function ThemeLibrary() {
               setEditing('new');
             }}
           >
-            ＋ إضافة هوية
+            {t('＋ إضافة هوية')}
           </button>
         </div>
       </header>
       {(error || loadError) && (
         <div role="alert" className="rounded-xl bg-rose-50 p-4 text-sm text-rose-700">
-          {error || loadError}
+          {translateMessage((error || loadError) ?? '')}
           <button
             type="button"
             className="ms-3 underline"
@@ -70,7 +74,7 @@ function ThemeLibrary() {
               reload();
             }}
           >
-            إعادة المحاولة
+            {t('إعادة المحاولة')}
           </button>
         </div>
       )}
@@ -96,11 +100,11 @@ function ThemeLibrary() {
       ) : (
         <>
           <label className="block">
-            <span className="sr-only">البحث عن هوية</span>
+            <span className="sr-only">{t('البحث عن هوية')}</span>
             <input
               type="search"
               className="field"
-              placeholder="ابحث باسم الهوية…"
+              placeholder={t('ابحث باسم الهوية…')}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -108,19 +112,19 @@ function ThemeLibrary() {
           {loading && <ThemeCardsSkeleton />}
           {!loading && refreshing && (
             <p role="status" className="text-xs text-slate-500">
-              جاري تحديث هوياتك البصرية…
+              {t('جاري تحديث هوياتك البصرية…')}
             </p>
           )}
           {!loading && !loadError && !visible.length && (
             <div className="card space-y-4 p-6">
               <p className="text-sm text-slate-500">
                 {query.trim()
-                  ? 'لا توجد هويات بصرية تطابق بحثك.'
-                  : 'لا توجد هويات بصرية محفوظة بعد. ابدأ بإضافة هويتك الأولى.'}
+                  ? t('لا توجد هويات بصرية تطابق بحثك.')
+                  : t('لا توجد هويات بصرية محفوظة بعد. ابدأ بإضافة هويتك الأولى.')}
               </p>
               {!query.trim() && (
                 <button type="button" className="primary-btn" onClick={() => setEditing('new')}>
-                  ＋ إضافة هوية
+                  {t('＋ إضافة هوية')}
                 </button>
               )}
             </div>
@@ -137,17 +141,19 @@ function ThemeLibrary() {
                   className="h-28 w-full"
                 />
                 <h2 className="mt-3 break-words font-black">{theme.name}</h2>
-                <p className="mt-1 text-xs text-slate-500">{theme.identity.avatars.length} صورة للاعبين</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {theme.identity.avatars.length} {countNoun('صورة للاعبين', theme.identity.avatars.length)}
+                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button type="button" className="secondary-btn flex-1" onClick={() => setEditing(theme)}>
-                    تعديل
+                    {t('تعديل')}
                   </button>
                   <button
                     type="button"
                     className="secondary-btn flex-1 text-rose-700"
                     onClick={() => setDeleting(theme)}
                   >
-                    حذف
+                    {t('حذف')}
                   </button>
                 </div>
               </article>
@@ -157,8 +163,11 @@ function ThemeLibrary() {
       )}
       <ConfirmDialog
         open={Boolean(deleting)}
-        title="حذف الهوية؟"
-        description={`ستُحذف الهوية «${deleting?.name ?? ''}» من المكتبة، وستعود مسابقاتك المرتبطة بها إلى هوية بولت الافتراضية.`}
+        title={t('حذف الهوية؟')}
+        description={t(
+          'ستُحذف الهوية «{0}» من المكتبة، وستعود مسابقاتك المرتبطة بها إلى هوية بولت الافتراضية.',
+          { 0: deleting?.name ?? '' },
+        )}
         busy={busy}
         onCancel={() => setDeleting(null)}
         onConfirm={async () => {
@@ -174,7 +183,7 @@ function ThemeLibrary() {
             setDeleting(null);
           } catch (cause) {
             setDeleting(null);
-            setError(cause instanceof Error ? cause.message : 'تعذّر حذف الهوية.');
+            setError(cause instanceof Error ? cause.message : t('تعذّر حذف الهوية.'));
           } finally {
             setBusy(false);
           }

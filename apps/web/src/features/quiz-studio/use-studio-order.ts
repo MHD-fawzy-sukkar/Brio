@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { useEffect } from 'react';
 import { setResource } from '../../services/resource-cache';
 import { useQuestionDrag } from '../../hooks/use-question-drag';
@@ -43,11 +45,11 @@ export function useStudioOrder(
       setOrderError(state.error);
       setOrderStatus(
         state.error
-          ? 'الترتيب ظاهر عندك، لكن لم يُحفظ بعد.'
+          ? t('الترتيب ظاهر عندك، لكن لم يُحفظ بعد.')
           : state.order
             ? state.saving
-              ? 'جاري حفظ آخر ترتيب…'
-              : 'تم حفظ ترتيب الأسئلة'
+              ? t('جاري حفظ آخر ترتيب…')
+              : t('تم حفظ ترتيب الأسئلة')
             : '',
       );
     };

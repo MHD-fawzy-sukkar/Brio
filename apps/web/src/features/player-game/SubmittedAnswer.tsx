@@ -1,4 +1,8 @@
+'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
 export function SubmittedAnswer() {
+  const { t } = useTranslations();
   return (
     <div
       role="status"
@@ -8,7 +12,7 @@ export function SubmittedAnswer() {
       <span className="grid h-6 w-6 place-items-center rounded-full bg-indigo-600 text-xs text-white shadow-xs">
         🔒
       </span>
-      <span>تم تثبيت إجابتك! بانتظار انتهاء الوقت لإظهار النتيجة…</span>
+      <span>{t('تم تثبيت إجابتك! بانتظار انتهاء الوقت لإظهار النتيجة…')}</span>
       <span className="h-2 w-2 animate-ping rounded-full bg-indigo-500" />
     </div>
   );

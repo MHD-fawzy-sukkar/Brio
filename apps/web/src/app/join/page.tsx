@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AmbientBackground } from '../../components/AmbientBackground';
@@ -12,6 +14,7 @@ import { selectedAvatar } from '../../features/competition-identity/model';
 import { PageSkeleton } from '../../components/Loading';
 
 function JoinSetup() {
+  const { t, translateMessage } = useTranslations();
   const params = useSearchParams();
   const directRoomId = params.get('roomId') || '';
   const directCode = params.get('code') || '';
@@ -34,7 +37,7 @@ function JoinSetup() {
       return;
     }
     if (!/^\d{6}$/.test(pin)) {
-      setError('رابط الانضمام غير مكتمل. اطلب من المضيف رمزاً جديداً.');
+      setError(t('رابط الانضمام غير مكتمل. اطلب من المضيف رمزاً جديداً.'));
       setResolving(false);
       return;
     }
@@ -48,7 +51,7 @@ function JoinSetup() {
       .then(async (response) => {
         const room = await response.json().catch(() => null);
         if (!response.ok || !room?.roomId)
-          throw new Error('لم نجد لعبة نشطة بهذا الرمز. تحقق منه وحاول مجدداً.');
+          throw new Error(t('لم نجد لعبة نشطة بهذا الرمز. تحقق منه وحاول مجدداً.'));
         setRoomId(room.roomId);
         setCode(pin);
       })
@@ -56,10 +59,10 @@ function JoinSetup() {
         if ((cause as Error)?.name !== 'AbortError')
           setError(
             (cause as Error)?.name === 'TimeoutError'
-              ? 'استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.'
+              ? t('استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.')
               : cause instanceof Error
                 ? cause.message
-                : 'تعذر تجهيز رابط الانضمام.',
+                : t('تعذر تجهيز رابط الانضمام.'),
           );
       })
       .finally(() => setResolving(false));
@@ -72,7 +75,7 @@ function JoinSetup() {
   const join = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!roomId || !code) return;
-    if (nickname.trim().length < 2) return setError('اكتب اسماً من حرفين على الأقل.');
+    if (nickname.trim().length < 2) return setError(t('اكتب اسماً من حرفين على الأقل.'));
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -86,8 +89,9 @@ function JoinSetup() {
         body: JSON.stringify({ nickname: nickname.trim(), avatarId: avatar }),
       });
       const player = await response.json().catch(() => null);
-      if (response.status === 404) throw new Error('انتهت اللعبة أو لم تعد متاحة.');
-      if (!response.ok || !player?.playerId) throw new Error(player?.detail || 'تعذر الانضمام إلى اللعبة.');
+      if (response.status === 404) throw new Error(t('انتهت اللعبة أو لم تعد متاحة.'));
+      if (!response.ok || !player?.playerId)
+        throw new Error(player?.detail || t('تعذر الانضمام إلى اللعبة.'));
       sessionStorage.setItem(`brio_player_session:${roomId}:${player.playerId}`, player.sessionToken);
       const query = new URLSearchParams({
         roomId,
@@ -101,10 +105,10 @@ function JoinSetup() {
       if ((cause as Error)?.name !== 'AbortError')
         setError(
           (cause as Error)?.name === 'TimeoutError'
-            ? 'استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.'
+            ? t('استغرق الاتصال وقتاً أطول من المتوقع. حاول مجدداً.')
             : cause instanceof Error
               ? cause.message
-              : 'تعذر الانضمام.',
+              : t('تعذر الانضمام.'),
         );
     } finally {
       if (requestRef.current === controller) {
@@ -119,10 +123,12 @@ function JoinSetup() {
     return (
       <div className="card mx-auto max-w-lg p-10 text-center">
         <div className="text-5xl">🔎</div>
-        <h1 className="mt-4 text-xl font-black">تعذر فتح رابط اللعبة</h1>
-        <p className="mt-2 text-sm font-bold leading-7 text-rose-600">{roomIdentity.error || error}</p>
+        <h1 className="mt-4 text-xl font-black">{t('تعذر فتح رابط اللعبة')}</h1>
+        <p className="mt-2 text-sm font-bold leading-7 text-rose-600">
+          {translateMessage((roomIdentity.error || error) ?? '')}
+        </p>
         <a href="/join-game/" className="secondary-btn mt-6 inline-block">
-          إدخال الرمز يدوياً
+          {t('إدخال الرمز يدوياً')}
         </a>
       </div>
     );
@@ -136,27 +142,27 @@ function JoinSetup() {
             <AmbientBackground />
             <div className="relative z-10 flex items-center gap-4 lg:flex-col lg:text-center">
               <div className="join-setup__avatar">
-                <Avatar src={avatar} presentation="hero" label="شخصيتك المختارة" className="w-full" />
+                <Avatar src={avatar} presentation="hero" label={t('شخصيتك المختارة')} className="w-full" />
               </div>
               <div className="min-w-0">
                 <div className="inline-flex items-center gap-2 rounded-xl border border-white bg-white/90 px-3 py-1.5">
-                  <span className="text-xs font-bold text-slate-500">رمز اللعبة</span>
+                  <span className="text-xs font-bold text-slate-500">{t('رمز اللعبة')}</span>
                   <b className="text-lg tracking-[.12em] text-brand-800" dir="ltr">
                     {code}
                   </b>
                 </div>
-                <h1 className="mt-3 text-lg font-black leading-8 lg:text-3xl">شخصيتك في التحدي</h1>
+                <h1 className="mt-3 text-lg font-black leading-8 lg:text-3xl">{t('شخصيتك في التحدي')}</h1>
                 <p className="mt-1 text-xs leading-6 text-slate-600 lg:mt-3 lg:text-sm">
-                  تتغيّر المعاينة عند اختيار صورتك.
+                  {t('تتغيّر المعاينة عند اختيار صورتك.')}
                 </p>
               </div>
             </div>
           </aside>
           <form onSubmit={join} className="join-setup__form space-y-4 sm:space-y-5">
             <div>
-              <h2 className="text-xl font-black text-slate-900">جهّز اسمك وصورتك</h2>
+              <h2 className="text-xl font-black text-slate-900">{t('جهّز اسمك وصورتك')}</h2>
               <p className="mt-1 text-xs leading-6 text-slate-500">
-                الرمز جاهز. بقي اسمك والصورة التي سترافقك.
+                {t('الرمز جاهز. بقي اسمك والصورة التي سترافقك.')}
               </p>
             </div>
             {error && (
@@ -164,12 +170,12 @@ function JoinSetup() {
                 role="alert"
                 className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700"
               >
-                {error}
+                {translateMessage(error ?? '')}
               </div>
             )}
             <div>
               <label htmlFor="nickname" className="label">
-                الاسم المستعار
+                {t('الاسم المستعار')}
               </label>
               <input
                 id="nickname"
@@ -180,7 +186,7 @@ function JoinSetup() {
                 autoComplete="nickname"
                 enterKeyHint="go"
                 className="field"
-                placeholder="مثال: نور"
+                placeholder={t('مثال: نور')}
               />
             </div>
             <AvatarPicker compact value={avatar} onChange={setAvatar} />
@@ -190,14 +196,14 @@ function JoinSetup() {
                 disabled={joining || nickname.trim().length < 2}
                 className="primary-btn w-full py-3.5"
               >
-                {joining ? 'لحظة، نجهّز مكانك…' : 'انضم إلى اللعبة'}
+                {joining ? t('لحظة، نجهّز مكانك…') : t('انضم إلى اللعبة')}
               </button>
             </div>
             <a
               href="/join-game/"
               className="block text-center text-xs font-bold text-slate-500 hover:text-brand-600"
             >
-              استخدام رمز مختلف
+              {t('استخدام رمز مختلف')}
             </a>
           </form>
         </section>
@@ -207,10 +213,11 @@ function JoinSetup() {
 }
 
 export default function JoinPage() {
+  const { t } = useTranslations();
   return (
     <Suspense
       fallback={
-        <div className="card mx-auto max-w-lg p-12 text-center text-slate-500">جاري تجهيز الغرفة…</div>
+        <div className="card mx-auto max-w-lg p-12 text-center text-slate-500">{t('جاري تجهيز الغرفة…')}</div>
       }
     >
       <JoinSetup />

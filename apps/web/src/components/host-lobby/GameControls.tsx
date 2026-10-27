@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
 import Link from 'next/link';
 import { ButtonContent } from '../Loading';
 import { canStartLobby, playerCountLabel, type LobbyPlayer } from './lobby-model';
@@ -24,6 +27,7 @@ export function GameControls({
   ending,
   finished = false,
 }: GameControlsProps) {
+  const { t } = useTranslations();
   const backHref = isLanMode
     ? '/local/'
     : quizId
@@ -31,12 +35,12 @@ export function GameControls({
       : '/dashboard/';
 
   return (
-    <section aria-label="التحكم باللعبة" className="game-controls">
+    <section aria-label={t('التحكم باللعبة')} className="game-controls">
       <div className="flex items-center gap-3.5">
         <Link
           href={backHref}
-          aria-label="العودة"
-          title="العودة"
+          aria-label={t('العودة')}
+          title={t('العودة')}
           className="group relative grid h-12 w-12 shrink-0 cursor-pointer place-items-center rounded-2xl border border-brand-200/80 bg-white/95 text-brand-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-600 hover:bg-brand-600 hover:text-white hover:shadow-lg hover:shadow-brand-600/20"
         >
           <svg
@@ -46,7 +50,7 @@ export function GameControls({
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="back-arrow-glide h-5 w-5"
+            className="back-arrow-glide h-5 w-5 ltr:rotate-180"
           >
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
@@ -57,16 +61,16 @@ export function GameControls({
             className={`h-3 w-3 shrink-0 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,.12)]' : 'bg-amber-400'}`}
           />
           <div>
-            <p className="text-xs font-black text-brand-600">ساحة المسابقة · لوحة المضيف</p>
+            <p className="text-xs font-black text-brand-600">{t('ساحة المسابقة · لوحة المضيف')}</p>
             <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">
-              {quizTitle || 'ساحة المسابقة'}
+              {quizTitle || t('ساحة المسابقة')}
             </h1>
             <p className="mt-1 text-xs font-bold text-slate-500">
               {finished
-                ? 'اكتملت المسابقة وإعلان النتائج النهائية'
+                ? t('اكتملت المسابقة وإعلان النتائج النهائية')
                 : connected
                   ? playerCountLabel(players.length)
-                  : 'نعيد الاتصال بالغرفة…'}
+                  : t('نعيد الاتصال بالغرفة…')}
             </p>
           </div>
         </div>
@@ -82,7 +86,7 @@ export function GameControls({
                 disabled={ending || !canStartLobby(connected, players)}
                 className="primary-btn flex-1 px-7 py-3.5 sm:flex-none"
               >
-                بدء المسابقة الآن
+                {t('بدء المسابقة الآن')}
               </button>
             )}
             <button
@@ -91,8 +95,8 @@ export function GameControls({
               disabled={ending}
               className="secondary-btn flex-1 border-rose-200 py-3.5 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
             >
-              <ButtonContent busy={ending} busyText="جاري الإنهاء…">
-                إنهاء اللعبة
+              <ButtonContent busy={ending} busyText={t('جاري الإنهاء…')}>
+                {t('إنهاء اللعبة')}
               </ButtonContent>
             </button>
           </>
@@ -101,7 +105,7 @@ export function GameControls({
             href={isLanMode ? '/local/' : '/dashboard/'}
             className="primary-btn inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-black"
           >
-            <span>مسابقاتي</span>
+            <span>{t('مسابقاتي')}</span>
           </Link>
         )}
       </div>

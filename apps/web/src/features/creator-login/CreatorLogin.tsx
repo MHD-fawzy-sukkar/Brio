@@ -1,5 +1,7 @@
 'use client';
-import Script from 'next/script';
+
+import { useTranslations } from '../../i18n/use-locale';
+
 import { AmbientBackground } from '../../components/AmbientBackground';
 import { Spinner } from '../../components/Loading';
 import { Logo } from '../../components/Logo';
@@ -7,12 +9,12 @@ import { MarketingHero } from '../../components/MarketingHero';
 
 import { useCreatorLogin } from './use-creator-login';
 export function CreatorLogin() {
+  const { t, translateMessage } = useTranslations();
   const {
     buttonRef,
     rememberRef,
     remember,
     setRemember,
-    setScriptLoaded,
     submitting,
     setSubmitting,
     error,
@@ -21,15 +23,6 @@ export function CreatorLogin() {
   } = useCreatorLogin();
   return (
     <div className="game-surface mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-brand-100 p-3 shadow-xl shadow-brand-100/40 sm:p-5 lg:p-6">
-      <Script
-        src="https://accounts.google.com/gsi/client?hl=ar"
-        strategy="afterInteractive"
-        onReady={() => setScriptLoaded(true)}
-        onError={() => {
-          setError('تعذر تحميل خدمة Google. تحقق من اتصالك ثم أعد المحاولة.');
-          setSubmitting(false);
-        }}
-      />
       <AmbientBackground />
       <div className="relative z-10 grid items-stretch gap-5 lg:grid-cols-[1.08fr_.92fr]">
         <MarketingHero context="login" />
@@ -37,9 +30,9 @@ export function CreatorLogin() {
           <div className="w-full max-w-[360px]">
             <div className="mb-8 text-center">
               <Logo className="mx-auto" />
-              <h1 className="mt-7 text-2xl font-black text-slate-900">تسجيل الدخول</h1>
+              <h1 className="mt-7 text-2xl font-black text-slate-900">{t('تسجيل الدخول')}</h1>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                تابع إلى مساحة مسابقاتك باستخدام حساب Google.
+                {t('تابع إلى مساحة مسابقاتك باستخدام حساب Google.')}
               </p>
             </div>
             {error && (
@@ -47,7 +40,7 @@ export function CreatorLogin() {
                 role="alert"
                 className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700"
               >
-                {error}
+                {translateMessage(error ?? '')}
               </div>
             )}
             <div
@@ -60,7 +53,7 @@ export function CreatorLogin() {
               >
                 {submitting && <Spinner className="h-4 w-4 text-brand-600" />}
                 <span>
-                  تسجيل الدخول باستخدام <bdi>Google</bdi>
+                  {t('تسجيل الدخول باستخدام')} <bdi>Google</bdi>
                 </span>
                 <svg className="h-5 w-5 shrink-0" viewBox="0 0 48 48" focusable="false">
                   <path
@@ -87,7 +80,7 @@ export function CreatorLogin() {
                 className="absolute inset-0 flex items-center justify-center opacity-0"
                 ref={buttonRef}
                 inert={submitting}
-                aria-label="تسجيل الدخول باستخدام Google"
+                aria-label={t('تسجيل الدخول باستخدام Google')}
               />
             </div>
             <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl p-2 transition hover:bg-slate-50">
@@ -106,22 +99,24 @@ export function CreatorLogin() {
               >
                 ✓
               </span>
-              <span className="text-right">
+              <span className="text-start">
                 <strong className="block text-sm font-bold text-slate-700">
-                  ابقَ مسجّلاً على هذا الجهاز
+                  {t('ابقَ مسجّلاً على هذا الجهاز')}
                 </strong>
                 <small className="mt-1 block text-xs leading-5 text-slate-500">
-                  لمدة 30 يوماً على جهازك الشخصي.
+                  {t('لمدة 30 يوماً على جهازك الشخصي.')}
                 </small>
               </span>
             </label>
             <div className="my-6 flex items-center gap-3 text-xs text-slate-300">
               <span className="h-px flex-1 bg-slate-200" />
-              <span>دخول آمن</span>
+              <span>{t('دخول آمن')}</span>
               <span className="h-px flex-1 bg-slate-200" />
             </div>
             <p className="text-center text-xs leading-6 text-slate-400">
-              لن يحصل Brio على كلمة مرور Google. بالمتابعة أنت توافق على استخدام جلسة آمنة لإدارة مسابقاتك.
+              {t(
+                'لن يحصل Brio على كلمة مرور Google. بالمتابعة أنت توافق على استخدام جلسة آمنة لإدارة مسابقاتك.',
+              )}
             </p>
           </div>
         </section>

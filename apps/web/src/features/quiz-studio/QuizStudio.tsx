@@ -1,4 +1,7 @@
 'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
+
 import { QuizIdentitySettings } from '../competition-identity/QuizIdentitySettings';
 import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -11,6 +14,7 @@ import { StudioBasics } from './StudioBasics';
 import { StudioQuestions } from './StudioQuestions';
 
 export function QuizStudio() {
+  const { t, translateMessage } = useTranslations();
   const studio = useQuizStudio();
   const {
     quizId,
@@ -44,7 +48,7 @@ export function QuizStudio() {
           role="alert"
           className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700"
         >
-          {error}
+          {translateMessage(error ?? '')}
           {!quiz && (
             <button
               type="button"
@@ -54,7 +58,7 @@ export function QuizStudio() {
                 void load().catch((cause) => setError(cause.message));
               }}
             >
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           )}
         </div>
@@ -64,11 +68,11 @@ export function QuizStudio() {
           role="status"
           className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800"
         >
-          {warning}
+          {translateMessage(warning ?? '')}
           <button
             onClick={() => setWarning(null)}
-            className="float-left text-amber-600"
-            aria-label="إغلاق التنبيه"
+            className="float-end text-amber-600"
+            aria-label={t('إغلاق التنبيه')}
           >
             ×
           </button>
@@ -94,15 +98,15 @@ export function QuizStudio() {
           role="alert"
           className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700"
         >
-          <span>{task.error || 'تعذر رفع الصورة في الخلفية.'}</span>
-          <button onClick={() => backgroundUploads.dismiss(task.id)} aria-label="إغلاق">
+          <span>{translateMessage(task.error ?? '') || t('تعذر رفع الصورة في الخلفية.')}</span>
+          <button onClick={() => backgroundUploads.dismiss(task.id)} aria-label={t('إغلاق')}>
             ×
           </button>
         </div>
       ))}
       {message && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">
-          {message}
+          {translateMessage(message ?? '')}
         </div>
       )}
       {quiz && (
@@ -115,8 +119,8 @@ export function QuizStudio() {
 
       <ConfirmDialog
         open={Boolean(deletingQuestionId)}
-        title="حذف السؤال؟"
-        description={`سيتم حذف السؤال «${deletingQuestion?.text || ''}» نهائياً من هذه المسابقة.`}
+        title={t('حذف السؤال؟')}
+        description={t('سيتم حذف السؤال «{0}» نهائياً من هذه المسابقة.', { 0: deletingQuestion?.text || '' })}
         busy={deleteQuestionBusy}
         onCancel={() => setDeletingQuestionId(null)}
         onConfirm={confirmRemoveQuestion}

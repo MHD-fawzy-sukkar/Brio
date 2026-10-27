@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from '../i18n/use-locale';
 export function Spinner({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <span
@@ -28,14 +31,15 @@ function Bone({ className = '' }: { className?: string }) {
   return <div aria-hidden="true" className={`skeleton-shimmer rounded-xl bg-slate-100 ${className}`} />;
 }
 export function ThemeCardsSkeleton({ count = 3, compact = false }: { count?: number; compact?: boolean }) {
+  const { t } = useTranslations();
   if (compact)
     return (
       <div
         role="status"
-        aria-label="جاري تحميل الهويات البصرية"
+        aria-label={t('جاري تحميل الهويات البصرية')}
         className="theme-library-gallery grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
       >
-        <span className="sr-only">جاري تحميل الهويات البصرية…</span>
+        <span className="sr-only">{t('جاري تحميل الهويات البصرية…')}</span>
         {Array.from({ length: count }, (_, index) => (
           <div key={index} className="min-w-0 space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
             <Bone className="h-24 w-full" />
@@ -49,7 +53,7 @@ export function ThemeCardsSkeleton({ count = 3, compact = false }: { count?: num
   return (
     <div
       role="status"
-      aria-label="جاري تحميل الهويات البصرية"
+      aria-label={t('جاري تحميل الهويات البصرية')}
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
       {Array.from({ length: count }, (_, index) => (
@@ -67,8 +71,13 @@ export function ThemeCardsSkeleton({ count = 3, compact = false }: { count?: num
   );
 }
 export function QuizCardsSkeleton() {
+  const { t } = useTranslations();
   return (
-    <div role="status" aria-label="جاري تحميل المسابقات" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      role="status"
+      aria-label={t('جاري تحميل المسابقات')}
+      className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+    >
       {[0, 1, 2].map((index) => (
         <div key={index} className="card overflow-hidden">
           <Bone className="aspect-[16/9] w-full !rounded-none" />
@@ -87,10 +96,11 @@ export function PageSkeleton({
   className = '',
   kind = 'question',
 }: { className?: string; kind?: SkeletonKind } = {}) {
+  const { t } = useTranslations();
   return (
     <div
       role="status"
-      aria-label="جاري تحميل الصفحة"
+      aria-label={t('جاري تحميل الصفحة')}
       className={`w-full min-w-0 space-y-6 ${kind === 'question' ? 'mx-auto max-w-5xl' : kind === 'create' ? 'quiz-create' : ''} ${className}`}
     >
       <div aria-hidden="true" className="flex flex-wrap items-center justify-between gap-4">

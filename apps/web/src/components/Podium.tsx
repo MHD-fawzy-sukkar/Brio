@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from '../i18n/use-locale';
 import { CompetitionMascot } from '../features/competition-identity/CompetitionMascot';
 import { Avatar } from './Avatar';
 
@@ -17,6 +20,7 @@ const stepStyle: Record<number, string> = {
 };
 
 function Contestant({ player }: { player: PodiumPlayer }) {
+  const { t, numberLocale } = useTranslations();
   return (
     <article className="podium-rise flex min-w-0 flex-col items-center text-center">
       <div className="podium-winner relative z-10 flex min-h-44 w-full flex-col items-center justify-end px-1">
@@ -30,14 +34,14 @@ function Contestant({ player }: { player: PodiumPlayer }) {
         />
         <b className="mt-2 w-full truncate text-sm text-slate-900 sm:text-base">{player.nickname}</b>
         <strong className="text-xs text-brand-700 sm:text-sm">
-          {player.score.toLocaleString('ar')} نقطة
+          {player.score.toLocaleString(numberLocale())} {t('نقطة')}
         </strong>
       </div>
       <div
         className={`relative mt-3 flex w-full flex-col items-center justify-start rounded-t-[1.5rem] border-x border-t pt-4 shadow-xl ${stepStyle[player.rank]}`}
       >
         <span className="text-4xl font-black sm:text-5xl">{player.rank}</span>
-        <span className="mt-1 text-[10px] font-black sm:text-xs">المركز</span>
+        <span className="mt-1 text-[10px] font-black sm:text-xs">{t('المركز')}</span>
         <div className="absolute inset-x-3 top-2 h-1 rounded-full bg-white/50" />
       </div>
     </article>
@@ -45,6 +49,7 @@ function Contestant({ player }: { player: PodiumPlayer }) {
 }
 
 export function Podium({ players }: { players: PodiumPlayer[] }) {
+  const { t } = useTranslations();
   const ranked = [1, 2, 3]
     .map((rank) => players.find((player) => player.rank === rank))
     .filter(Boolean) as PodiumPlayer[];
@@ -77,10 +82,10 @@ export function Podium({ players }: { players: PodiumPlayer[] }) {
           🏆
         </span>
         <span className="mx-auto mt-4 block w-fit rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-black text-amber-700 shadow-sm">
-          النتائج النهائية 🎉
+          {t('النتائج النهائية 🎉')}
         </span>
-        <h2 className="mt-5 text-3xl font-black text-brand-950 sm:text-5xl">منصة الأبطال</h2>
-        <p className="mt-2 text-sm font-bold text-slate-500">لحظة التتويج التي تستحق التصفيق!</p>
+        <h2 className="mt-5 text-3xl font-black text-brand-950 sm:text-5xl">{t('منصة الأبطال')}</h2>
+        <p className="mt-2 text-sm font-bold text-slate-500">{t('لحظة التتويج التي تستحق التصفيق!')}</p>
       </div>
       {ordered.length ? (
         <div
@@ -93,7 +98,7 @@ export function Podium({ players }: { players: PodiumPlayer[] }) {
         </div>
       ) : (
         <div className="relative z-10 grid min-h-72 place-items-center text-center">
-          <p className="font-black text-slate-500">لا توجد نتائج لعرضها بعد.</p>
+          <p className="font-black text-slate-500">{t('لا توجد نتائج لعرضها بعد.')}</p>
         </div>
       )}
     </section>

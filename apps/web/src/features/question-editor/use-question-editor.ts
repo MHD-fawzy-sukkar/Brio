@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { AuthoringQuestion, QuestionType, QuizSummaryDto } from '@brio/contracts';
@@ -78,7 +80,7 @@ export function useQuestionEditor() {
       .then((data) => {
         if (!active) return;
         const found = data.questions.find((item) => item.id === questionId);
-        if (!found) throw new Error('السؤال غير موجود.');
+        if (!found) throw new Error(t('السؤال غير موجود.'));
         if (!edited.current) setQuestion(fromStored(found));
         setStoredImageUrl(found.media_url ?? found.essentialImage ?? null);
       })
@@ -111,8 +113,8 @@ export function useQuestionEditor() {
           ? blankOptions(4)
           : type === 'TrueFalse'
             ? [
-                { text: 'صح', isCorrect: true },
-                { text: 'خطأ', isCorrect: false },
+                { text: t('صح'), isCorrect: true },
+                { text: t('خطأ'), isCorrect: false },
               ]
             : type === 'Poll'
               ? blankOptions(2).map((item) => ({ ...item, isCorrect: false }))
@@ -154,14 +156,14 @@ export function useQuestionEditor() {
       setImagePreview(URL.createObjectURL(file));
       setError(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'الصورة غير صالحة.');
+      setError(cause instanceof Error ? cause.message : t('الصورة غير صالحة.'));
     }
   };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     if (busy || loadingQuestion) return;
-    if (!quizId) return setError('معرّف المسابقة مفقود.');
+    if (!quizId) return setError(t('معرّف المسابقة مفقود.'));
     setBusy(true);
     setError(null);
     const payload = {
@@ -209,7 +211,7 @@ export function useQuestionEditor() {
       if (imageFile && savedQuestionId) backgroundUploads.enqueueQuestion(quizId, savedQuestionId, imageFile);
       router.push(`/builder/?quizId=${quizId}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذّر حفظ السؤال.');
+      setError(cause instanceof Error ? cause.message : t('تعذّر حفظ السؤال.'));
     } finally {
       setBusy(false);
     }

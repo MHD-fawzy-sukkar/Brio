@@ -1,9 +1,14 @@
 'use client';
+import { t } from '../../i18n/locale';
+
+import { useGoogleIdentityScript } from './use-google-identity-script';
+import { useLocale } from '../../i18n/use-locale';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../components/AuthProvider';
 
 export function useCreatorLogin() {
+  const locale = useLocale();
   const router = useRouter();
 
   const { acceptSession } = useAuth();
@@ -18,7 +23,8 @@ export function useCreatorLogin() {
 
   const [remember, setRemember] = useState(false);
 
-  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const googleScript = useGoogleIdentityScript(locale);
+  const scriptLoaded = googleScript.ready;
 
   const [buttonReady, setButtonReady] = useState(false);
 
@@ -30,25 +36,26 @@ export function useCreatorLogin() {
 
   useEffect(() => {
     router.prefetch('/dashboard/');
-    if (window.google?.accounts?.id) {
-      setScriptLoaded(true);
-      return;
-    }
-    const timer = window.setInterval(() => {
-      if (window.google?.accounts?.id) {
-        setScriptLoaded(true);
-        window.clearInterval(timer);
-      }
-    }, 50);
-    return () => window.clearInterval(timer);
   }, [router]);
 
   useEffect(() => {
-    if (!scriptLoaded || initializedRef.current) return;
+    if (googleScript.failed) {
+      setError(t('تعذر تحميل خدمة Google. تحقق من اتصالك ثم أعد المحاولة.'));
+      setSubmitting(false);
+    }
+  }, [googleScript.failed]);
+
+  useEffect(() => {
+    if (!scriptLoaded) {
+      buttonRef.current?.replaceChildren();
+      setButtonReady(false);
+      return;
+    }
+    if (initializedRef.current) return;
     const identity = window.google?.accounts?.id;
     if (!identity || !buttonRef.current) return;
     if (!clientId) {
-      setError('معرّف Google غير مهيأ. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID ثم أعد بناء التطبيق.');
+      setError(t('معرّف Google غير مهيأ. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID ثم أعد بناء التطبيق.'));
       setSubmitting(false);
       return;
     }
@@ -62,7 +69,7 @@ export function useCreatorLogin() {
     const handleCredentialResponse = async (response: { credential?: string }) => {
       if (!active) return;
       if (!response.credential) {
-        setError('لم يصل رمز المصادقة من Google.');
+        setError(t('لم يصل رمز المصادقة من Google.'));
         return;
       }
       setSubmitting(true);
@@ -76,7 +83,7 @@ export function useCreatorLogin() {
         });
         const payload = await result.json().catch(() => null);
         if (!result.ok) {
-          throw new Error(payload?.detail || 'تعذر تسجيل الدخول.');
+          throw new Error(payload?.detail || t('تعذر تسجيل الدخول.'));
         }
         if (payload?.creator) {
           acceptSession(payload.creator);
@@ -87,7 +94,7 @@ export function useCreatorLogin() {
         router.replace(destination);
       } catch (cause) {
         if (active) {
-          setError(cause instanceof Error ? cause.message : 'تعذر تسجيل الدخول.');
+          setError(cause instanceof Error ? cause.message : t('تعذر تسجيل الدخول.'));
           setSubmitting(false);
         }
       }
@@ -125,7 +132,7 @@ export function useCreatorLogin() {
         text: 'signin_with',
         logo_alignment: 'left',
         width,
-        locale: 'ar',
+        locale,
       });
     };
 
@@ -179,14 +186,14 @@ export function useCreatorLogin() {
     } catch (cause) {
       initializedRef.current = false;
       setSubmitting(false);
-      setError(cause instanceof Error ? cause.message : 'تعذر تهيئة تسجيل الدخول بواسطة Google.');
+      setError(cause instanceof Error ? cause.message : t('تعذر تهيئة تسجيل الدخول بواسطة Google.'));
     }
-  }, [scriptLoaded, clientId, acceptSession, router]);
+  }, [scriptLoaded, googleScript.version, clientId, acceptSession, router, locale]);
 
   const handleFallbackClick = () => {
     if (buttonReady || submitting) return;
     if (!clientId) {
-      setError('معرّف Google غير مهيأ. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID ثم أعد بناء التطبيق.');
+      setError(t('معرّف Google غير مهيأ. أضف NEXT_PUBLIC_GOOGLE_CLIENT_ID ثم أعد بناء التطبيق.'));
       return;
     }
     pendingClickRef.current = true;
@@ -202,7 +209,6 @@ export function useCreatorLogin() {
     remember,
     setRemember,
     scriptLoaded,
-    setScriptLoaded,
     buttonReady,
     setButtonReady,
     submitting,

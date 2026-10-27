@@ -1,3 +1,4 @@
+import { t } from '../i18n/locale';
 import { identityImageSources, type CompetitionIdentity } from '@brio/contracts';
 import { requestJson } from './http-json';
 
@@ -16,7 +17,7 @@ const MAX_IMAGE_BYTES = 500 * 1024;
 async function downloadImage(sourceUrl: string) {
   const url = new URL(sourceUrl);
   if (url.protocol !== 'https:' || url.hostname !== 'res.cloudinary.com' || url.username || url.password)
-    throw new Error('تعذّر تضمين إحدى الصور. أعد رفعها من صفحة تعديل المسابقة ثم حاول مجدداً.');
+    throw new Error(t('تعذّر تضمين إحدى الصور. أعد رفعها من صفحة تعديل المسابقة ثم حاول مجدداً.'));
   const response = await fetch(url, {
     redirect: 'error',
     credentials: 'omit',
@@ -24,7 +25,7 @@ async function downloadImage(sourceUrl: string) {
   });
   const contentType = response.headers.get('content-type')?.split(';')[0];
   if (!response.ok || !['image/png', 'image/jpeg', 'image/webp', 'image/avif'].includes(contentType || ''))
-    throw new Error('تعذّر تنزيل إحدى الصور. جرّب مجدداً.');
+    throw new Error(t('تعذّر تنزيل إحدى الصور. جرّب مجدداً.'));
   const reader = response.body!.getReader();
   const parts: Uint8Array[] = [];
   let size = 0;
@@ -35,7 +36,7 @@ async function downloadImage(sourceUrl: string) {
       size += value.byteLength;
       if (size > MAX_IMAGE_BYTES) {
         await reader.cancel();
-        throw new Error('إحدى الصور أكبر من 500 كيلوبايت. استبدلها بصورة أصغر ثم أعد التنزيل.');
+        throw new Error(t('إحدى الصور أكبر من 500 كيلوبايت. استبدلها بصورة أصغر ثم أعد التنزيل.'));
       }
       parts.push(value);
     }
@@ -76,16 +77,16 @@ export async function createLanBundle(
   // Two downloads at a time; a package is downloadable only when every image succeeds.
   for (let i = 0; i < urls.length; i += 2) {
     media.push(...(await Promise.all(urls.slice(i, i + 2).map(downloadImage))));
-    progress(`جاري تجهيز الصور ${Math.min(i + 2, urls.length)} / ${urls.length}…`);
+    progress(t('جاري تجهيز الصور {0} / {1}…', { 0: Math.min(i + 2, urls.length), 1: urls.length }));
   }
   const blob = new Blob([JSON.stringify({ ...source, media })], { type: 'application/json' });
   if (blob.size > 48 * 1024 * 1024)
-    throw new Error('حجم ملف المسابقة أكبر من 48 ميغابايت. قلّل أحجام الصور وأعد المحاولة.');
+    throw new Error(t('حجم ملف المسابقة أكبر من 48 ميغابايت. قلّل أحجام الصور وأعد المحاولة.'));
   return blob;
 }
 
 export async function downloadLanBundle(quizId: string, progress: (message: string) => void) {
-  progress('جاري تجهيز نسخة المسابقة…');
+  progress(t('جاري تجهيز نسخة المسابقة…'));
   await requestJson(`/api/quizzes/${encodeURIComponent(quizId)}/publish`, { method: 'POST' });
   const source = await requestJson<LanExportSource>(`/api/quizzes/${encodeURIComponent(quizId)}/lan-export`);
   const blob = await createLanBundle(source, progress);

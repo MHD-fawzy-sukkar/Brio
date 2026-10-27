@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { useEffect } from 'react';
 import { backgroundUploads } from '../../services/background-upload';
 import { validateImage } from '../../services/media-upload';
@@ -102,7 +104,7 @@ export function useStudioMedia(
       }
       backgroundUploads.enqueueCover(quizId, file);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'الصورة غير صالحة.');
+      setError(cause instanceof Error ? cause.message : t('الصورة غير صالحة.'));
     }
   };
 
@@ -128,7 +130,7 @@ export function useStudioMedia(
       const body = await response.json().catch(() => null);
       if (response.ok) invalidateQuizResources(quizId);
       if (!response.ok) {
-        throw new Error(body?.detail || 'تعذر إزالة الغلاف.');
+        throw new Error(body?.detail || t('تعذر إزالة الغلاف.'));
       }
     } catch (cause) {
       if (previousCover) {
@@ -137,7 +139,7 @@ export function useStudioMedia(
           current ? { ...current, cover_image_url: previousCover, coverImageUrl: previousCover } : current,
         );
       }
-      setError(cause instanceof Error ? cause.message : 'تعذر إزالة الغلاف.');
+      setError(cause instanceof Error ? cause.message : t('تعذر إزالة الغلاف.'));
     }
   };
   return { activeCoverTask, coverUploading, displayCover, hasCover, failedUploads, uploadCover, removeCover };

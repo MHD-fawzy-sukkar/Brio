@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../../i18n/use-locale';
+
 import Link from 'next/link';
 import { BoltMascot } from '../../../components/BoltMascot';
 
@@ -18,6 +20,7 @@ import { prefetchThemeLibrary } from '../../../features/competition-identity/api
 import { requestJson, jsonBody } from '../../../services/http-json';
 
 function NewQuizForm() {
+  const { t, translateMessage } = useTranslations();
   const router = useRouter();
   useEffect(() => {
     void prefetchThemeLibrary();
@@ -49,7 +52,7 @@ function NewQuizForm() {
       setPreviewUrl(URL.createObjectURL(file));
       setError(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'الصورة غير صالحة.');
+      setError(cause instanceof Error ? cause.message : t('الصورة غير صالحة.'));
     }
   };
 
@@ -64,15 +67,15 @@ function NewQuizForm() {
       return;
     setBusy(true);
     setError(null);
-    setProgress('جاري إنشاء المسابقة…');
+    setProgress(t('جاري إنشاء المسابقة…'));
     try {
       const preparedIdentity =
         themeMode === 'new' && identityDraft
           ? await identityDraft.prepare((done, total) =>
-              setProgress(`جاري رفع صور الهوية ${done} / ${total}…`),
+              setProgress(t('جاري رفع صور الهوية {0} / {1}…', { 0: done, 1: total })),
             )
           : undefined;
-      setProgress('جاري إنشاء المسابقة…');
+      setProgress(t('جاري إنشاء المسابقة…'));
       const quiz = await requestJson<{ id: string }>(
         '/api/quizzes',
         jsonBody('POST', {
@@ -87,10 +90,10 @@ function NewQuizForm() {
       if (coverFile) {
         backgroundUploads.enqueueCover(quiz.id, coverFile);
       }
-      setProgress('تم الإنشاء، جاري فتح الاستوديو…');
+      setProgress(t('تم الإنشاء، جاري فتح الاستوديو…'));
       router.push(`/builder/?quizId=${encodeURIComponent(quiz.id)}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذر إنشاء المسابقة.');
+      setError(cause instanceof Error ? cause.message : t('تعذر إنشاء المسابقة.'));
       setBusy(false);
       setProgress('');
     }
@@ -102,13 +105,16 @@ function NewQuizForm() {
         href="/dashboard/"
         className="secondary-btn inline-flex items-center justify-center gap-2 text-sm font-black"
       >
-        <span aria-hidden="true">→</span> العودة إلى لوحة التحكم
+        <span aria-hidden="true" className="inline-block ltr:rotate-180">
+          →
+        </span>{' '}
+        {t('العودة إلى لوحة التحكم')}
       </Link>
       <header className="mb-6 mt-4">
-        <p className="text-xs font-black text-brand-600">مسابقة جديدة</p>
-        <h1 className="mt-2 text-3xl font-black sm:text-4xl">جهّز مسابقتك بطابعك</h1>
+        <p className="text-xs font-black text-brand-600">{t('مسابقة جديدة')}</p>
+        <h1 className="mt-2 text-3xl font-black sm:text-4xl">{t('جهّز مسابقتك بطابعك')}</h1>
         <p className="mt-2 text-sm leading-7 text-slate-500">
-          اختر اسم المسابقة وغلافها وهويتها، ثم تابع إلى إعداد الأسئلة.
+          {t('اختر اسم المسابقة وغلافها وهويتها، ثم تابع إلى إعداد الأسئلة.')}
         </p>
       </header>
       {error && (
@@ -116,7 +122,7 @@ function NewQuizForm() {
           role="alert"
           className="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700"
         >
-          {error}
+          {translateMessage(error ?? '')}
         </div>
       )}
       <form onSubmit={createQuiz}>
@@ -127,11 +133,11 @@ function NewQuizForm() {
                 <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-50 text-sm font-black text-brand-700">
                   1
                 </span>
-                <h2 className="font-black">معلومات المسابقة</h2>
+                <h2 className="font-black">{t('معلومات المسابقة')}</h2>
               </div>
               <div>
                 <label className="label" htmlFor="quiz-title">
-                  اسم المسابقة
+                  {t('اسم المسابقة')}
                 </label>
                 <input
                   id="quiz-title"
@@ -139,25 +145,25 @@ function NewQuizForm() {
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   maxLength={120}
-                  placeholder="مثال: تحدي المعرفة الأسبوعي"
+                  placeholder={t('مثال: تحدي المعرفة الأسبوعي')}
                   autoFocus
                   required
                 />
               </div>
               <div>
                 <span className="label">
-                  صورة الغلاف <span className="font-normal text-slate-400">اختيارية</span>
+                  {t('صورة الغلاف')} <span className="font-normal text-slate-400">{t('اختيارية')}</span>
                 </span>
                 <label className="block cursor-pointer overflow-hidden rounded-2xl border border-dashed border-brand-200 bg-brand-50/30">
                   <div className="quiz-cover-frame grid aspect-[2/1] place-items-center bg-white">
                     {previewUrl ? (
-                      <img src={previewUrl} alt="معاينة غلاف المسابقة" />
+                      <img src={previewUrl} alt={t('معاينة غلاف المسابقة')} />
                     ) : (
                       <BoltMascot className="w-40" />
                     )}
                   </div>
                   <span className="block border-t border-brand-100 bg-white/80 p-3 text-center text-sm font-bold text-brand-700">
-                    {coverFile ? 'تغيير صورة الغلاف' : '＋ اختيار غلاف من جهازك'}
+                    {coverFile ? t('تغيير صورة الغلاف') : t('＋ اختيار غلاف من جهازك')}
                   </span>
                   <input
                     type="file"
@@ -176,29 +182,33 @@ function NewQuizForm() {
                     }}
                     className="mt-2 text-xs font-bold text-rose-700"
                   >
-                    إزالة الغلاف
+                    {t('إزالة الغلاف')}
                   </button>
                 )}
               </div>
               <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-bold text-slate-500">مسابقتك</p>
-                <p className="mt-1 break-words font-black text-slate-900">{title.trim() || 'اسم مسابقتك'}</p>
+                <p className="text-xs font-bold text-slate-500">{t('مسابقتك')}</p>
+                <p className="mt-1 break-words font-black text-slate-900">
+                  {title.trim() || t('اسم مسابقتك')}
+                </p>
                 <p className="mt-2 text-xs leading-6 text-slate-500">
-                  بعد الإنشاء تنتقل إلى استوديو الأسئلة. يمكنك تعديل الاسم والغلاف لاحقاً.
+                  {t('بعد الإنشاء تنتقل إلى استوديو الأسئلة. يمكنك تعديل الاسم والغلاف لاحقاً.')}
                 </p>
               </div>
             </section>
             <section
               className="quiz-create__theme card min-w-0 space-y-5 p-5 sm:p-6"
-              aria-label="هوية المسابقة"
+              aria-label={t('هوية المسابقة')}
             >
               <div className="flex items-center gap-3">
                 <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-50 text-sm font-black text-brand-700">
                   2
                 </span>
                 <div>
-                  <h2 className="font-black">هوية المسابقة</h2>
-                  <p className="mt-1 text-xs text-slate-500">احتفظ ببولت أو اختر طابعاً مناسباً لجهتك.</p>
+                  <h2 className="font-black">{t('هوية المسابقة')}</h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {t('احتفظ ببولت أو اختر طابعاً مناسباً لجهتك.')}
+                  </p>
                 </div>
               </div>
               <ThemeModePicker
@@ -212,9 +222,9 @@ function NewQuizForm() {
                 <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
                   <BoltMascot className="w-24 shrink-0" />
                   <div>
-                    <p className="font-black">جاهزة بهوية Brio</p>
+                    <p className="font-black">{t('جاهزة بهوية Brio')}</p>
                     <p className="mt-1 text-sm leading-7 text-slate-500">
-                      شخصية بولت وأفاتاراته الأصلية. يمكنك إنشاء المسابقة الآن.
+                      {t('شخصية بولت وأفاتاراته الأصلية. يمكنك إنشاء المسابقة الآن.')}
                     </p>
                   </div>
                 </div>
@@ -228,10 +238,10 @@ function NewQuizForm() {
           <div className="quiz-create__footer card min-w-0 space-y-3 p-5 sm:p-6">
             <p id="quiz-create-hint" className="text-sm leading-7 text-slate-500" aria-live="polite">
               {themeMode === 'new' && !identityDraft
-                ? 'أكمل اسم الهوية وأضف صورها للمتابعة.'
+                ? t('أكمل اسم الهوية وأضف صورها للمتابعة.')
                 : themeMode === 'saved' && !selectedTheme
-                  ? 'اختر هوية من المكتبة للمتابعة.'
-                  : 'الخطوة التالية: إعداد أسئلة المسابقة.'}
+                  ? t('اختر هوية من المكتبة للمتابعة.')
+                  : t('الخطوة التالية: إعداد أسئلة المسابقة.')}
             </p>
             <button
               type="submit"
@@ -244,8 +254,8 @@ function NewQuizForm() {
               }
               className="primary-btn w-full whitespace-normal py-3.5 leading-7"
             >
-              <ButtonContent busy={busy} busyText={progress || 'جاري الإنشاء…'}>
-                إنشاء المسابقة والمتابعة
+              <ButtonContent busy={busy} busyText={progress || t('جاري الإنشاء…')}>
+                {t('إنشاء المسابقة والمتابعة')}
               </ButtonContent>
             </button>
           </div>

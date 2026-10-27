@@ -1,4 +1,6 @@
 'use client';
+import { t } from '../../i18n/locale';
+
 import { useEffect } from 'react';
 import { backgroundUploads } from '../../services/background-upload';
 import { requestJson, jsonBody } from '../../services/http-json';
@@ -85,7 +87,7 @@ export function useStudioActions(
       setDeletingQuestionId(null);
       await load();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذّر حذف السؤال.');
+      setError(cause instanceof Error ? cause.message : t('تعذّر حذف السؤال.'));
       setDeletingQuestionId(null);
     } finally {
       setDeleteQuestionBusy(false);
@@ -113,7 +115,7 @@ export function useStudioActions(
         `/host/?roomId=${encodeURIComponent(room.roomId)}&code=${encodeURIComponent(room.code)}&quizId=${encodeURIComponent(quizId)}`,
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذر بدء اللعبة.');
+      setError(cause instanceof Error ? cause.message : t('تعذر بدء اللعبة.'));
       setStarting(false);
     }
   };
@@ -121,20 +123,20 @@ export function useStudioActions(
   const downloadForLan = async () => {
     if (!quizId || starting || downloadingLan || identitySaving || reordering) return;
     setDownloadNotice('');
-    setDownloadProgress('جاري تجهيز المسابقة…');
+    setDownloadProgress(t('جاري تجهيز المسابقة…'));
     setDownloadingLan(true);
     setError(null);
     setMessage(null);
     try {
       await orderQueue?.flush();
       if (backgroundUploads.list(quizId).some((task) => task.state === 'uploading'))
-        throw new Error('انتظر انتهاء رفع الصور قبل تنزيل نسخة للّعب المحلي.');
+        throw new Error(t('انتظر انتهاء رفع الصور قبل تنزيل نسخة للّعب المحلي.'));
       if (isEditingTitle && title.trim() && title.trim() !== quiz?.title) await commitTitle();
       else if (pendingTitleSaveRef.current) await pendingTitleSaveRef.current;
       await downloadLanBundle(quizId, setDownloadProgress);
-      setDownloadNotice('تم تنزيل المسابقة وصورها. أضف الملف من لوحة المقدّم على اللابتوب.');
+      setDownloadNotice(t('تم تنزيل المسابقة وصورها. أضف الملف من لوحة المقدّم على اللابتوب.'));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'تعذّر تجهيز نسخة للّعب المحلي.');
+      setError(cause instanceof Error ? cause.message : t('تعذّر تجهيز نسخة للّعب المحلي.'));
     } finally {
       setDownloadingLan(false);
       setDownloadProgress('');

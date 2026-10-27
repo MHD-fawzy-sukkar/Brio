@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { useEffect, useRef, useState } from 'react';
 import type { IdentityRecordDto, ThemeSummaryDto } from '@brio/contracts';
 import { getQuizIdentity, assignIdentity } from './api';
@@ -28,6 +30,7 @@ export function QuizIdentitySettings({
   onBusyChange: (busy: boolean) => void;
   disabled?: boolean;
 }) {
+  const { t, translateMessage } = useTranslations();
   const [panel, setPanel] = useState<PanelState>({ mode: 'closed' });
   const [choosing, setChoosing] = useState(false);
   const [selected, setSelected] = useState<ThemeSummaryDto | null>(null);
@@ -61,18 +64,18 @@ export function QuizIdentitySettings({
       }
     } catch (cause) {
       if (!controller.signal.aborted) {
-        setPanel({ mode: 'error', error: cause instanceof Error ? cause.message : 'تعذّر تحميل الهوية.' });
+        setPanel({ mode: 'error', error: cause instanceof Error ? cause.message : t('تعذّر تحميل الهوية.') });
         onBusyChange(false);
       }
     }
   };
   return (
-    <section className="card space-y-4 p-5 sm:p-7" aria-label="هوية المسابقة">
+    <section className="card space-y-4 p-5 sm:p-7" aria-label={t('هوية المسابقة')}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-black">هوية المسابقة</h2>
+          <h2 className="font-black">{t('هوية المسابقة')}</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {value ? 'هوية مخصصة لهذه المسابقة' : 'تستخدم هذه المسابقة شخصية بولت وصورها الافتراضية.'}
+            {value ? t('هوية مخصصة لهذه المسابقة') : t('تستخدم هذه المسابقة شخصية بولت وصورها الافتراضية.')}
           </p>
         </div>
         {!choosing && panel.mode !== 'editor' && panel.mode !== 'loading' && (
@@ -82,7 +85,7 @@ export function QuizIdentitySettings({
             className="secondary-btn"
             onClick={() => void edit()}
           >
-            {value ? 'إدارة هوية المسابقة' : 'تخصيص الهوية'}
+            {value ? t('إدارة هوية المسابقة') : t('تخصيص الهوية')}
           </button>
         )}
       </div>
@@ -97,7 +100,7 @@ export function QuizIdentitySettings({
             onBusyChange(true);
           }}
         >
-          اختيار من هوياتي
+          {t('اختيار من هوياتي')}
         </button>
       )}
       {choosing && (
@@ -105,7 +108,9 @@ export function QuizIdentitySettings({
           <ThemeLibraryPicker selected={selected} onSelect={setSelected} />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
             <p className="min-w-0 text-xs text-slate-500">
-              {selected ? `الهوية المحددة: ${selected.name}` : 'اختر هوية من المكتبة لتطبيقها على المسابقة'}
+              {selected
+                ? t('الهوية المحددة: {0}', { 0: selected.name })
+                : t('اختر هوية من المكتبة لتطبيقها على المسابقة')}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -122,17 +127,17 @@ export function QuizIdentitySettings({
                   } catch (cause) {
                     setPanel({
                       mode: 'error',
-                      error: cause instanceof Error ? cause.message : 'تعذّر تطبيق الهوية.',
+                      error: cause instanceof Error ? cause.message : t('تعذّر تطبيق الهوية.'),
                     });
                   } finally {
                     setResetting(false);
                   }
                 }}
               >
-                {resetting ? 'جاري تطبيق الهوية…' : 'استخدام هذه الهوية'}
+                {resetting ? t('جاري تطبيق الهوية…') : t('استخدام هذه الهوية')}
               </button>
               <button type="button" disabled={resetting} className="secondary-btn" onClick={close}>
-                إلغاء
+                {t('إلغاء')}
               </button>
             </div>
           </div>
@@ -140,18 +145,18 @@ export function QuizIdentitySettings({
       )}
       {panel.mode === 'loading' && (
         <p role="status" className="text-sm text-slate-500">
-          جاري تجهيز هوية المسابقة…
+          {t('جاري تجهيز هوية المسابقة…')}
         </p>
       )}
       {panel.mode === 'error' && (
         <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
-          {panel.error}
+          {translateMessage(panel.error ?? '')}
         </p>
       )}
       {panel.mode === 'locked' && panel.record && (
         <>
           <p className="rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-600">
-            هذه نسخة محفوظة من هوية سابقة. يمكنك الاحتفاظ بها لهذه المسابقة أو اختيار هوية من هوياتك.
+            {t('هذه نسخة محفوظة من هوية سابقة. يمكنك الاحتفاظ بها لهذه المسابقة أو اختيار هوية من هوياتك.')}
           </p>
           <IdentityPreview identity={panel.record.identity} />
         </>
@@ -183,7 +188,7 @@ export function QuizIdentitySettings({
             } catch (cause) {
               setPanel({
                 mode: 'error',
-                error: cause instanceof Error ? cause.message : 'تعذّر تغيير الهوية.',
+                error: cause instanceof Error ? cause.message : t('تعذّر تغيير الهوية.'),
               });
             } finally {
               setResetting(false);
@@ -191,7 +196,7 @@ export function QuizIdentitySettings({
             }
           }}
         >
-          {resetting ? 'جاري الحفظ…' : 'استخدام هوية Brio الافتراضية'}
+          {resetting ? t('جاري الحفظ…') : t('استخدام هوية Brio الافتراضية')}
         </button>
       )}
     </section>

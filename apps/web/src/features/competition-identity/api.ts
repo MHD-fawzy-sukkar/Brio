@@ -1,3 +1,4 @@
+import { t } from '../../i18n/locale';
 import type { IdentityRecordDto, SaveIdentityRequest, ThemeSummaryDto } from '@brio/contracts';
 import { loadResource } from '../../services/resource-cache';
 import { requestJson, jsonBody } from '../../services/http-json';
@@ -36,7 +37,7 @@ export async function uploadIdentityImage(file: File, signal?: AbortSignal): Pro
     signal,
   });
   if (!signed?.assetId || !signed.uploadUrl || !signed.apiKey || !signed.signature || !signed.params) {
-    throw new Error('تعذّر تجهيز رفع الصورة. حدّث الصفحة وحاول مجدداً.');
+    throw new Error(t('تعذّر تجهيز رفع الصورة. حدّث الصفحة وحاول مجدداً.'));
   }
   const form = new FormData();
   form.append('file', optimized);
@@ -49,10 +50,10 @@ export async function uploadIdentityImage(file: File, signal?: AbortSignal): Pro
     body: form,
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
-  if (!response.ok) throw new Error('تعذّر رفع الصورة. حاول مجدداً.');
+  if (!response.ok) throw new Error(t('تعذّر رفع الصورة. حاول مجدداً.'));
   const result = await response.json().catch(() => null);
   if (!result?.public_id || !result.version || !result.signature)
-    throw new Error('لم يكتمل رد خدمة الصور. أعد المحاولة.');
+    throw new Error(t('لم يكتمل رد خدمة الصور. أعد المحاولة.'));
   return requestJson('/api/identity-assets/complete', {
     ...jsonBody('POST', {
       assetId: signed.assetId,

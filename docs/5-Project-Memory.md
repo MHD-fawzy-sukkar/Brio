@@ -2,6 +2,15 @@
 
 Updated: 2026-10-27. Read this on every engineering iteration; update only with observed work/evidence.
 
+## 2026-10-27 — Arabic/English interface on a new branch
+
+- Committed personal-only identities as `1a58924`, pushed `thems`, fast-forwarded/pushed `main`, then created `codex/arabic-english` as requested. Language work stays separate from that main-branch merge.
+- Added an accessible Arabic/English header switch, persisted per browser/origin and synchronized across tabs. It changes RTL/LTR, interface copy, document metadata, dates/numbers and Google button locale without remounting forms or game sessions. User-authored quiz/questions/options/nicknames/identity artwork text remain intact.
+- Catalogs include system errors, progress, confirmations, accessibility labels, local-play screens and offline fallback. Stored system messages translate when the locale changes. Source coverage/interpolation checks guard future additions; details in `23-Languages.md`.
+- Evidence: 152 passing tests (6 contracts, 10 core, 58 Worker, 69 web, 9 LAN), workspace types, cloud/LAN builds and architecture/format checks. Browser checks covered unsaved form preservation, language restoration/navigation, English Google button, host/player screens, answer lock and finale. Host switching kept one connection; after player join/switch the fixture had two connections and one answer submission. Mobile player/authoring had no horizontal overflow at 390px. Fixtures stayed local.
+- Final direct-load checks use React-snapshot-bound translations to prevent hydration mismatch when English is restored before deferred screens hydrate. Repeated English login loads and Arabic/English Google SDK switches completed without React/hydration errors; real OAuth submission remains outside this rehearsal.
+- Published language release `5a90f329-9a36-4351-a28d-a2dbdf6763e6`. All 13 live page HTML documents and 35 JS/CSS/service-worker assets match the final cloud export; health is 200 and protected APIs are 401 without a session. Live English switch, native Google button, preference restoration, LTR and translated document title were verified with no console errors.
+
 ## 2026-10-27 — Personal identity library only
 
 - User removed public identity sharing entirely. Removed publication dialog, visibility selector, public library tab, publication actions and public-source copy from creation/studio/library screens. The picker now has a plain personal-library heading, search and management link; the editor uses the available width after removing visibility controls.

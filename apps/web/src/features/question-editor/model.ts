@@ -1,3 +1,4 @@
+import { t } from '../../i18n/locale';
 import type { AuthoringQuestion, PointsMultiplier, QuestionType } from '@brio/contracts';
 export type StoredQuestion = {
   id: string;
@@ -23,10 +24,18 @@ export const fromStored = (found: StoredQuestion): AuthoringQuestion => ({
 });
 
 export const typeLabels: Record<QuestionType, string> = {
-  MultipleChoice: 'اختيار من متعدد',
-  TrueFalse: 'صح أو خطأ',
-  ShortAnswer: 'إجابة قصيرة',
-  Poll: 'استطلاع رأي',
+  get MultipleChoice() {
+    return t('اختيار من متعدد');
+  },
+  get TrueFalse() {
+    return t('صح أو خطأ');
+  },
+  get ShortAnswer() {
+    return t('إجابة قصيرة');
+  },
+  get Poll() {
+    return t('استطلاع رأي');
+  },
 };
 
 export const blankOptions = (count: number) =>

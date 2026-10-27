@@ -1,10 +1,39 @@
 'use client';
+import { t } from '../../i18n/locale';
+import { useTranslations } from '../../i18n/use-locale';
 
 export type ThemeMode = 'default' | 'new' | 'saved';
 const modes = [
-  { id: 'default', title: 'بولت الافتراضي', description: 'هوية Brio وشخصية بولت الأصلية', icon: '⚡' },
-  { id: 'new', title: 'هوية جديدة', description: 'شعارك وشخصيتك وصورك وألوانك', icon: '✦' },
-  { id: 'saved', title: 'هوية محفوظة', description: 'اختر من هوياتك البصرية المحفوظة', icon: '▦' },
+  {
+    id: 'default',
+    get title() {
+      return t('بولت الافتراضي');
+    },
+    get description() {
+      return t('هوية Brio وشخصية بولت الأصلية');
+    },
+    icon: '⚡',
+  },
+  {
+    id: 'new',
+    get title() {
+      return t('هوية جديدة');
+    },
+    get description() {
+      return t('شعارك وشخصيتك وصورك وألوانك');
+    },
+    icon: '✦',
+  },
+  {
+    id: 'saved',
+    get title() {
+      return t('هوية محفوظة');
+    },
+    get description() {
+      return t('اختر من هوياتك البصرية المحفوظة');
+    },
+    icon: '▦',
+  },
 ] as const;
 
 export function ThemeModePicker({
@@ -14,8 +43,9 @@ export function ThemeModePicker({
   value: ThemeMode;
   onChange: (mode: ThemeMode) => void;
 }) {
+  const { t, translateMessage } = useTranslations();
   return (
-    <div className="grid gap-3 sm:grid-cols-3" role="group" aria-label="اختيار نوع الهوية">
+    <div className="grid gap-3 sm:grid-cols-3" role="group" aria-label={t('اختيار نوع الهوية')}>
       {modes.map((mode) => (
         <button
           type="button"
@@ -31,8 +61,10 @@ export function ThemeModePicker({
               mode.icon
             )}
           </span>
-          <span className="block text-sm font-black">{mode.title}</span>
-          <span className="mt-1 block text-xs leading-6 text-slate-500">{mode.description}</span>
+          <span className="block text-sm font-black">{translateMessage(mode.title)}</span>
+          <span className="mt-1 block text-xs leading-6 text-slate-500">
+            {translateMessage(mode.description)}
+          </span>
           <span className="theme-mode-card__check" aria-hidden="true">
             {value === mode.id ? '✓' : '+'}
           </span>

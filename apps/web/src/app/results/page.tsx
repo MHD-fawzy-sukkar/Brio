@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../../i18n/use-locale';
+
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { HostSnapshotDto, PlayerSnapshotDto } from '@brio/contracts';
@@ -13,32 +15,38 @@ import { requestJson } from '../../services/http-json';
 type ResultSnapshot = HostSnapshotDto | PlayerSnapshotDto;
 
 function PlayerResults({ snapshot }: { snapshot: PlayerSnapshotDto }) {
+  const { t, numberLocale } = useTranslations();
   const topThree = snapshot.ownRank !== null && snapshot.ownRank <= 3;
   return (
     <div className="relative mx-auto max-w-xl rounded-[2rem] border border-brand-100 bg-gradient-to-br from-white via-brand-50 to-amber-50 p-8 text-center text-slate-900 shadow-2xl shadow-brand-100/60 sm:p-10">
       <div className="text-7xl">{topThree ? '🏆' : '✨'}</div>
       <h1 className="mt-5 text-4xl font-black text-brand-950">
-        {snapshot.ownRank === 1 ? 'أنت بطل الجولة!' : 'أحسنت اللعب!'}
+        {snapshot.ownRank === 1 ? t('أنت بطل الجولة!') : t('أحسنت اللعب!')}
       </h1>
-      <p className="mt-2 text-sm font-bold text-slate-500">هذه نتيجتك النهائية بعد جمع نقاط جميع الأسئلة.</p>
+      <p className="mt-2 text-sm font-bold text-slate-500">
+        {t('هذه نتيجتك النهائية بعد جمع نقاط جميع الأسئلة.')}
+      </p>
       <div className="mt-8 grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-brand-100 bg-white p-5 shadow-sm">
-          <small className="font-bold text-slate-500">الترتيب</small>
+          <small className="font-bold text-slate-500">{t('الترتيب')}</small>
           <b className="mt-1 block text-4xl text-brand-700">#{snapshot.ownRank ?? '—'}</b>
         </div>
         <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm">
-          <small className="font-bold text-slate-500">النقاط</small>
-          <b className="mt-1 block text-3xl text-amber-600">{snapshot.ownScore.toLocaleString('ar')}</b>
+          <small className="font-bold text-slate-500">{t('النقاط')}</small>
+          <b className="mt-1 block text-3xl text-amber-600">
+            {snapshot.ownScore.toLocaleString(numberLocale())}
+          </b>
         </div>
       </div>
       <a href="/" className="primary-btn mt-8 inline-block">
-        العودة إلى الصفحة الرئيسية
+        {t('العودة إلى الصفحة الرئيسية')}
       </a>
     </div>
   );
 }
 
 function ResultsContent() {
+  const { t, translateMessage } = useTranslations();
   const params = useSearchParams();
   const roomId = params.get('roomId') || '';
   const playerId = params.get('playerId') || '';
@@ -56,15 +64,15 @@ function ResultsContent() {
       })
       .catch((cause) => {
         if (!controller.signal.aborted)
-          setState({ key, error: cause instanceof Error ? cause.message : 'تعذر تحميل النتائج.' });
+          setState({ key, error: cause instanceof Error ? cause.message : t('تعذر تحميل النتائج.') });
       });
     return () => controller.abort();
   }, [roomId, playerId, key]);
-  const error = !roomId ? 'معرّف الغرفة مفقود.' : state?.key === key ? state.error : undefined;
+  const error = !roomId ? t('معرّف الغرفة مفقود.') : state?.key === key ? state.error : undefined;
   if (error)
     return (
       <div role="alert" className="card mx-auto max-w-lg p-10 text-center font-bold text-rose-600">
-        {error}
+        {translateMessage(error ?? '')}
       </div>
     );
   const snapshot = state?.key === key ? state.snapshot : undefined;
@@ -78,7 +86,7 @@ function ResultsContent() {
             <Podium players={snapshot.leaderboard} />
             <div className="text-center">
               <a className="primary-btn inline-block" href="/dashboard/">
-                العودة للوحة التحكم
+                {t('العودة للوحة التحكم')}
               </a>
             </div>
           </div>

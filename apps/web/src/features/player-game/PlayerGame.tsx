@@ -1,4 +1,7 @@
 'use client';
+
+import { useTranslations } from '../../i18n/use-locale';
+
 import { Spinner } from '../../components/Loading';
 import { AmbientBackground } from '../../components/AmbientBackground';
 import { CompetitionIdentityProvider } from '../competition-identity/CompetitionIdentityProvider';
@@ -10,6 +13,7 @@ import { PlayerFinale } from './PlayerFinale';
 import { usePlayerGame } from './use-player-game';
 import { PlayerQuestion } from './PlayerQuestion';
 export function PlayerGame() {
+  const { t, numberLocale } = useTranslations();
   const game = usePlayerGame();
   const {
     code,
@@ -31,7 +35,7 @@ export function PlayerGame() {
   if (!validJoin) {
     return (
       <div className="card mx-auto max-w-md p-10 text-center text-sm font-bold text-slate-500">
-        بيانات الدخول غير مكتملة؛ سنعيدك إلى الصفحة الرئيسية.
+        {t('بيانات الدخول غير مكتملة؛ سنعيدك إلى الصفحة الرئيسية.')}
       </div>
     );
   }
@@ -41,11 +45,11 @@ export function PlayerGame() {
         <Spinner />
         <p role="status">
           {connection === 'disconnected'
-            ? 'انقطع الاتصال. نحاول إعادة الاتصال بالغرفة…'
-            : 'جاري تحميل الغرفة…'}
+            ? t('انقطع الاتصال. نحاول إعادة الاتصال بالغرفة…')
+            : t('جاري تحميل الغرفة…')}
         </p>
         <a href="/join-game/" className="secondary-btn inline-block">
-          العودة لإدخال الرمز
+          {t('العودة لإدخال الرمز')}
         </a>
       </div>
     );
@@ -59,9 +63,11 @@ export function PlayerGame() {
             <div className="min-w-0">
               <h1 className="truncate font-black text-slate-900">{nickname}</h1>
               {phase === 'LOBBY' ? (
-                <p className="text-xs font-bold text-brand-600">رمز اللعبة {code}</p>
+                <p className="text-xs font-bold text-brand-600">
+                  {t('رمز اللعبة')} {code}
+                </p>
               ) : (
-                <p className="text-xs font-bold text-slate-400">أنت داخل المسابقة الآن</p>
+                <p className="text-xs font-bold text-slate-400">{t('أنت داخل المسابقة الآن')}</p>
               )}
             </div>
           </div>
@@ -71,10 +77,10 @@ export function PlayerGame() {
                 connection === 'connected' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
               }`}
             >
-              {connection === 'connected' ? 'متصل' : 'نعيد الاتصال…'}
+              {connection === 'connected' ? t('متصل') : t('نعيد الاتصال…')}
             </span>
-            <div className="text-left">
-              <span className="block text-[10px] font-bold text-slate-400">نقاطك</span>
+            <div className="text-end">
+              <span className="block text-[10px] font-bold text-slate-400">{t('نقاطك')}</span>
               <b className="text-lg text-brand-700 sm:text-xl">{ownScore}</b>
             </div>
           </div>
@@ -85,16 +91,16 @@ export function PlayerGame() {
             <AmbientBackground />
             <div className="relative z-10 mx-auto max-w-xl pt-4">
               <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-                ✓ تم انضمامك
+                {t('✓ تم انضمامك')}
               </span>
               <div className="mascot-hero mascot-hero--lobby mx-auto mt-5">
-                <CompetitionMascot label="شخصية المسابقة تنتظر بداية اللعبة" className="w-full" />
+                <CompetitionMascot label={t('شخصية المسابقة تنتظر بداية اللعبة')} className="w-full" />
               </div>
               <h2 className="mt-4 text-2xl font-black text-slate-900 sm:text-3xl">
-                مكانك جاهز في غرفة الانتظار
+                {t('مكانك جاهز في غرفة الانتظار')}
               </h2>
               <p className="mt-2 text-sm leading-7 text-slate-500">
-                ستبدأ اللعبة تلقائياً عندما يضغط المضيف زر البدء.
+                {t('ستبدأ اللعبة تلقائياً عندما يضغط المضيف زر البدء.')}
               </p>
               {mediaReadiness.total > 0 && (
                 <p
@@ -102,15 +108,18 @@ export function PlayerGame() {
                   className={`mt-3 text-xs font-bold ${mediaReadiness.failed ? 'text-amber-700' : 'text-emerald-700'}`}
                 >
                   {mediaReadiness.failed
-                    ? 'تعذّر تجهيز بعض الصور. سنحاول مجدداً عند اقتراب السؤال.'
+                    ? t('تعذّر تجهيز بعض الصور. سنحاول مجدداً عند اقتراب السؤال.')
                     : mediaReadiness.ready === mediaReadiness.total
-                      ? '✓ صور البداية جاهزة على جهازك'
-                      : `نجهّز صور البداية على جهازك… ${mediaReadiness.ready} / ${mediaReadiness.total}`}
+                      ? t('✓ صور البداية جاهزة على جهازك')
+                      : t('نجهّز صور البداية على جهازك… {0} / {1}', {
+                          0: mediaReadiness.ready,
+                          1: mediaReadiness.total,
+                        })}
                 </p>
               )}
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                {players.length} {players.length === 1 ? 'لاعب جاهز' : 'لاعبون جاهزون'}
+                {players.length} {players.length === 1 ? t('لاعب جاهز') : t('لاعبون جاهزون')}
               </div>
             </div>
             <div className="relative z-10 mx-auto mt-9 grid max-w-2xl grid-cols-3 gap-4 sm:grid-cols-5 sm:gap-5">
@@ -134,7 +143,7 @@ export function PlayerGame() {
                   </div>
                   <span className="max-w-full truncate rounded-full bg-white px-2 py-1 text-[11px] font-black text-slate-700 shadow-sm">
                     {player.nickname}
-                    {player.id === playerId ? ' · أنت' : ''}
+                    {player.id === playerId ? t(' · أنت') : ''}
                   </span>
                 </div>
               ))}
@@ -145,7 +154,7 @@ export function PlayerGame() {
                 disabled={leaving}
                 className="rounded-xl border border-rose-200 bg-white px-5 py-2.5 text-sm font-black text-rose-600 transition hover:bg-rose-50 disabled:opacity-60"
               >
-                {leaving ? 'جاري مغادرة الغرفة…' : 'مغادرة غرفة الانتظار'}
+                {leaving ? t('جاري مغادرة الغرفة…') : t('مغادرة غرفة الانتظار')}
               </button>
             </div>
           </section>
@@ -157,8 +166,8 @@ export function PlayerGame() {
               <div className="mx-auto grid h-28 w-28 place-items-center rounded-full border-4 border-brand-100 bg-brand-50 text-6xl font-black text-brand-700 shadow-xl shadow-brand-100">
                 {countdown.seconds}
               </div>
-              <h2 className="mt-7 text-3xl font-black">استعد… سنبدأ!</h2>
-              <p className="mt-2 text-slate-500">ركّز، فكل ثانية تصنع فرقاً في نقاطك.</p>
+              <h2 className="mt-7 text-3xl font-black">{t('استعد… سنبدأ!')}</h2>
+              <p className="mt-2 text-slate-500">{t('ركّز، فكل ثانية تصنع فرقاً في نقاطك.')}</p>
             </div>
           </section>
         )}
@@ -169,10 +178,13 @@ export function PlayerGame() {
           <section className="card relative p-6 text-center sm:p-8">
             <div className="text-5xl">{phase === 'STATS' ? '📊' : '🏅'}</div>
             <h2 className="mt-4 text-2xl font-black">
-              {phase === 'STATS' ? 'اكتمل وقت الإجابة' : 'ترتيب الجولة حتى الآن'}
+              {phase === 'STATS' ? t('اكتمل وقت الإجابة') : t('ترتيب الجولة حتى الآن')}
             </h2>
             <p className="mt-2 text-slate-500">
-              رصيدك الحالي: <b className="text-brand-700">{ownScore.toLocaleString('ar')} نقطة</b>
+              {t('رصيدك الحالي:')}{' '}
+              <b className="text-brand-700">
+                {ownScore.toLocaleString(numberLocale())} {t('نقطة')}
+              </b>
             </p>
             {phase === 'LEADERBOARD' && (
               <div className="mx-auto mt-6 max-w-md space-y-2">
@@ -182,10 +194,10 @@ export function PlayerGame() {
                     className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-bold"
                   >
                     <Avatar src={player.avatarId} className="h-9 w-9 rounded-lg" />
-                    <span className="flex-1 text-right">
+                    <span className="flex-1 text-start">
                       #{player.rank} {player.nickname}
                     </span>
-                    <span className="text-brand-700">{player.score.toLocaleString('ar')}</span>
+                    <span className="text-brand-700">{player.score.toLocaleString(numberLocale())}</span>
                   </div>
                 ))}
               </div>

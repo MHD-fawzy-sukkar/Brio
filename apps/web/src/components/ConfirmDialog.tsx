@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../i18n/use-locale';
+
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ButtonContent } from './Loading';
@@ -29,6 +31,7 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
+  const { translateMessage } = useTranslations();
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLElement>(null);
@@ -96,7 +99,7 @@ export function ConfirmDialog({
             disabled={busy}
             className="secondary-btn flex-1 cursor-pointer py-3 text-sm font-black"
           >
-            {cancelLabel}
+            {translateMessage(cancelLabel)}
           </button>
           <button
             type="button"
@@ -104,8 +107,8 @@ export function ConfirmDialog({
             disabled={busy}
             className="flex-1 cursor-pointer rounded-xl bg-rose-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-rose-200 transition hover:bg-rose-700 disabled:opacity-60"
           >
-            <ButtonContent busy={busy} busyText={busyLabel}>
-              {confirmLabel}
+            <ButtonContent busy={busy} busyText={translateMessage(busyLabel)}>
+              {translateMessage(confirmLabel)}
             </ButtonContent>
           </button>
         </div>

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from '../i18n/use-locale';
+
 import { useEffect, useState } from 'react';
 import { isLanMode } from '../services/runtime-mode';
 export function buildPinJoinPath(pin: string): string {
@@ -7,6 +9,7 @@ export function buildPinJoinPath(pin: string): string {
 }
 
 export function JoinQrCode({ pin, className = '' }: { pin: string; className?: string }) {
+  const { t } = useTranslations();
   const [image, setImage] = useState('');
   const [origins, setOrigins] = useState<string[]>([]);
   const [joinOrigin, setJoinOrigin] = useState('');
@@ -50,7 +53,7 @@ export function JoinQrCode({ pin, className = '' }: { pin: string; className?: s
         className={`grid aspect-square place-items-center overflow-hidden rounded-2xl border-8 border-white bg-white shadow-sm ${className}`}
       >
         {image ? (
-          <img src={image} alt={`رمز QR للانضمام إلى اللعبة ${pin}`} className="h-full w-full" />
+          <img src={image} alt={t('رمز QR للانضمام إلى اللعبة {0}', { 0: pin })} className="h-full w-full" />
         ) : (
           <div className="skeleton-shimmer h-full w-full" />
         )}
@@ -59,9 +62,9 @@ export function JoinQrCode({ pin, className = '' }: { pin: string; className?: s
         (origins.length ? (
           <div className="w-full max-w-sm text-center text-xs leading-6">
             <label className="font-bold">
-              رابط الانضمام على شبكتك
+              {t('رابط الانضمام على شبكتك')}
               <select
-                aria-label="رابط الانضمام على شبكتك"
+                aria-label={t('رابط الانضمام على شبكتك')}
                 dir="ltr"
                 className="field mt-2 text-xs"
                 value={joinOrigin}
@@ -78,13 +81,14 @@ export function JoinQrCode({ pin, className = '' }: { pin: string; className?: s
               </select>
             </label>
             <p className="mt-2 text-slate-500">
-              امسح الرمز من هاتف متصل بالشبكة نفسها للتأكد من عمل الرابط. إذا لم تفتح الصفحة، اختر عنواناً آخر
-              من القائمة.
+              {t(
+                'امسح الرمز من هاتف متصل بالشبكة نفسها للتأكد من عمل الرابط. إذا لم تفتح الصفحة، اختر عنواناً آخر من القائمة.',
+              )}
             </p>
           </div>
         ) : (
           <p role="alert" className="text-xs text-rose-600">
-            وصّل جهاز المقدّم بالشبكة، ثم أعد تشغيل اللعبة لإظهار رابط الانضمام.
+            {t('وصّل جهاز المقدّم بالشبكة، ثم أعد تشغيل اللعبة لإظهار رابط الانضمام.')}
           </p>
         ))}
     </div>

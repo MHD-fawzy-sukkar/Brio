@@ -1,4 +1,5 @@
 'use client';
+import { t } from '../i18n/locale';
 
 import { invalidateQuizResources } from './resource-cache';
 
@@ -58,7 +59,7 @@ export class BackgroundUploadManager {
     return this.enqueue({
       quizId,
       target: 'cover',
-      label: 'جاري رفع غلاف المسابقة…',
+      label: t('جاري رفع غلاف المسابقة…'),
       file,
       operation: () => this.coverUploader(quizId, file),
     });
@@ -68,7 +69,7 @@ export class BackgroundUploadManager {
       quizId,
       questionId,
       target: 'question',
-      label: 'جاري رفع صورة السؤال…',
+      label: t('جاري رفع صورة السؤال…'),
       file,
       operation: () => this.questionUploader(quizId, questionId, file),
     });
@@ -93,7 +94,7 @@ export class BackgroundUploadManager {
         invalidateQuizResources(input.quizId);
         this.tasks.set(id, {
           ...base,
-          label: 'اكتمل رفع الصورة',
+          label: t('اكتمل رفع الصورة'),
           state: 'completed',
           resultUrl: media.hostUrl,
         });
@@ -102,11 +103,11 @@ export class BackgroundUploadManager {
       .catch((cause) => {
         this.tasks.set(id, {
           ...base,
-          label: 'تعذر رفع الصورة، لكن تم حفظ المحتوى',
+          label: t('تعذر رفع الصورة، لكن تم حفظ المحتوى'),
           state: 'failed',
           error:
             cause?.name === 'TimeoutError'
-              ? 'استغرق رفع الصورة وقتاً أطول من المتوقع. حاول مجدداً.'
+              ? t('استغرق رفع الصورة وقتاً أطول من المتوقع. حاول مجدداً.')
               : cause instanceof Error
                 ? cause.message
                 : undefined,
