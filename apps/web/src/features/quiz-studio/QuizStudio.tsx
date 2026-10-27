@@ -1,5 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useBackgroundIdentity } from '../competition-identity/use-background-identity';
+import { IdentitySaveError } from '../competition-identity/IdentitySaveError';
+import { HostLobbySkeleton } from '../../components/host-lobby/HostLobbySkeleton';
 import { useTranslations } from '../../i18n/use-locale';
 
 import { QuizIdentitySettings } from '../competition-identity/QuizIdentitySettings';
@@ -38,6 +42,15 @@ export function QuizStudio() {
     confirmRemoveQuestion,
     deletingQuestion,
   } = studio;
+  const identityTask = useBackgroundIdentity(quizId);
+  useEffect(() => {
+    if (identityTask?.state === 'saved' && identityTask.record)
+      studio.setQuiz((current) =>
+        current?.id === identityTask.quizId ? { ...current, identity_id: identityTask.record!.id } : current,
+      );
+  }, [identityTask?.record?.id]);
+  const identityPending = Boolean(identityTask && identityTask.state !== 'saved');
+  if (starting) return <HostLobbySkeleton />;
   if (!quiz && !error) return <PageSkeleton kind="studio" />;
   return (
     <div data-mascot-flight-root className="relative space-y-7">
@@ -78,12 +91,14 @@ export function QuizStudio() {
           </button>
         </div>
       )}
+      {identityTask && <IdentitySaveError task={identityTask} />}
       {quiz && quizId && (
         <QuizIdentitySettings
           key={quizId}
           quizId={quizId}
           quizTitle={quiz.title}
-          disabled={starting || downloadingLan || reordering}
+          disabled={starting || downloadingLan || reordering || identityPending}
+          pendingName={identityPending ? identityTask?.name : undefined}
           value={quiz.identity_id ?? null}
           onBusyChange={setIdentitySaving}
           onSaved={(id) => {

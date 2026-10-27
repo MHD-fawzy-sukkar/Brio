@@ -14,6 +14,7 @@ export function useIdentityUploads(onStaged: (asset: IdentityAsset, file: File, 
   const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState('');
   const mounted = useRef(true);
+  const detached = useRef(false);
   const controller = useRef<AbortController | null>(null);
   const callback = useRef(onStaged);
   callback.current = onStaged;
@@ -32,6 +33,7 @@ export function useIdentityUploads(onStaged: (asset: IdentityAsset, file: File, 
     const files = queue.current!.files;
     return () => {
       mounted.current = false;
+      if (detached.current) return;
       controller.current?.abort();
       for (const item of files.values()) URL.revokeObjectURL(item.preview);
       files.clear();
@@ -57,6 +59,17 @@ export function useIdentityUploads(onStaged: (asset: IdentityAsset, file: File, 
     uploading,
     notice,
     prepare,
+    handoff(input: SaveIdentityRequest) {
+      detached.current = true;
+      const files = queue.current!;
+      return {
+        prepare: (signal: AbortSignal) => files.prepare(input, signal),
+        dispose: () => {
+          for (const item of files.files.values()) URL.revokeObjectURL(item.preview);
+          files.files.clear();
+        },
+      };
+    },
     addFiles(files: readonly File[], capacity: number) {
       if (controller.current) return;
       const selected = files.slice(0, Math.max(0, capacity));

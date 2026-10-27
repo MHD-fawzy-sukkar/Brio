@@ -1,5 +1,4 @@
 'use client';
-
 import { useTranslations } from '../../i18n/use-locale';
 export function SubmittedAnswer() {
   const { t } = useTranslations();
@@ -7,13 +6,18 @@ export function SubmittedAnswer() {
     <div
       role="status"
       aria-live="polite"
-      className="answer-confirmation mx-auto flex w-fit items-center gap-2.5 rounded-full border border-indigo-200 bg-gradient-to-l from-indigo-50 via-white to-violet-50 px-5 py-2.5 text-sm font-black text-indigo-900 shadow-md shadow-indigo-100/80"
+      className="mx-auto flex w-fit max-w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-start shadow-sm"
     >
-      <span className="grid h-6 w-6 place-items-center rounded-full bg-indigo-600 text-xs text-white shadow-xs">
-        🔒
+      <span
+        aria-hidden="true"
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700"
+      >
+        ✓
       </span>
-      <span>{t('تم تثبيت إجابتك! بانتظار انتهاء الوقت لإظهار النتيجة…')}</span>
-      <span className="h-2 w-2 animate-ping rounded-full bg-indigo-500" />
+      <div>
+        <p className="text-sm font-bold text-slate-800">{t('تم تسجيل إجابتك')}</p>
+        <p className="mt-0.5 text-xs text-slate-500">{t('بانتظار انتهاء الوقت.')}</p>
+      </div>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export function QuizIdentitySettings({
   onSaved,
   onBusyChange,
   disabled = false,
+  pendingName,
 }: {
   quizId: string;
   quizTitle: string;
@@ -29,6 +30,7 @@ export function QuizIdentitySettings({
   onSaved: (id: string | null) => void;
   onBusyChange: (busy: boolean) => void;
   disabled?: boolean;
+  pendingName?: string;
 }) {
   const { t, translateMessage } = useTranslations();
   const [panel, setPanel] = useState<PanelState>({ mode: 'closed' });
@@ -75,7 +77,10 @@ export function QuizIdentitySettings({
         <div>
           <h2 className="font-black">{t('هوية المسابقة')}</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {value ? t('هوية مخصصة لهذه المسابقة') : t('تستخدم هذه المسابقة شخصية بولت وصورها الافتراضية.')}
+            {pendingName ??
+              (value
+                ? t('هوية مخصصة لهذه المسابقة')
+                : t('تستخدم هذه المسابقة شخصية بولت وصورها الافتراضية.'))}
           </p>
         </div>
         {!choosing && panel.mode !== 'editor' && panel.mode !== 'loading' && (

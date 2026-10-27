@@ -17,6 +17,9 @@ import { IdentityEditor, type IdentityDraft } from '../../../features/competitio
 import { ThemeLibraryPicker } from '../../../features/competition-identity/ThemeLibraryPicker';
 import { ThemeModePicker } from '../../../features/competition-identity/ThemeModePicker';
 import { prefetchThemeLibrary } from '../../../features/competition-identity/api';
+import { backgroundIdentitySaves } from '../../../features/competition-identity/background-identity-saves';
+import { setResource } from '../../../services/resource-cache';
+import type { QuizDetail } from '../../../features/quiz-studio/model';
 import { requestJson, jsonBody } from '../../../services/http-json';
 
 function NewQuizForm() {
@@ -24,6 +27,7 @@ function NewQuizForm() {
   const router = useRouter();
   useEffect(() => {
     void prefetchThemeLibrary();
+    router.prefetch('/builder/');
   }, []);
   const [themeMode, setThemeMode] = useState<'default' | 'new' | 'saved'>('default');
   const [selectedTheme, setSelectedTheme] = useState<ThemeSummaryDto | null>(null);
@@ -69,28 +73,24 @@ function NewQuizForm() {
     setError(null);
     setProgress(t('جاري إنشاء المسابقة…'));
     try {
-      const preparedIdentity =
-        themeMode === 'new' && identityDraft
-          ? await identityDraft.prepare((done, total) =>
-              setProgress(t('جاري رفع صور الهوية {0} / {1}…', { 0: done, 1: total })),
-            )
-          : undefined;
-      setProgress(t('جاري إنشاء المسابقة…'));
-      const quiz = await requestJson<{ id: string }>(
+      const quiz = await requestJson<QuizDetail>(
         '/api/quizzes',
         jsonBody('POST', {
           title: title.trim(),
           coverImageUrl: null,
           questions: [],
-          ...(preparedIdentity ? { identity: preparedIdentity } : {}),
           ...(themeMode === 'saved' && selectedTheme ? { identityId: selectedTheme.id } : {}),
         }),
       );
 
+      setResource(`/api/quizzes/${quiz.id}`, quiz);
+      if (themeMode === 'new' && identityDraft) {
+        backgroundIdentitySaves.enqueue(quiz.id, identityDraft.name, identityDraft.handoff());
+      }
       if (coverFile) {
         backgroundUploads.enqueueCover(quiz.id, coverFile);
       }
-      setProgress(t('تم الإنشاء، جاري فتح الاستوديو…'));
+      setProgress(t('جاري إنشاء المسابقة…'));
       router.push(`/builder/?quizId=${encodeURIComponent(quiz.id)}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('تعذر إنشاء المسابقة.'));

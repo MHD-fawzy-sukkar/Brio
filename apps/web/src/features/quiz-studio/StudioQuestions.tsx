@@ -16,7 +16,6 @@ export function StudioQuestions({
     | 'identitySaving'
     | 'reordering'
     | 'orderQueue'
-    | 'orderStatus'
     | 'orderError'
     | 'starting'
     | 'downloadingLan'
@@ -32,7 +31,6 @@ export function StudioQuestions({
     identitySaving,
     reordering,
     orderQueue,
-    orderStatus,
     orderError,
     starting,
     downloadingLan,
@@ -68,10 +66,7 @@ export function StudioQuestions({
           )}
         </p>
       )}
-      <div className="mb-3 min-h-5 text-xs text-brand-700">
-        <span role="status" aria-live="polite">
-          {translateMessage(orderStatus ?? '')}
-        </span>
+      <div hidden={!orderError} className="mb-3 text-xs text-brand-700">
         {orderError && (
           <span role="alert" className="ms-2 text-rose-700">
             {translateMessage(orderError ?? '')}

@@ -117,15 +117,16 @@ export function PlayerQuestion({
             return (
               <button
                 key={option.id}
+                aria-pressed={selected}
                 disabled={imageBlocking || locked}
                 onClick={() => submit(option.id)}
                 className={`relative flex min-h-18 cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-2xl border-2 px-4 py-3.5 text-start font-black transition-all duration-200 active:scale-[.98] ${
                   selected
                     ? submission === 'accepted'
-                      ? 'answer-locked border-indigo-600 bg-gradient-to-l from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-200/80 ring-4 ring-indigo-500/20'
-                      : 'border-indigo-500 bg-indigo-50 text-indigo-950 shadow-lg shadow-indigo-100'
+                      ? 'border-brand-500 bg-brand-50 text-slate-900 shadow-sm ring-2 ring-brand-100'
+                      : 'border-brand-400 bg-brand-50/70 text-slate-900 shadow-sm'
                     : selectedOption
-                      ? 'border-slate-200/70 bg-slate-100/70 text-slate-400 opacity-45 scale-[0.98]'
+                      ? 'border-slate-200/70 bg-slate-100/70 text-slate-400 opacity-70'
                       : 'border-slate-200 bg-white text-slate-800 shadow-2xs hover:border-brand-300 hover:bg-brand-50/50'
                 } disabled:cursor-default`}
               >
@@ -133,7 +134,7 @@ export function PlayerQuestion({
                   <span
                     className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-sm font-black transition-colors ${
                       selected && submission === 'accepted'
-                        ? 'bg-white/20 text-white'
+                        ? 'bg-brand-100 text-brand-700'
                         : `${optionBadgeColors[index % optionBadgeColors.length]} text-white`
                     }`}
                   >
@@ -144,8 +145,8 @@ export function PlayerQuestion({
 
                 {selected && submission === 'submitting' && <Spinner className="h-4 w-4 shrink-0" />}
                 {selected && submission === 'accepted' && (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-xs font-black text-white backdrop-blur-xs">
-                    <span>🔒</span>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-brand-700 ring-1 ring-brand-200/60">
+                    <span aria-hidden="true">✓</span>
                     <span>{t('اختيارك')}</span>
                   </span>
                 )}
@@ -160,7 +161,7 @@ export function PlayerQuestion({
           <input
             className={`field py-4 text-center text-lg font-bold transition ${
               submission === 'accepted'
-                ? 'border-indigo-400 bg-indigo-50/70 text-indigo-950 ring-4 ring-indigo-500/15'
+                ? 'border-brand-400 bg-brand-50/70 text-slate-900 ring-2 ring-brand-100'
                 : ''
             }`}
             value={textAnswer}
@@ -181,7 +182,7 @@ export function PlayerQuestion({
       )}
 
       {submission === 'submitting' && (
-        <div className="answer-confirmation mx-auto flex w-fit items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-black text-indigo-800">
+        <div className="answer-confirmation mx-auto flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-600">
           <Spinner className="h-4 w-4" />
           {t('نثبّت اختيارك…')}
         </div>

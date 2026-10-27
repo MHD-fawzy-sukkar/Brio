@@ -72,10 +72,6 @@ export function AuthNav() {
     <div className={playerPage ? 'hidden sm:block' : ''}>
       {user ? (
         <div className="flex items-center gap-3">
-          <span className="hidden text-sm font-bold text-slate-600 sm:inline">
-            {t('مرحباً،')} {user.displayName}
-          </span>
-          <span className="hidden h-4 w-px bg-slate-200 sm:inline" aria-hidden="true" />
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}

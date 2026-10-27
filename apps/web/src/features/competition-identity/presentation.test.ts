@@ -21,19 +21,19 @@ test('identity picker shows card placeholders until loaded and only then reports
       createElement(ThemeLibraryPicker, { selected: null, onSelect: () => {} }),
     );
     assert.match(loading, /aria-busy="true"/);
-    assert.match(loading, /جاري تحميل الهويات البصرية/);
+    assert.match(loading, /جاري تحميل الهويات/);
     assert.doesNotMatch(loading, /لا توجد هويات/);
     setResource('/api/themes', []);
     const empty = renderToStaticMarkup(
       createElement(ThemeLibraryPicker, { selected: null, onSelect: () => {} }),
     );
-    assert.match(empty, /لا توجد هويات بصرية محفوظة بعد/);
-    assert.doesNotMatch(empty, /جاري تحميل الهويات البصرية/);
+    assert.match(empty, /لا توجد هويات محفوظة بعد/);
+    assert.doesNotMatch(empty, /جاري تحميل الهويات/);
     invalidateResources(['/api/themes']);
     const stale = renderToStaticMarkup(
       createElement(ThemeLibraryPicker, { selected: null, onSelect: () => {} }),
     );
-    assert.match(stale, /جاري تحميل الهويات البصرية/);
+    assert.match(stale, /جاري تحميل الهويات/);
     assert.doesNotMatch(stale, /لا توجد هويات/);
   } finally {
     setCacheOwner(null);

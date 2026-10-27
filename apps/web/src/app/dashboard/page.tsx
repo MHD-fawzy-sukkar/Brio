@@ -3,6 +3,9 @@
 import { useTranslations } from '../../i18n/use-locale';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { HostLobbySkeleton } from '../../components/host-lobby/HostLobbySkeleton';
+import { backgroundIdentitySaves } from '../../features/competition-identity/background-identity-saves';
 import { RoamingBolt } from '../../components/host-lobby/RoamingBolt';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { QuizSummaryDto, CreatorParticipationStats } from '@brio/contracts';
@@ -17,6 +20,7 @@ import { requestJson, jsonBody } from '../../services/http-json';
 import { prefetchThemeLibrary } from '../../features/competition-identity/api';
 
 function DashboardContent() {
+  const router = useRouter();
   const { t, translateMessage, numberLocale, countNoun } = useTranslations();
   const { data, loading, error: loadError, reload } = useResource<QuizSummaryDto[]>('/api/quizzes');
   const quizzes = data ?? [];
@@ -38,6 +42,7 @@ function DashboardContent() {
 
   useEffect(() => {
     void prefetchThemeLibrary();
+    router.prefetch('/host/');
   }, []);
 
   useEffect(() => {
@@ -65,12 +70,13 @@ function DashboardContent() {
     setError(null);
     setStartingId(quizId);
     try {
+      await backgroundIdentitySaves.wait(quizId);
       await requestJson(`/api/quizzes/${quizId}/publish`, { method: 'POST' });
       const body = await requestJson<{ roomId: string; code: string }>(
         '/api/rooms',
         jsonBody('POST', { quizId }),
       );
-      window.location.assign(
+      router.push(
         `/host/?roomId=${encodeURIComponent(body.roomId)}&code=${encodeURIComponent(body.code)}&quizId=${encodeURIComponent(quizId)}`,
       );
     } catch (cause) {
@@ -97,6 +103,7 @@ function DashboardContent() {
       setDeleteBusy(false);
     }
   };
+  if (startingId) return <HostLobbySkeleton />;
   if (loading && !data) return <PageSkeleton kind="dashboard" />;
 
   return (
@@ -110,7 +117,7 @@ function DashboardContent() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/identities/" className="secondary-btn text-center">
-            {t('هوياتي البصرية')}
+            {t('هوياتي')}
           </Link>
           <Link href="/quizzes/new/" className="primary-btn text-center">
             {t('＋ إنشاء مسابقة')}

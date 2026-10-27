@@ -32,7 +32,6 @@ export function useStudioState() {
   const [identitySaving, setIdentitySaving] = useState(false);
   const [reordering, setReordering] = useState(false);
   const orderQueue = useMemo(() => (quizId ? questionOrderSync(quizId) : null), [quizId, user?.id]);
-  const [orderStatus, setOrderStatus] = useState('');
   const [orderError, setOrderError] = useState('');
   const [starting, setStarting] = useState(false);
   const [downloadingLan, setDownloadingLan] = useState(false);
@@ -72,8 +71,6 @@ export function useStudioState() {
     reordering,
     setReordering,
     orderQueue,
-    orderStatus,
-    setOrderStatus,
     orderError,
     setOrderError,
     starting,

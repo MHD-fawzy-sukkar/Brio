@@ -1,5 +1,4 @@
 'use client';
-import { t } from '../../i18n/locale';
 
 import { useEffect } from 'react';
 import { setResource } from '../../services/resource-cache';
@@ -17,7 +16,6 @@ export function useStudioOrder(
     | 'identitySaving'
     | 'setReordering'
     | 'orderQueue'
-    | 'setOrderStatus'
     | 'setOrderError'
     | 'starting'
     | 'downloadingLan'
@@ -32,7 +30,6 @@ export function useStudioOrder(
     identitySaving,
     setReordering,
     orderQueue,
-    setOrderStatus,
     setOrderError,
     starting,
     downloadingLan,
@@ -43,15 +40,6 @@ export function useStudioOrder(
       const state = orderQueue.snapshot();
       setReordering(state.saving);
       setOrderError(state.error);
-      setOrderStatus(
-        state.error
-          ? t('الترتيب ظاهر عندك، لكن لم يُحفظ بعد.')
-          : state.order
-            ? state.saving
-              ? t('جاري حفظ آخر ترتيب…')
-              : t('تم حفظ ترتيب الأسئلة')
-            : '',
-      );
     };
     update();
     return orderQueue.subscribe(update);

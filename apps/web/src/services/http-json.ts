@@ -18,8 +18,8 @@ export async function requestJson<T>(url: string, init?: RequestInit): Promise<T
   });
   if (!response.ok) throw new Error(translateMessage(body?.detail) || t('تعذّر إتمام الطلب. حاول مجدداً.'));
   if (init?.method && init.method.toUpperCase() !== 'GET') {
-    if (/\/question-order$/.test(url)) {
-      /* The order queue owns its optimistic cache. */
+    if (/\/(question-order|publish)$/.test(url)) {
+      /* Order saves own their optimistic cache; publishing does not change the authoring list. */
     } else if (/^\/api\/(identities|themes)(\/|$)/.test(url) || /\/identity$/.test(url))
       invalidateResources(['/api/identities', '/api/themes', '/api/quizzes']);
     else if (url.startsWith('/api/rooms')) invalidateResources(['/api/creator/stats']);

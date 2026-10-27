@@ -12,6 +12,7 @@ import { ThemeColorPicker } from './ThemeColorPicker';
 
 type DraftImage = DraftThemeImage;
 export type IdentityDraft = SaveIdentityRequest & {
+  handoff: () => { prepare: (signal: AbortSignal) => Promise<SaveIdentityRequest>; dispose: () => void };
   prepare: (progress?: (done: number, total: number) => void) => Promise<SaveIdentityRequest>;
 };
 
@@ -87,7 +88,13 @@ export function IdentityEditor({
   const blocked = uploads.uploading;
   useEffect(() => {
     onDraftChange?.(
-      input.success ? { ...input.data, prepare: (progress) => uploads.prepare(input.data, progress) } : null,
+      input.success
+        ? {
+            ...input.data,
+            handoff: () => uploads.handoff(input.data),
+            prepare: (progress) => uploads.prepare(input.data, progress),
+          }
+        : null,
     );
   }, [input, onDraftChange, uploads.prepare]);
   const saving = Boolean(quizId || libraryId !== undefined);

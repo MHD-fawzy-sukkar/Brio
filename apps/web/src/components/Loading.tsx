@@ -36,10 +36,10 @@ export function ThemeCardsSkeleton({ count = 3, compact = false }: { count?: num
     return (
       <div
         role="status"
-        aria-label={t('جاري تحميل الهويات البصرية')}
+        aria-label={t('جاري تحميل الهويات')}
         className="theme-library-gallery grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
       >
-        <span className="sr-only">{t('جاري تحميل الهويات البصرية…')}</span>
+        <span className="sr-only">{t('جاري تحميل الهويات…')}</span>
         {Array.from({ length: count }, (_, index) => (
           <div key={index} className="min-w-0 space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
             <Bone className="h-24 w-full" />
@@ -53,7 +53,7 @@ export function ThemeCardsSkeleton({ count = 3, compact = false }: { count?: num
   return (
     <div
       role="status"
-      aria-label={t('جاري تحميل الهويات البصرية')}
+      aria-label={t('جاري تحميل الهويات')}
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
       {Array.from({ length: count }, (_, index) => (

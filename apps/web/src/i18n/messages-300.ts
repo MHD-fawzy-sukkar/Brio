@@ -26,25 +26,25 @@ export default {
   'إلغاء تعيين الشعار': 'Unset logo',
   'تعيين كشعار': 'Set as logo',
   'حذف الصورة': 'Delete image',
-  'مكتبة الهويات البصرية': 'Visual identity library',
+  'مكتبة الهويات': 'Theme library',
   'اختر من هوياتك المحفوظة لإعادة استخدامها في هذه المسابقة.':
     'Choose one of your saved identities to reuse in this quiz.',
   'إدارة الهويات': 'Manage identities',
-  'جاري تحديث الهويات البصرية…': 'Updating visual identities…',
-  'لا توجد هويات بصرية محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.':
-    'No saved visual identities yet. Create one in identity settings to reuse it later.',
+  'جاري تحديث الهويات…': 'Updating themes…',
+  'لا توجد هويات محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.':
+    'No saved themes yet. Create one in identity settings to reuse it later.',
   'صورة للاعبين ·': 'player images ·',
   'محددة ✓': 'Selected ✓',
   'اضغط للاختيار': 'Click to select',
-  'ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي البصرية» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها لبولت.':
-    'This quiz is linked to this identity. Editing it in “My visual identities” updates linked quizzes; deleting it restores Bolt.',
+  'ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها لبولت.':
+    'This quiz is linked to this identity. Editing it in “My themes” updates linked quizzes; deleting it restores Bolt.',
   'معاينة الهوية المحددة': 'Preview selected identity',
   'بولت الافتراضي': 'Default Bolt',
   'هوية Brio وشخصية بولت الأصلية': "Brio's identity and original Bolt character",
   'هوية جديدة': 'New identity',
   'شعارك وشخصيتك وصورك وألوانك': 'Your logo, character, images and colors',
   'هوية محفوظة': 'Saved identity',
-  'اختر من هوياتك البصرية المحفوظة': 'Choose from your saved visual identities',
+  'اختر من هوياتك المحفوظة': 'Choose from your saved themes',
   'اختيار نوع الهوية': 'Choose identity type',
   'انتظر اكتمال الحفظ الحالي.': 'Wait for the current save to finish.',
   'تم اختيار {0} صورة. الحد الأقصى 20 صورة.': '{0} images selected. The limit is 20.',

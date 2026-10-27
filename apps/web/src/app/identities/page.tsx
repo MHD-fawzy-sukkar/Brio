@@ -36,10 +36,10 @@ function ThemeLibrary() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black">{t('هوياتي البصرية')}</h1>
+          <h1 className="text-3xl font-black">{t('هوياتي')}</h1>
           <p className="mt-2 text-sm leading-7 text-slate-500">
             {t(
-              'أنشئ هوية بصرية أو عدّل هوياتك المحفوظة. التعديل يحدّث مسابقاتك المرتبطة، والحذف يعيدها لهوية بولت.',
+              'أنشئ هوية أو عدّل هوياتك المحفوظة. التعديل يحدّث مسابقاتك المرتبطة، والحذف يعيدها لهوية بولت.',
             )}
           </p>
         </div>
@@ -112,15 +112,15 @@ function ThemeLibrary() {
           {loading && <ThemeCardsSkeleton />}
           {!loading && refreshing && (
             <p role="status" className="text-xs text-slate-500">
-              {t('جاري تحديث هوياتك البصرية…')}
+              {t('جاري تحديث هوياتك…')}
             </p>
           )}
           {!loading && !loadError && !visible.length && (
             <div className="card space-y-4 p-6">
               <p className="text-sm text-slate-500">
                 {query.trim()
-                  ? t('لا توجد هويات بصرية تطابق بحثك.')
-                  : t('لا توجد هويات بصرية محفوظة بعد. ابدأ بإضافة هويتك الأولى.')}
+                  ? t('لا توجد هويات تطابق بحثك.')
+                  : t('لا توجد هويات محفوظة بعد. ابدأ بإضافة هويتك الأولى.')}
               </p>
               {!query.trim() && (
                 <button type="button" className="primary-btn" onClick={() => setEditing('new')}>

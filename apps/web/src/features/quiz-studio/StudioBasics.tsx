@@ -128,7 +128,7 @@ export function StudioBasics({
         </div>
 
         <div
-          className={`relative flex items-center rounded-2xl border-2 bg-white shadow-2xs transition ${
+          className={`grid grid-cols-[minmax(0,1fr)_auto] items-center rounded-2xl border-2 bg-white shadow-2xs transition ${
             isEditingTitle
               ? 'border-brand-500 ring-4 ring-brand-500/12'
               : 'border-slate-200/90 hover:border-brand-300'
@@ -136,6 +136,7 @@ export function StudioBasics({
         >
           <input
             id="quiz-title-input"
+            dir="auto"
             ref={titleInputRef}
             readOnly={!isEditingTitle}
             value={title}
@@ -156,7 +157,7 @@ export function StudioBasics({
                 setIsEditingTitle(false);
               }
             }}
-            className={`w-full bg-transparent px-5 py-4 pl-20 text-2xl font-black text-slate-900 outline-none sm:text-3xl ${
+            className={`min-w-0 w-full bg-transparent px-4 py-4 text-2xl font-black text-slate-900 outline-none sm:text-3xl ${
               isEditingTitle ? 'cursor-text' : 'cursor-pointer'
             }`}
             placeholder={t('اكتب عنوان المسابقة…')}
@@ -168,7 +169,7 @@ export function StudioBasics({
               onClick={() => void commitTitle()}
               aria-label={t('حفظ عنوان المسابقة')}
               title={t('حفظ العنوان')}
-              className="absolute end-3 inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-brand-700"
+              className="me-3 inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-sm font-black text-white shadow-sm transition hover:bg-brand-700"
             >
               {t('✓ حفظ')}
             </button>
@@ -178,7 +179,7 @@ export function StudioBasics({
               onClick={startEditingTitle}
               aria-label={t('تعديل عنوان المسابقة')}
               title={t('تعديل العنوان')}
-              className="absolute end-3 grid h-11 w-11 cursor-pointer place-items-center rounded-xl border border-slate-200/90 bg-slate-50 text-base text-slate-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+              className="me-3 grid h-11 w-11 cursor-pointer place-items-center rounded-xl border border-slate-200/90 bg-slate-50 text-base text-slate-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
             >
               ✏️
             </button>

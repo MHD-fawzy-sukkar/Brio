@@ -186,7 +186,7 @@ function JoinSetup() {
                 autoComplete="nickname"
                 enterKeyHint="go"
                 className="field"
-                placeholder={t('مثال: نور')}
+                placeholder={t('مثال: فوزي')}
               />
             </div>
             <AvatarPicker compact value={avatar} onChange={setAvatar} />

@@ -4,7 +4,7 @@ import { useTranslations } from '../../i18n/use-locale';
 
 import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
-import { PageSkeleton } from '../../components/Loading';
+import { HostLobbySkeleton } from '../../components/host-lobby/HostLobbySkeleton';
 import { Podium } from '../../components/Podium';
 import { Avatar } from '../../components/Avatar';
 import { GameControls } from '../../components/host-lobby/GameControls';
@@ -46,7 +46,7 @@ export function HostGame() {
     code,
     finalLeaderboard,
   } = game;
-  if (!snapshot) return <PageSkeleton />;
+  if (!snapshot) return <HostLobbySkeleton />;
   return (
     <CompetitionIdentityProvider identity={snapshot?.identity ?? DEFAULT_COMPETITION_IDENTITY}>
       <div data-mascot-flight-root className="relative mx-auto max-w-6xl space-y-5">

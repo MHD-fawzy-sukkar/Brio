@@ -2,6 +2,16 @@
 
 Updated: 2026-10-27. Read this on every engineering iteration; update only with observed work/evidence.
 
+## 2026-10-27 — Language merge and smoother authoring/game transitions
+
+- Renamed the language branch to `language`, pushed it, removed its old remote name, and fast-forwarded/pushed `main`. These follow-up UI changes are on `main`.
+- Removed the header greeting, kept language/account controls adjacent, shortened the library label to `هوياتي` / `My themes`, and changed the nickname examples to `فوزي` / `fawzy`. The studio title uses a separate grid cell for its action and automatic text direction, including Arabic titles in English UI.
+- Reordering stays optimistic and accepts consecutive moves while saving silently; errors/retry remain visible. Publication preserves the authoring list cache, navigation uses the client router, and studio/dashboard/host share a lobby-shaped loading view.
+- Creating a quiz with a new theme now navigates after quiz creation while a scoped background job uploads/saves the staged theme. Selecting images alone sends no uploads. Retained files support retry after failure; leaving the site with unfinished work triggers the browser guard. This is an in-memory navigation handoff, not durable recovery after browser termination. Starting/exporting waits for theme completion; account changes abort staged work.
+- Accepted answers use a quiet brand outline and check mark with a compact saved receipt instead of purple/lock styling. Browser rehearsal covered immediate studio navigation during a delayed theme upload, persisted consecutive reorder after reload, lobby transition, both nickname examples, bilingual answer receipt and 390px player layout without horizontal overflow or console errors. Fixtures stayed local. Screenshot: `answer-selection-mobile.png`.
+- Validation: 156 tests overall (6 contracts, 10 core, 58 Worker, 73 web, 9 LAN), workspace types, architecture/format checks, and cloud/LAN builds. The final 73 web tests were repeated after the UI cleanup.
+- Published release `fec02839-d2a1-4efb-8dee-8237c53fd0fe`. All 13 live pages and 35 JS/CSS/service-worker assets match the final cloud export; health is 200 and protected quiz/library APIs are 401 without a session. No database migration or production fixture writes.
+
 ## 2026-10-27 — Arabic/English interface on a new branch
 
 - Committed personal-only identities as `1a58924`, pushed `thems`, fast-forwarded/pushed `main`, then created `codex/arabic-english` as requested. Language work stays separate from that main-branch merge.

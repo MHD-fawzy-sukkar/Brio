@@ -102,8 +102,8 @@ export default {
     'Scan with a phone on the same network to check the link. If it does not open, choose another address from the list.',
   'وصّل جهاز المقدّم بالشبكة، ثم أعد تشغيل اللعبة لإظهار رابط الانضمام.':
     'Connect the host computer to the network, then restart the game to show a join link.',
-  'جاري تحميل الهويات البصرية': 'Loading visual identities',
-  'جاري تحميل الهويات البصرية…': 'Loading visual identities…',
+  'جاري تحميل الهويات': 'Loading themes',
+  'جاري تحميل الهويات…': 'Loading themes…',
   'جاري تحميل المسابقات': 'Loading quizzes',
   'جاري تحميل الصفحة': 'Loading page',
   'ثلاث خطوات للبدء': 'Three steps to get started',

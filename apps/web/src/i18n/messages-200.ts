@@ -96,7 +96,7 @@ export default {
   'تستخدم هذه المسابقة شخصية بولت وصورها الافتراضية.': 'This quiz uses Bolt and the default images.',
   'إدارة هوية المسابقة': 'Manage quiz identity',
   'تخصيص الهوية': 'Customize identity',
-  'اختيار من هوياتي': 'Choose from my identities',
+  'اختيار من هوياتي': 'Choose from My themes',
   'الهوية المحددة: {0}': 'Selected identity: {0}',
   'اختر هوية من المكتبة لتطبيقها على المسابقة': 'Choose an identity from your library to apply to this quiz',
   'تعذّر تطبيق الهوية.': 'Unable to apply the identity.',

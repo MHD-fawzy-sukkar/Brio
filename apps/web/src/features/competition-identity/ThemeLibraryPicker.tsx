@@ -39,12 +39,12 @@ export function ThemeLibraryPicker({
   return (
     <section
       className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4"
-      aria-label={t('مكتبة الهويات البصرية')}
+      aria-label={t('مكتبة الهويات')}
       aria-busy={isLoading}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-black">{t('هوياتي البصرية')}</h3>
+          <h3 className="text-sm font-black">{t('هوياتي')}</h3>
           <p className="mt-1 text-xs leading-6 text-slate-500">
             {t('اختر من هوياتك المحفوظة لإعادة استخدامها في هذه المسابقة.')}
           </p>
@@ -96,7 +96,7 @@ export function ThemeLibraryPicker({
       {isLoading && <ThemeCardsSkeleton compact />}
       {!isLoading && refreshing && (
         <p role="status" className="text-xs text-slate-500">
-          {t('جاري تحديث الهويات البصرية…')}
+          {t('جاري تحديث الهويات…')}
         </p>
       )}
       {loadError && (
@@ -116,8 +116,8 @@ export function ThemeLibraryPicker({
       {!isLoading && !loadError && !visible.length && (
         <p className="rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-500">
           {query.trim()
-            ? t('لا توجد هويات بصرية تطابق بحثك.')
-            : t('لا توجد هويات بصرية محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.')}
+            ? t('لا توجد هويات تطابق بحثك.')
+            : t('لا توجد هويات محفوظة بعد. أنشئ هوية جديدة من إعدادات الهوية لاستخدامها مجدداً.')}
         </p>
       )}
       {!isLoading && (
@@ -161,7 +161,7 @@ export function ThemeLibraryPicker({
         <>
           <p className="text-xs leading-6 text-slate-500">
             {t(
-              'ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي البصرية» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها لبولت.',
+              'ترتبط المسابقة بهذه الهوية؛ تعديلها من «هوياتي» يحدّث مسابقاتك المرتبطة، وحذفها يعيدها لبولت.',
             )}
           </p>
           <details className="rounded-2xl border border-slate-200 bg-white">

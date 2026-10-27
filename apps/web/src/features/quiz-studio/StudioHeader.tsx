@@ -53,7 +53,7 @@ export function StudioHeader({
         <div className="studio-download">
           <button
             onClick={downloadForLan}
-            disabled={starting || downloadingLan || identitySaving || reordering || !quiz?.questions.length}
+            disabled={starting || downloadingLan || identitySaving || !quiz?.questions.length}
             className="secondary-btn w-full px-5 py-3"
             aria-busy={downloadingLan}
           >
@@ -69,7 +69,7 @@ export function StudioHeader({
         </div>
         <button
           onClick={startGame}
-          disabled={starting || downloadingLan || identitySaving || reordering || !quiz?.questions.length}
+          disabled={starting || downloadingLan || identitySaving || !quiz?.questions.length}
           className="primary-btn px-7 py-3"
         >
           {starting ? t('جاري تجهيز الغرفة…') : t('▶ ابدأ اللعبة')}

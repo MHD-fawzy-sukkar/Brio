@@ -1,6 +1,8 @@
 'use client';
 import { t } from '../../i18n/locale';
 
+import { useRouter } from 'next/navigation';
+import { backgroundIdentitySaves } from '../competition-identity/background-identity-saves';
 import { useEffect } from 'react';
 import { backgroundUploads } from '../../services/background-upload';
 import { requestJson, jsonBody } from '../../services/http-json';
@@ -65,6 +67,10 @@ export function useStudioActions(
     load,
     commitTitle,
   } = options;
+  const router = useRouter();
+  useEffect(() => {
+    router.prefetch('/host/');
+  }, [router]);
   useEffect(() => {
     if (!downloadNotice) return;
     const timeout = window.setTimeout(() => setDownloadNotice(''), 6000);
@@ -95,12 +101,13 @@ export function useStudioActions(
   };
 
   const startGame = async () => {
-    if (!quizId || starting || downloadingLan || identitySaving || reordering) return;
+    if (!quizId || starting || downloadingLan || identitySaving) return;
     setStarting(true);
     setError(null);
     setMessage(null);
     try {
       await orderQueue?.flush();
+      await backgroundIdentitySaves.wait(quizId);
       if (isEditingTitle && title.trim() && title.trim() !== quiz?.title) {
         await commitTitle();
       } else if (pendingTitleSaveRef.current) {
@@ -111,7 +118,7 @@ export function useStudioActions(
         '/api/rooms',
         jsonBody('POST', { quizId }),
       );
-      window.location.assign(
+      router.push(
         `/host/?roomId=${encodeURIComponent(room.roomId)}&code=${encodeURIComponent(room.code)}&quizId=${encodeURIComponent(quizId)}`,
       );
     } catch (cause) {
@@ -121,7 +128,7 @@ export function useStudioActions(
   };
 
   const downloadForLan = async () => {
-    if (!quizId || starting || downloadingLan || identitySaving || reordering) return;
+    if (!quizId || starting || downloadingLan || identitySaving) return;
     setDownloadNotice('');
     setDownloadProgress(t('جاري تجهيز المسابقة…'));
     setDownloadingLan(true);
@@ -133,6 +140,7 @@ export function useStudioActions(
         throw new Error(t('انتظر انتهاء رفع الصور قبل تنزيل نسخة للّعب المحلي.'));
       if (isEditingTitle && title.trim() && title.trim() !== quiz?.title) await commitTitle();
       else if (pendingTitleSaveRef.current) await pendingTitleSaveRef.current;
+      await backgroundIdentitySaves.wait(quizId);
       await downloadLanBundle(quizId, setDownloadProgress);
       setDownloadNotice(t('تم تنزيل المسابقة وصورها. أضف الملف من لوحة المقدّم على اللابتوب.'));
     } catch (cause) {

@@ -4,7 +4,7 @@ export default {
   'لوحة المنشئ': 'Creator dashboard',
   'مرحباً بك في Brio': 'Welcome to Brio',
   'تابع مسابقاتك الأخيرة أو ابدأ تجربة جديدة.': 'Pick up a recent quiz or start something new.',
-  'هوياتي البصرية': 'My visual identities',
+  هوياتي: 'My themes',
   '＋ إنشاء مسابقة': '＋ Create a quiz',
   'إعادة المحاولة': 'Try again',
   المسابقات: 'Quizzes',
@@ -38,16 +38,16 @@ export default {
   'حدث خطأ غير متوقع': 'Something went wrong',
   'يمكنك إعادة تشغيل الواجهة بأمان. إذا انتهت جلستك فسيتم تحويلك إلى تسجيل الدخول.':
     'You can safely restart the interface. If your session has expired, you will be redirected to sign in.',
-  'أنشئ هوية بصرية أو عدّل هوياتك المحفوظة. التعديل يحدّث مسابقاتك المرتبطة، والحذف يعيدها لهوية بولت.':
-    'Create or edit your saved visual identities. Changes update linked quizzes; deleting an identity restores Bolt.',
+  'أنشئ هوية أو عدّل هوياتك المحفوظة. التعديل يحدّث مسابقاتك المرتبطة، والحذف يعيدها لهوية بولت.':
+    'Create or edit your saved themes. Changes update linked quizzes; deleting an identity restores Bolt.',
   '→ مسابقاتي': '← My quizzes',
   '＋ إضافة هوية': '＋ Add an identity',
   'البحث عن هوية': 'Search identities',
   'ابحث باسم الهوية…': 'Search by identity name…',
-  'جاري تحديث هوياتك البصرية…': 'Updating your visual identities…',
-  'لا توجد هويات بصرية تطابق بحثك.': 'No visual identities match your search.',
-  'لا توجد هويات بصرية محفوظة بعد. ابدأ بإضافة هويتك الأولى.':
-    'No saved visual identities yet. Add your first identity to get started.',
+  'جاري تحديث هوياتك…': 'Updating your themes…',
+  'لا توجد هويات تطابق بحثك.': 'No themes match your search.',
+  'لا توجد هويات محفوظة بعد. ابدأ بإضافة هويتك الأولى.':
+    'No saved themes yet. Add your first identity to get started.',
   'صورة للاعبين': 'player images',
   حذف: 'Delete',
   'حذف الهوية؟': 'Delete this identity?',
@@ -74,7 +74,7 @@ export default {
   'جهّز اسمك وصورتك': 'Choose your name and character',
   'الرمز جاهز. بقي اسمك والصورة التي سترافقك.': 'The code is ready. Just add your name and character.',
   'الاسم المستعار': 'Nickname',
-  'مثال: نور': 'Example: Alex',
+  'مثال: فوزي': 'Example: fawzy',
   'لحظة، نجهّز مكانك…': 'Getting your place ready…',
   'انضم إلى اللعبة': 'Join the game',
   'استخدام رمز مختلف': 'Use a different code',

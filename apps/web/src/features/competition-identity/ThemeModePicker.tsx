@@ -30,7 +30,7 @@ const modes = [
       return t('هوية محفوظة');
     },
     get description() {
-      return t('اختر من هوياتك البصرية المحفوظة');
+      return t('اختر من هوياتك المحفوظة');
     },
     icon: '▦',
   },
