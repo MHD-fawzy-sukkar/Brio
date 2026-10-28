@@ -72,42 +72,70 @@ export function QuizIdentitySettings({
     }
   };
   return (
-    <section className="card space-y-4 p-5 sm:p-7" aria-label={t('هوية المسابقة')}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-black">{t('هوية المسابقة')}</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {pendingName ??
-              (value
-                ? t('هوية مخصصة لهذه المسابقة')
-                : t('تستخدم هذه المسابقة شخصية بولت وصورها الافتراضية.'))}
-          </p>
-        </div>
-        {!choosing && panel.mode !== 'editor' && panel.mode !== 'loading' && (
-          <button
-            type="button"
-            disabled={disabled || resetting}
-            className="secondary-btn"
-            onClick={() => void edit()}
+    <section
+      className="space-y-4 rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-sm sm:p-6"
+      aria-label={t('هوية المسابقة')}
+    >
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-brand-100 bg-brand-50 text-brand-700"
+            aria-hidden="true"
           >
-            {value ? t('إدارة هوية المسابقة') : t('تخصيص الهوية')}
-          </button>
-        )}
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3 1.3 1.3 0 0 1 1-2.2H17a4 4 0 0 0 4-4C21 6.8 17 3 12 3Z" />
+              <circle cx="7.5" cy="11" r=".75" />
+              <circle cx="10" cy="7.5" r=".75" />
+              <circle cx="14.5" cy="7.5" r=".75" />
+              <circle cx="17" cy="11" r=".75" />
+            </svg>
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-black">{t('هوية المسابقة')}</h2>
+            <p className="mt-1 break-words text-sm leading-6 text-slate-500">
+              {pendingName ??
+                (value
+                  ? t('هوية مخصصة لهذه المسابقة')
+                  : t('تستخدم هذه المسابقة شخصية بولت وصورها الافتراضية.'))}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {!choosing && panel.mode !== 'editor' && panel.mode !== 'loading' && (
+            <button
+              type="button"
+              disabled={disabled || resetting}
+              className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-100 disabled:opacity-50"
+              onClick={() => void edit()}
+            >
+              {value ? t('إدارة هوية المسابقة') : t('تخصيص الهوية')}
+            </button>
+          )}
+          {!choosing && panel.mode !== 'editor' && panel.mode !== 'loading' && (
+            <button
+              type="button"
+              disabled={disabled || resetting}
+              className="secondary-btn"
+              onClick={() => {
+                setPanel({ mode: 'closed' });
+                setChoosing(true);
+                onBusyChange(true);
+              }}
+            >
+              {t('اختيار من هوياتي')}
+            </button>
+          )}
+        </div>
       </div>
-      {!choosing && panel.mode !== 'editor' && panel.mode !== 'loading' && (
-        <button
-          type="button"
-          disabled={disabled || resetting}
-          className="secondary-btn"
-          onClick={() => {
-            setPanel({ mode: 'closed' });
-            setChoosing(true);
-            onBusyChange(true);
-          }}
-        >
-          {t('اختيار من هوياتي')}
-        </button>
-      )}
       {choosing && (
         <div className="space-y-4">
           <ThemeLibraryPicker selected={selected} onSelect={setSelected} />
@@ -182,7 +210,7 @@ export function QuizIdentitySettings({
         <button
           type="button"
           disabled={disabled || resetting}
-          className="text-sm font-bold text-slate-600"
+          className="block border-t border-slate-100 pt-3 text-start text-xs font-semibold text-slate-500 transition hover:text-brand-700 disabled:opacity-50"
           onClick={async () => {
             setResetting(true);
             onBusyChange(true);

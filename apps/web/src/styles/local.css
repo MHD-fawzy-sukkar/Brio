@@ -13,7 +13,7 @@ main:has(> .local-dashboard) {
 }
 
 .local-mascot-stage .roaming-mascot {
-  width: 6rem;
+  width: 7.5rem;
   pointer-events: auto;
 }
 
