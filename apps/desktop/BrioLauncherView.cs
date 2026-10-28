@@ -14,7 +14,7 @@ partial class BrioLauncher {
     PictureBox logo;
 
     void InitializeWindow() {
-        Text = "Brio LAN";
+        Text = "Brio LAN · 0.1.1";
         ClientSize = new Size(720, 540); MinimumSize = new Size(690, 580);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(246, 247, 251);

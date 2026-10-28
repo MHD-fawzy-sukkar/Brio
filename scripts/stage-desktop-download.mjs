@@ -15,7 +15,7 @@ for (let offset = 0; offset < installer.length; offset += partSize) {
   parts.push({ path: `/downloads/windows/${sha256.slice(0, 16)}/${name}`, size: bytes.length });
 }
 const manifest = {
-  version: '0.1.0-pilot',
+  version: '0.1.1-pilot',
   filename: 'Brio-LAN-Setup.exe',
   size: installer.length,
   sha256,

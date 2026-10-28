@@ -27,7 +27,8 @@ $payload = Join-Path $root "releases/$id-payload.zip"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [IO.Compression.ZipFile]::CreateFromDirectory($package, $payload, [IO.Compression.CompressionLevel]::Optimal, $false)
 $installer = Join-Path $root "releases/$id-Setup.exe"
-& $compiler /nologo /target:winexe /platform:x64 /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll "/win32icon:$iconPath" "/resource:$payload,Brio.Payload" "/out:$installer" (Join-Path $root 'apps\desktop\BrioSetup.cs')
+$setupSources = Get-ChildItem -LiteralPath (Join-Path $root 'apps/desktop') -Filter 'BrioSetup*.cs' | ForEach-Object { $_.FullName }
+& $compiler /nologo /target:winexe /platform:x64 /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll "/win32icon:$iconPath" "/resource:$iconPath,Brio.Icon" "/resource:$logoPath,Brio.Logo" "/resource:$payload,Brio.Payload" "/out:$installer" $setupSources
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
 node scripts/stage-desktop-download.mjs $installer
 if ($LASTEXITCODE -ne 0) { throw 'Download staging failed' }
