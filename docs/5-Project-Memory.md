@@ -4,6 +4,9 @@ Updated: 2026-10-28. Read this on every engineering iteration; update only with 
 
 ## 2026-10-28 — Production hardening and Windows presenter installer
 
+- Native desktop UI follow-up: embedded Brio mascot/logo and application/setup/uninstall icons; separated WinForms layout/state presentation into BrioLauncherView.cs from the process controller. Added readable state card, primary Start/Open action priority, concise numbered steps and a collapsed diagnostics panel. Fixed stale health callbacks after shutdown. Framework compilation, actual isolated server/UI smoke test, installer extraction/restart test and repository architecture check passed. See docs/31-Desktop-UI.md and desktop-ready-verified.png.
+- New local installer is releases/Brio-LAN-Setup-UI.exe, 35,273,728 bytes, SHA-256 4e5a51b5a26884e357a15ce0223b1d1bb9a18f80a45dde6895da0241b43a7b2d. Public update failed repeatedly during Cloudflare asset upload (connection reset/connect timeout); do not describe it as published. Download staging uses 8 MiB parts to reduce upload retry sizes; local reconstruction verified the exact installer bytes. No security protections or persistent network settings were changed.
+
 - Fixed the Local play link disappearing on join/player routes by removing the cloud link's player-route visibility condition. Published `11cd7700-bb4c-48c0-addd-516bec45c815`; real click-through local → join → local passed in Arabic/English at 1440, 390, 320px without overflow or page errors. Format/architecture checks and production build passed.
 - User confirmed the warning is SmartScreen's "unrecognized app" on startup. Authenticode inspection of the shipped installer returned NotSigned. Documented trusted MSIX Store distribution versus direct code signing, and why moving an unsigned binary to Drive does not establish publisher trust. No protection settings changed, certificates purchased, or files submitted to a third-party review service. See docs/30-Windows-Distribution.md.
 
