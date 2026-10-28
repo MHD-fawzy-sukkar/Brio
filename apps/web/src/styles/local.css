@@ -1,11 +1,19 @@
 /* Automatic flight stays beside the heading; pointer capture allows dragging across the page. */
 
+main:has(> .local-dashboard) {
+  max-width: 1536px;
+}
+
+.local-quiz-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+}
+
 .local-mascot-stage {
   pointer-events: none;
 }
 
 .local-mascot-stage .roaming-mascot {
-  width: 9rem;
+  width: 6rem;
   pointer-events: auto;
 }
 

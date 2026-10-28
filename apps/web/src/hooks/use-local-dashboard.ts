@@ -25,6 +25,11 @@ export function useLocalDashboard() {
   const [error, setError] = useState('');
   const [quizDeleteError, setQuizDeleteError] = useState<{ quizId: string; message: string } | null>(null);
   const [message, setMessage] = useState('');
+  useEffect(() => {
+    if (!message) return;
+    const timeout = window.setTimeout(() => setMessage(''), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [message]);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const load = useCallback(async () => setInfo(await localRequest<LocalInfo>('/api/local/info')), []);
   const connect = useCallback(async () => {
