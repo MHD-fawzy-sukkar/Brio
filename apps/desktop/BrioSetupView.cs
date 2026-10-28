@@ -8,7 +8,7 @@ partial class BrioSetup {
     PictureBox logo;
 
     void InitializeWindow() {
-        Text = "تثبيت Brio LAN · 0.1.1";
+        Text = "تثبيت Brio LAN · 0.1.2";
         ClientSize = new Size(640, 472); FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false; MinimizeBox = false; StartPosition = FormStartPosition.CenterScreen;
         AutoScaleDimensions = new SizeF(96,96); AutoScaleMode = AutoScaleMode.Dpi;
@@ -47,6 +47,7 @@ partial class BrioSetup {
             guide.RowStyles.Add(new RowStyle(SizeType.Percent,100f/3)); guide.Controls.Add(Copy(line,10.5f,false));
         }
         layout.Controls.Add(guide,0,1);
+        BrioAppearance.Round(guide,14);
         status.Dock=DockStyle.Fill; status.Text="جاهز للتثبيت على حسابك. مسابقاتك ونتائجك تبقى محفوظة عند التحديث.";
         status.ForeColor=Color.FromArgb(87,101,122); status.RightToLeft=RightToLeft.Yes;
         status.TextAlign=ContentAlignment.MiddleLeft; layout.Controls.Add(status,0,2);
@@ -57,7 +58,7 @@ partial class BrioSetup {
         install.BackColor=Color.FromArgb(166,44,67); install.ForeColor=Color.White;
         install.Font=new Font("Segoe UI",12,FontStyle.Bold); install.Cursor=Cursors.Hand;
         install.UseVisualStyleBackColor=false; layout.Controls.Add(install,0,4);
-        var version=Copy("Windows 10 / 11 · x64 · الإصدار التجريبي 0.1.1",9,false);
+        var version=Copy("Windows 10 / 11 · x64 · الإصدار التجريبي 0.1.2",9,false);
         layout.Controls.Add(version,0,5);
     }
     static Label Copy(string text,float size,bool bold) {

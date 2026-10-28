@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using Microsoft.Win32;
 
 partial class BrioSetup : Form {
-    readonly Button install = new Button();
+    readonly Button install = new BrioButton();
     readonly Label status = new Label();
     bool busy;
     bool completed;
@@ -41,7 +41,7 @@ partial class BrioSetup : Form {
             CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), executable);
             CreateShortcut(Environment.GetFolderPath(Environment.SpecialFolder.Programs), executable);
             using (var key = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\BrioLAN")) {
-                key.SetValue("DisplayName", "Brio LAN"); key.SetValue("DisplayVersion", "0.1.1-pilot");
+                key.SetValue("DisplayName", "Brio LAN"); key.SetValue("DisplayVersion", "0.1.2-pilot");
                 key.SetValue("Publisher", "Brio"); key.SetValue("DisplayIcon", executable);
                 key.SetValue("InstallLocation", target);
                 key.SetValue("UninstallString", "\"" + Path.Combine(target, "Uninstall.exe") + "\"");

@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 partial class BrioLauncher : Form {
     Process server;
-    readonly Button start = new Button(), stop = new Button(), open = new Button();
+    readonly Button start = new BrioButton(), stop = new BrioButton(), open = new BrioButton();
     readonly TextBox details = new TextBox();
     readonly System.Windows.Forms.Timer health = new System.Windows.Forms.Timer();
     bool stopping;

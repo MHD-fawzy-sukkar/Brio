@@ -14,7 +14,7 @@ partial class BrioLauncher {
     PictureBox logo;
 
     void InitializeWindow() {
-        Text = "Brio LAN · 0.1.1";
+        Text = "Brio LAN · 0.1.2";
         ClientSize = new Size(720, 540); MinimumSize = new Size(690, 580);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(246, 247, 251);
@@ -53,6 +53,7 @@ partial class BrioLauncher {
     }
     void BuildStatus() {
         statusCard.Dock = DockStyle.Fill; statusCard.Padding = new Padding(18,10,18,10); statusCard.Margin = new Padding(0,0,0,10);
+        BrioAppearance.Round(statusCard,14);
         var text = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, BackColor = Color.Transparent };
         text.RowStyles.Add(new RowStyle(SizeType.Absolute,34)); text.RowStyles.Add(new RowStyle(SizeType.Percent,100));
         statusTitle.Dock = statusHint.Dock = DockStyle.Fill;
@@ -88,6 +89,7 @@ partial class BrioLauncher {
             guide.Controls.Add(TextLabel(line,10,Color.FromArgb(87,101,122),false));
         for(int i=0;i<3;i++) guide.RowStyles.Add(new RowStyle(SizeType.Percent,100f/3));
         layout.Controls.Add(guide,0,3);
+        BrioAppearance.Round(guide,14);
     }
     void BuildFooter() {
         var footer = new TableLayoutPanel { Dock=DockStyle.Fill, ColumnCount=2, RowCount=1, Margin=new Padding(0), RightToLeft=RightToLeft.No };
