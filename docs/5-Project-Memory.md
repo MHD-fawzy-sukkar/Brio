@@ -4,6 +4,9 @@ Updated: 2026-10-28. Read this on every engineering iteration; update only with 
 
 ## 2026-10-28 — Production hardening and Windows presenter installer
 
+- Fixed the Local play link disappearing on join/player routes by removing the cloud link's player-route visibility condition. Published `11cd7700-bb4c-48c0-addd-516bec45c815`; real click-through local → join → local passed in Arabic/English at 1440, 390, 320px without overflow or page errors. Format/architecture checks and production build passed.
+- User confirmed the warning is SmartScreen's "unrecognized app" on startup. Authenticode inspection of the shipped installer returned NotSigned. Documented trusted MSIX Store distribution versus direct code signing, and why moving an unsigned binary to Drive does not establish publisher trust. No protection settings changed, certificates purchased, or files submitted to a third-party review service. See docs/30-Windows-Distribution.md.
+
 - Follow-up download UI polish: replaced the dense single card with a responsive introduction/download layout and three numbered preparation steps. Kept platform/size outside the primary action; removed the raw SHA-256/manifest link from the normal user flow. Arabic/English copy is separated in local-download-copy.ts. Fixed local-page navigation to activate Local play rather than My quizzes, and added aria-current. Native LAN presenter navigation keeps its prior behavior.
 - Verified Arabic RTL and English LTR at 1440, 390 and 320px: exactly one active Local play nav item, no horizontal overflow, no page errors. Inspected desktop/mobile screenshots. Architecture checks, formatting, 73 web tests and production web build pass. Presentation-only changes; no runtime/download API or desktop installer change.
 - Published the UI follow-up as `ce9aa367-7afd-48f1-8aaf-d330875f816c` and repeated all six browser layout/navigation checks on the live site successfully.

@@ -48,7 +48,7 @@ export function NavbarLinks() {
       >
         {isLanMode ? t('لوحة المقدّم') : t('مسابقاتي')}
       </Link>
-      {!isLanMode && !isPlayerPage && (
+      {!isLanMode && (
         <Link
           href="/local/"
           aria-current={isLocalActive ? 'page' : undefined}
