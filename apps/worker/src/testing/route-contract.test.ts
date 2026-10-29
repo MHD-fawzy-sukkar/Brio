@@ -26,6 +26,7 @@ const expected = [
   ['DELETE', '/api/rooms/:roomId'],
   ['GET', '/api/rooms/by-code/:code'],
   ['GET', '/api/rooms/:roomId/identity'],
+  ['GET', '/api/rooms/:roomId/session'],
   ['POST', '/api/rooms/:roomId/join'],
   ['POST', '/api/rooms/:roomId/leave'],
   ['GET', '/api/rooms/:roomId/snapshot'],

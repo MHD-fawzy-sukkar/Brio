@@ -10,6 +10,7 @@ import { globalMediaPrefetchEngine } from '../../services/media-prefetch';
 import { registerServiceWorker } from '../../services/sw-register';
 import { useSynchronizedCountdown } from '../../hooks/use-synchronized-countdown';
 import { useRoomMediaPrefetch } from '../../hooks/use-room-media-prefetch';
+import { RequestGate } from '../../services/request-gate';
 export type SubmissionState = 'idle' | 'submitting' | 'accepted' | 'rejected';
 export function usePlayerGame() {
   const params = useSearchParams();
@@ -41,6 +42,7 @@ export function usePlayerGame() {
   const [submission, setSubmission] = useState<SubmissionState>('idle');
 
   const pendingSubmissionIdRef = useRef<string | null>(null);
+  const submissionGate = useRef(new RequestGate());
 
   const [rejection, setRejection] = useState('');
 
@@ -146,6 +148,7 @@ export function usePlayerGame() {
   const submit = async (optionId?: string) => {
     if (!socket || !roundId || imageBlocking || submission === 'submitting' || submission === 'accepted')
       return;
+    if (!submissionGate.current.start()) return;
     if (optionId) setSelectedOption(optionId);
     setSubmission('submitting');
     setRejection('');
@@ -161,6 +164,8 @@ export function usePlayerGame() {
       setRejection(
         cause instanceof Error ? cause.message : t('لم نتمكن من إرسال الإجابة. تحقق من اتصالك وحاول مجدداً.'),
       );
+    } finally {
+      submissionGate.current.finish();
     }
   };
 

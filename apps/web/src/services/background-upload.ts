@@ -64,6 +64,20 @@ export class BackgroundUploadManager {
       operation: () => this.coverUploader(quizId, file),
     });
   }
+
+  waitForQuestion(quizId: string, questionId: string): Promise<void> {
+    const pending = () =>
+      this.list(quizId).some((task) => task.questionId === questionId && task.state === 'uploading');
+    if (!pending()) return Promise.resolve();
+    return new Promise((resolve) => {
+      const unsubscribe = this.subscribe(() => {
+        if (pending()) return;
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+
   enqueueQuestion(quizId: string, questionId: string, file: File) {
     return this.enqueue({
       quizId,

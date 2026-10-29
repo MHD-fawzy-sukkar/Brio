@@ -57,6 +57,7 @@ export const AuthoringQuestionSchema = z.object({
   options: z.array(AuthoringQuestionOptionSchema).default([]),
   acceptedAlternatives: z.array(z.string()).default([]),
   essentialImage: z.string().nullable().optional(),
+  removeImage: z.boolean().optional(),
 });
 
 export type AuthoringQuestion = z.infer<typeof AuthoringQuestionSchema>;

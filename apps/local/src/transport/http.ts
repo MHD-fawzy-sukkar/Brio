@@ -126,11 +126,25 @@ export function createLanHttpHandler(runtime: LanRuntime, getPort: () => number)
         return json(res, 200, { roomId: room.id, code: room.code, status: 'active' });
       }
       const route = path.match(
-        /^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|leave|snapshot|media|results|identity))?$/,
+        /^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|leave|snapshot|media|results|identity|session))?$/,
       );
       if (route) {
         let room = reconcile(route[1]);
         const action = route[2];
+        if (action === 'session' && req.method === 'GET') {
+          const id = room.state.phase === 'FINISHED' ? undefined : identity(req, room);
+          const player = id ? room.state.players.get(id) : undefined;
+          return json(res, 200, {
+            player: player
+              ? {
+                  playerId: player.id,
+                  nickname: player.nickname,
+                  avatarId: player.avatarId,
+                  sessionToken: 'cookie',
+                }
+              : null,
+          });
+        }
         if (action === 'identity' && req.method === 'GET') {
           if (room.state.phase === 'FINISHED') throw new HttpError(404, 'انتهت اللعبة.');
           return json(res, 200, { identity: room.quiz.identity ?? null });

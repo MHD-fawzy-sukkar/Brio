@@ -1,4 +1,6 @@
 export default {
+  'طلبات كثيرة خلال وقت قصير. انتظر قليلاً ثم حاول مجدداً.':
+    'Too many requests. Wait a moment and try again.',
   'تم تسجيل إجابتك': 'Answer saved',
   'بانتظار انتهاء الوقت.': 'Waiting for time to end.',
   'إجابات صحيحة': 'Correct answers',

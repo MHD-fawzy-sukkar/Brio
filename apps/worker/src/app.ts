@@ -27,7 +27,10 @@ app.use('*', async (c, next) => {
     return rfc7807Error(c, 503, 'unsafe_configuration', 'Development bypass must be disabled');
   const limited = await enforceRequestLimit(c);
   if (limited) return limited;
+  const clientCookie = c.res.headers.get('Set-Cookie');
   await next();
+  if (clientCookie?.startsWith('brio_client=') && !c.res.headers.get('Set-Cookie')?.includes('brio_client='))
+    c.header('Set-Cookie', clientCookie, { append: true });
 });
 app.use('/api/*', bodyLimit({ maxSize: 2 * 1024 * 1024 }));
 app.route('/api', identityRoutes);

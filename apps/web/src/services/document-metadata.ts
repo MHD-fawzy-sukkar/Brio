@@ -1,5 +1,5 @@
 export const siteDescription = {
-  ar: 'أنشئ مسابقات تفاعلية بالعربية والإنجليزية، وشاركها مباشرة أو شغّلها عبر الشبكة المحلية بعد تنزيل الأسئلة والصور مسبقاً.',
+  ar: 'أنشئ مسابقات تفاعلية بالعربية والإنجليزية، وشاركها مباشرة أو شغّلها عبر الشبكة المحلية',
   en: 'Create live quizzes in Arabic and English. Play online or over a local network after downloading your questions and images in advance.',
 };
 

@@ -21,6 +21,7 @@ export async function webSocketMessage(
   ws: WebSocket,
   message: string | ArrayBuffer,
 ): Promise<void> {
+  if (telemetry.blockedSockets.has(ws)) return;
   await room.ensureInitialized();
   if (!room.quizSnapshot) return;
 
@@ -30,6 +31,7 @@ export async function webSocketMessage(
   const byteLen =
     typeof message === 'string' ? new TextEncoder().encode(message).byteLength : message.byteLength;
   if (byteLen > 4096) {
+    telemetry.blockedSockets.add(ws);
     ws.send(
       JSON.stringify({
         v: 1,
@@ -38,6 +40,7 @@ export async function webSocketMessage(
         payload: { code: 'message_too_large', detail: 'Inbound socket payload exceeds 4 KiB limit' },
       }),
     );
+    ws.close?.(1009, 'Message too large');
     return;
   }
 
@@ -45,6 +48,7 @@ export async function webSocketMessage(
   const timestamps = telemetry.timestamps.get(ws) || [];
   const recentTimestamps = timestamps.filter((t) => arrivalTime - t < 1000);
   if (recentTimestamps.length >= 10) {
+    telemetry.blockedSockets.add(ws);
     ws.send(
       JSON.stringify({
         v: 1,
@@ -53,6 +57,7 @@ export async function webSocketMessage(
         payload: { code: 'rate_limit_exceeded', detail: 'Too many socket messages. Max 10 per second' },
       }),
     );
+    ws.close?.(1008, 'Rate limit');
     return;
   }
   recentTimestamps.push(arrivalTime);
@@ -64,6 +69,18 @@ export async function webSocketMessage(
     const now = Date.now();
     const identity = socketIdentity(room, ws);
     if (!identity.host && !identity.playerId) throw new Error('Session superseded or unauthorized');
+    if (!telemetry.allowParticipant(identity.playerId || 'host', now)) {
+      telemetry.blockedSockets.add(ws);
+      ws.send(
+        JSON.stringify({
+          v: 1,
+          type: 'error',
+          payload: { code: 'rate_limit_exceeded', detail: 'Too many messages. Try again shortly.' },
+        }),
+      );
+      ws.close?.(1008, 'Rate limit');
+      return;
+    }
     if (typeof data.type !== 'string') throw new Error('Invalid message type');
     if (data.type.startsWith('host.') && (!identity.host || !(await verifyHostCommand(room, ws))))
       throw new Error('Host authentication required');

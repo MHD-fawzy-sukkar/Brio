@@ -26,6 +26,7 @@ export function attachLanSockets(server: Server, runtime: LanRuntime) {
     requestUrl,
   } = runtime;
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 4096, perMessageDeflate: false });
+  const participantMessages = new Map<string, number[]>();
   server.on('upgrade', (req, socket, head) => {
     try {
       const url = requestUrl(req);
@@ -59,8 +60,24 @@ export function attachLanSockets(server: Server, runtime: LanRuntime) {
           const receivedAt = now();
           try {
             if (!connections.has(c)) return;
+            const key = `${c.roomId}:${c.host ? 'host' : c.playerId}`;
+            if (!participantMessages.has(key) && participantMessages.size >= 2048) {
+              for (const [id, times] of participantMessages)
+                if (receivedAt - times[times.length - 1] >= 10000) participantMessages.delete(id);
+              if (participantMessages.size >= 2048) return ws.close(1008, 'Rate limit');
+            }
+            const recent = (participantMessages.get(key) || []).filter((time) => receivedAt - time < 10000);
+            if (recent.length >= 30) {
+              connections.delete(c);
+              return ws.close(1008, 'Rate limit');
+            }
+            recent.push(receivedAt);
+            participantMessages.set(key, recent);
             c.recent = c.recent.filter((t) => receivedAt - t < 1000);
-            if (c.recent.length >= 10) return ws.close(1008, 'Rate limit');
+            if (c.recent.length >= 10) {
+              connections.delete(c);
+              return ws.close(1008, 'Rate limit');
+            }
             c.recent.push(receivedAt);
             const msg = JSON.parse(raw.toString());
             const current = reconcile(c.roomId);

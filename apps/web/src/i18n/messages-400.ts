@@ -45,8 +45,7 @@ export default {
     'Uploading the image in the background… The preview is ready and the link will update automatically.',
   'تعذر رفع الصورة. اخترها مجدداً ثم احفظ السؤال لإعادة المحاولة.':
     'Unable to upload the image. Select it again and save the question to retry.',
-  'حتى 5MB. يبدأ الرفع في الخلفية فور حفظ السؤال.':
-    'Up to 5 MB. Background uploading starts when you save the question.',
+  'حتى 5MB. ': 'Up to 5 MB. Background uploading starts when you save the question.',
   'نص السؤال': 'Question text',
   'اكتب السؤال بوضوح…': 'Write a clear question…',
   الإجابات: 'Answers',

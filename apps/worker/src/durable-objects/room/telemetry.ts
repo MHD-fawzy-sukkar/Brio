@@ -11,6 +11,20 @@ export interface RoomMetrics {
 
 export class RoomTelemetry {
   readonly timestamps = new Map<RoomSocket, number[]>();
+  readonly blockedSockets = new WeakSet<RoomSocket>();
+  readonly participantTimestamps = new Map<string, number[]>();
+  allowParticipant(key: string, now: number): boolean {
+    if (!this.participantTimestamps.has(key) && this.participantTimestamps.size >= 256) {
+      for (const [id, times] of this.participantTimestamps)
+        if (now - times[times.length - 1] >= 10000) this.participantTimestamps.delete(id);
+      if (this.participantTimestamps.size >= 256) return false;
+    }
+    const recent = (this.participantTimestamps.get(key) || []).filter((time) => now - time < 10000);
+    if (recent.length >= 30) return false;
+    recent.push(now);
+    this.participantTimestamps.set(key, recent);
+    return true;
+  }
   readonly metrics: RoomMetrics = {
     totalSubmissions: 0,
     totalReceiptsEmitted: 0,

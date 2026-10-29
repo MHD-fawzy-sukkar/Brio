@@ -9,6 +9,7 @@ import { AmbientBackground } from './AmbientBackground';
 import { MarketingHero } from './MarketingHero';
 import { normalizePin } from '../services/home-routing';
 import { isLanMode } from '../services/runtime-mode';
+import { RequestGate } from '../services/request-gate';
 
 export function JoinGame() {
   const { t, translateMessage } = useTranslations();
@@ -16,6 +17,7 @@ export function JoinGame() {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestRef = useRef<AbortController | null>(null);
+  const requestGate = useRef(new RequestGate());
 
   useEffect(
     () => () => {
@@ -29,6 +31,7 @@ export function JoinGame() {
     event.preventDefault();
     const pin = normalizePin(code);
     if (pin.length !== 6) return setError(t('أدخل رمز اللعبة المكوّن من 6 أرقام.'));
+    if (!requestGate.current.start()) return;
 
     requestRef.current?.abort();
     const controller = new AbortController();
@@ -54,6 +57,7 @@ export function JoinGame() {
               : t('تعذر العثور على اللعبة.'),
         );
     } finally {
+      requestGate.current.finish();
       if (requestRef.current === controller) {
         requestRef.current = null;
         setChecking(false);

@@ -37,6 +37,10 @@ Web imports contracts, while Worker and LAN import contracts plus game-core. The
 
 The host opens a room, players join, and the server advances through countdown, questions, statistics, ranking and final results. Clients render server timestamps rather than deciding when answers close. Reconnecting clients request the current state instead of replaying missed screens.
 
+Cloud joins reuse the room's HttpOnly session cookie to recover the same player, name, avatar and score. Reopening the join form does not create another seat while that session remains valid. Successful joins replace the setup entry in browser history; explicit lobby leave releases the seat. LAN also reuses its room cookie.
+
+QR and manual-code entry check the authenticated room session before showing name/avatar setup. Existing players go directly to the current game state; new or explicitly departed players see setup. The session check is read-only, uncached and does not create a seat or supersede a live connection.
+
 - Persist accepted answers before acknowledging them. Repeated submissions must not award points twice.
 - Keep correct answers and host-only data out of player payloads. Published quiz content is frozen for a room.
 - Slow players, unavailable images and media readiness reports must not postpone other players' questions.
@@ -54,3 +58,7 @@ The service worker caches application assets; authentication, creator APIs and l
 Cloud creator login uses Google token verification; ownership and room permissions are enforced on the server. LAN presenter access bootstraps from the same laptop through loopback. Imported quiz packages contain private answer keys and belong on the presenter device only.
 
 Runtime artwork in `apps/web/public/` is used by the UI, service worker and Windows packaging. The performance fixture in `benchmarks/` is also an active script input.
+
+Rapid-click guards synchronously allow one pending PIN lookup, join or answer request, with a one-second retry interval. Cloud HTTP uses a durable browser-cookie budget of 30 requests per 10 seconds, shared across Cloudflare locations through `RequestLimiterDO`. Accepted counts survive object restarts; rejected requests do not update the counter or reach application D1/room handlers. Idle counter rows are removed after a minute. Approximate edge limits, the shared entry/IP ceiling and existing auth/upload limits remain additional controls.
+
+Live messages allow 10 per second per connection and 30 per 10 seconds per participant across connections; flooded sockets are closed and ignored before further game processing. Socket budgets are bounded, in-memory state and reset when their runtime restarts.

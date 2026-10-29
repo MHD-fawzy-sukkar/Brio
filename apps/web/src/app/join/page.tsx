@@ -12,6 +12,9 @@ import { useRoomIdentity } from '../../features/competition-identity/use-room-id
 import { CompetitionIdentityBadge } from '../../features/competition-identity/CompetitionIdentityBadge';
 import { selectedAvatar } from '../../features/competition-identity/model';
 import { PageSkeleton } from '../../components/Loading';
+import { usePlayerResume } from '../../hooks/use-player-resume';
+import { enterPlayerGame } from '../../services/player-session';
+import { RequestGate } from '../../services/request-gate';
 
 function JoinSetup() {
   const { t, translateMessage } = useTranslations();
@@ -30,6 +33,8 @@ function JoinSetup() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestRef = useRef<AbortController | null>(null);
+  const requestGate = useRef(new RequestGate());
+  const resume = usePlayerResume(roomId, code);
 
   useEffect(() => {
     if (directRoomId && /^\d{6}$/.test(directCode)) {
@@ -76,6 +81,7 @@ function JoinSetup() {
     event.preventDefault();
     if (!roomId || !code) return;
     if (nickname.trim().length < 2) return setError(t('اكتب اسماً من حرفين على الأقل.'));
+    if (!requestGate.current.start()) return;
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
@@ -92,15 +98,7 @@ function JoinSetup() {
       if (response.status === 404) throw new Error(t('انتهت اللعبة أو لم تعد متاحة.'));
       if (!response.ok || !player?.playerId)
         throw new Error(player?.detail || t('تعذر الانضمام إلى اللعبة.'));
-      sessionStorage.setItem(`brio_player_session:${roomId}:${player.playerId}`, player.sessionToken);
-      const query = new URLSearchParams({
-        roomId,
-        code,
-        playerId: player.playerId,
-        nickname: player.nickname,
-        avatar: player.avatarId,
-      });
-      window.location.assign(`/play/?${query}`);
+      enterPlayerGame(roomId, code, player);
     } catch (cause) {
       if ((cause as Error)?.name !== 'AbortError')
         setError(
@@ -111,6 +109,7 @@ function JoinSetup() {
               : t('تعذر الانضمام.'),
         );
     } finally {
+      requestGate.current.finish();
       if (requestRef.current === controller) {
         requestRef.current = null;
         setJoining(false);
@@ -118,15 +117,21 @@ function JoinSetup() {
     }
   };
 
-  if (resolving || roomIdentity.loading) return <PageSkeleton kind="join" />;
-  if (!roomId || !code || roomIdentity.error)
+  if (resolving || roomIdentity.loading || (roomId && code && !resume.checked))
+    return <PageSkeleton kind="join" />;
+  if (!roomId || !code || roomIdentity.error || resume.error)
     return (
       <div className="card mx-auto max-w-lg p-10 text-center">
         <div className="text-5xl">🔎</div>
         <h1 className="mt-4 text-xl font-black">{t('تعذر فتح رابط اللعبة')}</h1>
         <p className="mt-2 text-sm font-bold leading-7 text-rose-600">
-          {translateMessage((roomIdentity.error || error) ?? '')}
+          {translateMessage((resume.error || roomIdentity.error || error) ?? '')}
         </p>
+        {resume.error && (
+          <button type="button" onClick={resume.retry} className="primary-btn mt-6">
+            {t('إعادة المحاولة')}
+          </button>
+        )}
         <a href="/join-game/" className="secondary-btn mt-6 inline-block">
           {t('إدخال الرمز يدوياً')}
         </a>

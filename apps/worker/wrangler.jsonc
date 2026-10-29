@@ -14,7 +14,8 @@
   "ratelimits": [
     { "name": "AUTH_LIMITER", "namespace_id": "61421001", "simple": { "limit": 30, "period": 60 } },
     { "name": "ENTRY_LIMITER", "namespace_id": "61421002", "simple": { "limit": 1200, "period": 60 } },
-    { "name": "UPLOAD_LIMITER", "namespace_id": "61421003", "simple": { "limit": 60, "period": 60 } }
+    { "name": "UPLOAD_LIMITER", "namespace_id": "61421003", "simple": { "limit": 60, "period": 60 } },
+    { "name": "CLIENT_LIMITER", "namespace_id": "61421004", "simple": { "limit": 30, "period": 10 } }
   ],
   "observability": { "enabled": true, "head_sampling_rate": 0.1 },
   "d1_databases": [
@@ -29,6 +30,10 @@
       {
         "name": "GAME_ROOM",
         "class_name": "GameRoomDO"
+      },
+      {
+        "name": "REQUEST_LIMITER",
+        "class_name": "RequestLimiterDO"
       }
     ]
   },
@@ -36,6 +41,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["GameRoomDO"]
+    },
+    {
+      "tag": "v2-request-limiter",
+      "new_sqlite_classes": ["RequestLimiterDO"]
     }
   ]
 }

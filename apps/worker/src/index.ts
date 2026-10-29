@@ -1,6 +1,7 @@
 import { app } from './app';
 import type { Env } from './env';
 export { GameRoomDO } from './durable-objects/GameRoomDO';
+export { RequestLimiterDO } from './durable-objects/RequestLimiterDO';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {

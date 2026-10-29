@@ -47,3 +47,29 @@ test('question upload remains associated with its question and exposes preview t
   manager.dismiss(id);
   assert.deepEqual(revoked, ['blob:question-preview']);
 });
+
+test('image removal can wait for all matching uploads without waiting on other questions', async () => {
+  const complete: Array<(value: MediaVariantsDto) => void> = [];
+  const manager = new BackgroundUploadManager(
+    async () => media,
+    async () => new Promise<MediaVariantsDto>((resolve) => complete.push(resolve)),
+    () => 'blob:preview',
+    () => {},
+  );
+  manager.enqueueQuestion('quiz', 'question', {} as File);
+  manager.enqueueQuestion('quiz', 'question', {} as File);
+  manager.enqueueQuestion('quiz', 'other', {} as File);
+  let settled = false;
+  const waiting = manager.waitForQuestion('quiz', 'question').then(() => {
+    settled = true;
+  });
+  complete[0](media);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(settled, false);
+  complete[1](media);
+  await waiting;
+  assert.equal(settled, true);
+  assert.equal(manager.latestQuestion('quiz', 'other')?.state, 'uploading');
+  complete[2](media);
+  await manager.waitForQuestion('quiz', 'other');
+});

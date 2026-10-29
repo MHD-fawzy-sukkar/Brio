@@ -84,11 +84,22 @@ export async function updateQuestionInQuiz(
     .prepare(
       `
     UPDATE questions
-    SET type = ?, text = ?, duration_ms = ?, multiplier = ?
+    SET type = ?, text = ?, duration_ms = ?, multiplier = ?,
+      media_id = CASE WHEN ? THEN NULL ELSE media_id END,
+      essential = CASE WHEN ? THEN 0 ELSE essential END
     WHERE id = ? AND quiz_id = ?
   `,
     )
-    .bind(q.type, q.text, q.durationMs, q.multiplier, questionId, quizId)
+    .bind(
+      q.type,
+      q.text,
+      q.durationMs,
+      q.multiplier,
+      q.removeImage ? 1 : 0,
+      q.removeImage ? 1 : 0,
+      questionId,
+      quizId,
+    )
     .run();
 
   await db.prepare('DELETE FROM question_options WHERE question_id = ?').bind(questionId).run();

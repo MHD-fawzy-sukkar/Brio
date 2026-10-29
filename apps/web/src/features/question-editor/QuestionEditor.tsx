@@ -30,6 +30,7 @@ export function QuestionEditor() {
     addOption,
     removeOption,
     chooseImage,
+    removeImage,
     save,
   } = useQuestionEditor();
   if (loadingQuestion) return <PageSkeleton kind="question" />;
@@ -101,32 +102,49 @@ export function QuestionEditor() {
             <label className="label">
               {t('صورة السؤال')} <span className="font-normal text-slate-400">{t('(اختيارية)')}</span>
             </label>
-            <label className="group relative grid min-h-52 cursor-pointer place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-brand-400 hover:bg-brand-50/50">
-              {visibleImageUrl ? (
-                <img
-                  src={visibleImageUrl}
-                  alt={t('معاينة صورة السؤال')}
-                  className="max-h-72 w-full object-contain p-3"
+            <div className="relative">
+              <label className="group relative grid min-h-52 cursor-pointer place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-brand-400 hover:bg-brand-50/50">
+                {visibleImageUrl ? (
+                  <img
+                    src={visibleImageUrl}
+                    alt={t('معاينة صورة السؤال')}
+                    className="max-h-72 w-full object-contain p-3"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-2xl shadow-sm">
+                      🖼️
+                    </span>
+                    <b className="mt-3 block text-sm text-slate-700">{t('أضف صورة توضيحية')}</b>
+                    <small className="mt-1 block text-slate-400">{t('تظهر كاملة دون قص')}</small>
+                  </div>
+                )}
+                <span className="absolute bottom-3 end-3 rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-brand-700 shadow-md">
+                  {imageFile ? t('تغيير الصورة') : t('رفع صورة')}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  className="hidden"
+                  onChange={(e) => {
+                    chooseImage(e.target.files?.[0]);
+                    e.target.value = '';
+                  }}
                 />
-              ) : (
-                <div className="text-center">
-                  <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white text-2xl shadow-sm">
-                    🖼️
-                  </span>
-                  <b className="mt-3 block text-sm text-slate-700">{t('أضف صورة توضيحية')}</b>
-                  <small className="mt-1 block text-slate-400">{t('تظهر كاملة دون قص')}</small>
-                </div>
+              </label>
+              {visibleImageUrl && (
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  disabled={busy}
+                  aria-label={t('حذف الصورة')}
+                  title={t('حذف الصورة')}
+                  className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-lg bg-white/95 text-lg text-slate-500 shadow-sm transition hover:bg-rose-50 hover:text-rose-600 active:scale-95 focus-visible:outline-2 focus-visible:outline-brand-500 disabled:opacity-50"
+                >
+                  ×
+                </button>
               )}
-              <span className="absolute bottom-3 end-3 rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-brand-700 shadow-md">
-                {imageFile ? t('تغيير الصورة') : t('رفع صورة')}
-              </span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                className="hidden"
-                onChange={(e) => chooseImage(e.target.files?.[0])}
-              />
-            </label>
+            </div>
             {activeUpload?.state === 'uploading' && (
               <p role="status" className="mt-2 text-xs font-bold text-brand-600">
                 {t('جاري رفع الصورة في الخلفية… تظهر المعاينة الآن وسيُحدّث الرابط تلقائياً.')}
@@ -137,11 +155,7 @@ export function QuestionEditor() {
                 {t('تعذر رفع الصورة. اخترها مجدداً ثم احفظ السؤال لإعادة المحاولة.')}
               </p>
             )}
-            {!activeUpload && (
-              <p className="mt-2 text-xs text-slate-400">
-                {t('حتى 5MB. يبدأ الرفع في الخلفية فور حفظ السؤال.')}
-              </p>
-            )}
+            {!activeUpload && <p className="mt-2 text-xs text-slate-400">{t('حتى 5MB. ')}</p>}
           </div>
           <div>
             <label className="label">{t('نص السؤال')}</label>

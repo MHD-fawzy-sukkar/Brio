@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { hashSessionToken } from '../auth/session';
+import { hashSessionToken, parseCookies } from '../auth/session';
 import { findRoomByCode, findJoinableRoomById } from '../repositories/room-directory.repository';
 import { rfc7807Error } from '../http/problem';
 import type { Env } from '../env';
@@ -35,6 +35,23 @@ app.get('/api/rooms/:roomId/identity', async (c) => {
   });
 });
 
+app.get('/api/rooms/:roomId/session', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  const roomId = c.req.param('roomId');
+  const sessionToken = parseCookies(c.req.header('Cookie') ?? null)[`brio_player_${roomId}`];
+  if (!sessionToken || !(await findJoinableRoomById(c.env.DB, roomId))) return c.json({ player: null });
+  const response = await c.env.GAME_ROOM.get(c.env.GAME_ROOM.idFromName(roomId)).fetch(
+    new Request('http://internal/session', {
+      headers: { 'X-Brio-Session-Hash': await hashSessionToken(sessionToken) },
+    }),
+  );
+  if (!response.ok) return rfc7807Error(c, 503, 'session_unavailable', 'Unable to check player session');
+  const { player } = (await response.json()) as {
+    player: { playerId: string; nickname: string; avatarId: string } | null;
+  };
+  return c.json({ player: player ? { ...player, sessionToken } : null });
+});
+
 app.post('/api/rooms/:roomId/join', async (c) => {
   const roomId = c.req.param('roomId');
   const room = await findJoinableRoomById(c.env.DB, roomId);
@@ -54,7 +71,8 @@ app.post('/api/rooms/:roomId/join', async (c) => {
   }
 
   const playerId = 'p_' + crypto.randomUUID();
-  const sessionToken = crypto.randomUUID();
+  const previousToken = parseCookies(c.req.header('Cookie') ?? null)[`brio_player_${roomId}`];
+  const sessionToken = /^[a-f0-9-]{36}$/i.test(previousToken || '') ? previousToken : crypto.randomUUID();
   const sessionHash = await hashSessionToken(sessionToken);
 
   const doId = c.env.GAME_ROOM.idFromName(roomId);
@@ -80,6 +98,7 @@ app.post('/api/rooms/:roomId/join', async (c) => {
     );
   }
 
+  const player = (await joinRes.json()) as { playerId: string; nickname: string; avatarId: string };
   const secure = new URL(c.req.url).protocol === 'https:' ? '; Secure' : '';
   c.header(
     'Set-Cookie',
@@ -88,9 +107,9 @@ app.post('/api/rooms/:roomId/join', async (c) => {
   return c.json(
     {
       roomId,
-      playerId,
-      nickname,
-      avatarId,
+      playerId: player.playerId,
+      nickname: player.nickname,
+      avatarId: player.avatarId,
       sessionToken,
     },
     201,

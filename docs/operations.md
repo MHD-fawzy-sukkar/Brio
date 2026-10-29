@@ -45,6 +45,8 @@ After deployment, check the page, `/api/health`, actual sign-in and a complete g
 
 During early events, monitor Worker/Durable Object errors, reconnects, HTTP 429 responses and D1/Cloudinary usage. Provider free plans still have finite quotas. Keep credentials, session tokens and private answers out of logs.
 
+HTTP burst rejection returns 429 with `Retry-After` indicating the remaining window (up to 10 seconds); the entry/IP, auth and upload windows return `Retry-After: 60`. The durable browser budget is separate for each cookie, so a shared Wi-Fi address does not share the 30-request burst limit. The shared entry ceiling remains 1,200/minute/IP. Cookie rotation can obtain another browser budget, which is why broader entry limits remain in place. [Cloudflare's edge counters are approximate and local to each location](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/); `RequestLimiterDO` supplies the shared browser counter. Incoming traffic still has a cost. Repeated clicking in the normal UI is also blocked before sending another request.
+
 The Windows installer remains an unsigned pilot. It bundles Node.js for the presenter, installs per user and does not require Node or pnpm on player devices. A trusted signing/distribution channel and clean-Windows install/update/uninstall acceptance are still pending; do not ask users to disable Windows protection.
 
 See [Project status](status.md) for the recorded release checksum and outstanding tests.

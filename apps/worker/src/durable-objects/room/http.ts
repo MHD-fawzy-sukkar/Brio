@@ -53,6 +53,28 @@ export async function fetch(
     });
   }
 
+  if (url.pathname === '/session' && request.method === 'GET') {
+    const hash = request.headers.get('X-Brio-Session-Hash');
+    const row = hash
+      ? (Array.from(
+          room.ctx.storage.sql.exec('SELECT player_id FROM players WHERE session_hash = ? LIMIT 1', hash),
+        )[0] as { player_id: string } | undefined)
+      : undefined;
+    const player = row && room.state.phase !== 'FINISHED' ? room.state.players.get(row.player_id) : undefined;
+    return Response.json(
+      {
+        player: player
+          ? {
+              playerId: player.id,
+              nickname: player.nickname,
+              avatarId: player.avatarId,
+            }
+          : null,
+      },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
   // 2. Player Join HTTP endpoint
   if (url.pathname.endsWith('/join') && request.method === 'POST') {
     if (!room.quizSnapshot)
@@ -66,7 +88,16 @@ export async function fetch(
         headers: { 'Content-Type': 'application/json' },
       });
     const body = (await request.json()) as any;
-    const { playerId, nickname, avatarId, sessionHash } = body;
+    const { nickname, avatarId, sessionHash } = body;
+    const existing = sessionHash
+      ? (Array.from(
+          room.ctx.storage.sql.exec(
+            'SELECT player_id FROM players WHERE session_hash = ? LIMIT 1',
+            sessionHash,
+          ),
+        )[0] as { player_id: string } | undefined)
+      : undefined;
+    const playerId = existing?.player_id ?? body.playerId;
     let player = room.state.players.get(playerId);
     if (!player) {
       if (room.state.players.size >= 200) return Response.json({ detail: 'Room is full' }, { status: 409 });

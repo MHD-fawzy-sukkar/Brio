@@ -82,7 +82,8 @@ function generateMockQuiz(questionCount: number): PublishedQuizSnapshot {
 
 describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () => {
   describe('T01 & Harness — 150 Players x 30 Questions Load Simulation & Burst Testing', () => {
-    it('simulates 150 concurrent players across 30 questions with near-deadline bursts', async () => {
+    it('simulates 150 concurrent players across 30 questions with near-deadline bursts', async (t) => {
+      t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
       const storage = createMockDoStorage();
       const mockCtx = {
         id: { toString: () => 'room_load_150' },
@@ -129,6 +130,8 @@ describe('Phase P6 — Correctness Hardening & 150-Player Local Rehearsal', () =
 
       // 3. Execute 30 Questions Loop
       for (let qIdx = 0; qIdx < 30; qIdx++) {
+        // Real questions take time; do not compress 30 rounds into one rate-limit window.
+        t.mock.timers.tick(10000);
         const roundId = doInstance.state.activeRound!.roundId;
 
         // Near-deadline answer burst: Submit answers from all 150 players in parallel using fresh socket instances per round

@@ -50,6 +50,7 @@ export function useQuestionEditor() {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageRemoved, setImageRemoved] = useState(false);
 
   const [storedImageUrl, setStoredImageUrl] = useState<string | null>(
     cachedQuestion?.media_url ?? cachedQuestion?.essentialImage ?? null,
@@ -60,7 +61,7 @@ export function useQuestionEditor() {
   const uploadedImageUrl =
     activeUpload?.state === 'failed' ? null : activeUpload?.resultUrl || activeUpload?.previewUrl;
 
-  const visibleImageUrl = imagePreview || uploadedImageUrl || storedImageUrl;
+  const visibleImageUrl = imageRemoved ? null : imagePreview || uploadedImageUrl || storedImageUrl;
 
   useEffect(
     () => () => {
@@ -151,6 +152,8 @@ export function useQuestionEditor() {
     if (!file) return;
     try {
       validateImage(file);
+      edited.current = true;
+      setImageRemoved(false);
       if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
@@ -158,6 +161,14 @@ export function useQuestionEditor() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t('الصورة غير صالحة.'));
     }
+  };
+
+  const removeImage = () => {
+    edited.current = true;
+    setImageRemoved(true);
+    setImageFile(null);
+    setImagePreview(null);
+    setError(null);
   };
 
   const save = async (event: React.FormEvent) => {
@@ -169,6 +180,7 @@ export function useQuestionEditor() {
     const payload = {
       ...question,
       essentialImage: null,
+      removeImage: imageRemoved,
       text: question.text.trim(),
       options: question.options.map((option) => ({ ...option, text: option.text.trim() })),
       acceptedAlternatives: question.acceptedAlternatives.map((item) => item.trim()).filter(Boolean),
@@ -177,11 +189,15 @@ export function useQuestionEditor() {
       ? `/api/quizzes/${quizId}/questions/${questionId}`
       : `/api/quizzes/${quizId}/questions`;
     try {
+      if (imageRemoved && questionId) await backgroundUploads.waitForQuestion(quizId, questionId);
       const body = await requestJson<{ questionId?: string }>(
         path,
         jsonBody(questionId ? 'PUT' : 'POST', payload),
       );
       const savedQuestionId = questionId || body?.questionId;
+      if (imageRemoved && savedQuestionId)
+        for (const task of backgroundUploads.list(quizId))
+          if (task.questionId === savedQuestionId) backgroundUploads.dismiss(task.id);
       const cached = peekResource<{ id: string; questions: StoredQuestion[] }>(`/api/quizzes/${quizId}`);
       if (cached && savedQuestionId) {
         const previous = cached.questions.find((item) => item.id === savedQuestionId);
@@ -191,7 +207,7 @@ export function useQuestionEditor() {
           id: savedQuestionId,
           duration_ms: payload.durationMs,
           options: payload.options.map((option) => ({ ...option, is_correct: option.isCorrect ? 1 : 0 })),
-          media_url: previous?.media_url ?? null,
+          media_url: imageRemoved ? null : (previous?.media_url ?? null),
         };
         const questions = previous
           ? cached.questions.map((item) => (item.id === savedQuestionId ? nextQuestion : item))
@@ -239,7 +255,7 @@ export function useQuestionEditor() {
     setImagePreview,
     storedImageUrl,
     setStoredImageUrl,
-    activeUpload,
+    activeUpload: imageRemoved ? undefined : activeUpload,
     setActiveUpload,
     uploadedImageUrl,
     visibleImageUrl,
@@ -249,6 +265,7 @@ export function useQuestionEditor() {
     addOption,
     removeOption,
     chooseImage,
+    removeImage,
     save,
   };
 }

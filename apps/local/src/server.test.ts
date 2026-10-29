@@ -73,12 +73,27 @@ test('LAN host and three players finish locally; auth, durable receipts, reconne
   assert.equal(dashboard.rooms.find((room: any) => room.roomId === roomId).quizId, 'quiz');
   assert.equal(((await (await request(`/api/rooms/by-code/${code}`)).json()) as any).roomId, roomId);
   assert.equal((await request(`/api/rooms/${roomId}/snapshot`)).status, 401);
+  assert.deepEqual(await (await request(`/api/rooms/${roomId}/session`)).json(), { player: null });
   const players = await Promise.all(
     ['one', 'two', 'three'].map(async (nickname) => {
       const res = await request(`/api/rooms/${roomId}/join`, '', { nickname, avatarId: 'avatar_1' });
       assert.equal(res.status, 201);
       return { ...((await res.json()) as any), cookie: res.headers.get('set-cookie')!.split(';')[0] };
     }),
+  );
+  assert.equal(app.store.load(roomId)!.state.players.size, 3);
+  const existingSession = (await (
+    await request(`/api/rooms/${roomId}/session`, players[0].cookie)
+  ).json()) as any;
+  assert.deepEqual(existingSession.player, {
+    playerId: players[0].playerId,
+    nickname: 'one',
+    avatarId: 'avatar_1',
+    sessionToken: 'cookie',
+  });
+  assert.deepEqual(
+    await (await request(`/api/rooms/${roomId}/session`, 'brio_player_invalid=invalid')).json(),
+    { player: null },
   );
   assert.equal(app.store.load(roomId)!.state.players.size, 3);
   const manifest = (await (await request(`/api/rooms/${roomId}/media`, players[0].cookie)).json()) as any[];
@@ -178,6 +193,9 @@ test('LAN host and three players finish locally; auth, durable receipts, reconne
   assert.equal(final.phase, 'FINISHED');
   assert.equal(final.ownScore, 1000);
   assert.equal(final.ownRank, 1);
+  assert.deepEqual(await (await request(`/api/rooms/${roomId}/session`, players[0].cookie)).json(), {
+    player: null,
+  });
   await app.close();
   app = createLanServer(config);
   port = await app.listen();
