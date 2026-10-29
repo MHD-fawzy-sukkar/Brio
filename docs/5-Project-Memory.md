@@ -1,6 +1,12 @@
 # Brio — Project Memory and Current Decisions
 
-Updated: 2026-10-28. Read this on every engineering iteration; update only with observed work/evidence.
+Updated: 2026-10-29. Read this on every engineering iteration; update only with observed work/evidence.
+
+## 2026-10-29 — Verified public Windows release
+
+- Completed the remaining installer parts through immutable undeployed asset-staging versions, then published the complete release as Worker a78c5bb8-25a5-47a2-bc1a-31d16b6c80ef. The public download is now 0.1.2-pilot, not the old 0.1.0.
+- Clicked the actual Arabic public download button in a 390px Edge/Chromium context: received all 35,478,528 bytes, exact SHA-256 0ac9b00f6e7070928c2290e18656f3603c8d498f8689a47590c732f5fecb2c19, no horizontal overflow or page errors. Repeated live builder JavaScript/CSS comparison: both match the redesigned export byte-for-byte. Screenshot: docs/windows-download-0.1.2-mobile.png. See docs/32-Release-and-Cleanup.md.
+- Removed temporary per-part upload stages, obsolete web staging, the duplicate verification download and disposable QA scripts after successful publication. Kept current/previous installers, current complete package/publish assets, every database-containing directory and the SQL backup. Earlier cleanup reclaimed 3,183,662,742 bytes before these final temporary outputs were removed.
 
 ## 2026-10-28 — Production hardening and Windows presenter installer
 

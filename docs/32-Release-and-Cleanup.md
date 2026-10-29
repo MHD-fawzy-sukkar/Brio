@@ -26,4 +26,10 @@ Preserved: the current installer and previous installer, current package/publish
 
 Small web assets uploaded successfully while bulk installer uploads repeatedly reset. Longer process-local connection timeouts helped diagnosis; TLS verification, credentials, VPN and firewall settings were not weakened or changed. Uploading one binary part into an undeployed Worker version succeeded. Remaining parts are staged independently; such asset-only versions must never be promoted to live traffic. Only the complete cloud asset manifest may be deployed.
 
-The public installer must be considered old until the final manifest is activated and the downloaded binary has been checked against the SHA-256 above.
+## Final public verification — 2026-10-29
+
+All eight parts were uploaded successfully in sequence. The complete release was published as Worker `a78c5bb8-25a5-47a2-bc1a-31d16b6c80ef`.
+
+The real Arabic download button was clicked in a 390px Edge/Chromium context. It downloaded the complete 35,478,528-byte installer; SHA-256 exactly matched `0ac9b00f6e7070928c2290e18656f3603c8d498f8689a47590c732f5fecb2c19`. The live manifest reports `0.1.2-pilot`. The mobile page had no horizontal overflow or page errors. Live builder JS/CSS were checked again and still match the redesigned cloud export. Evidence: `windows-download-0.1.2-mobile.png`.
+
+Temporary per-part upload directories, superseded web staging, the duplicate verification download and one-off QA scripts were removed after this verification. The current complete publish assets, local installer, previous installer and every database/backup remain available.
