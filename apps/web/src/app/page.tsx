@@ -17,6 +17,6 @@ export default function HomePage() {
     if (experience === 'dashboard') router.replace(isLanMode ? '/local/' : '/dashboard/');
   }, [experience, router]);
 
-  if (experience !== 'join') return <PageSkeleton />;
+  if (experience !== 'join') return <PageSkeleton kind="dashboard" />;
   return <JoinGame />;
 }
